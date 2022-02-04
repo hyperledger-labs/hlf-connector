@@ -2,12 +2,19 @@ package hlf.java.rest.client.util;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.protobuf.ByteString;
 import com.google.protobuf.InvalidProtocolBufferException;
+import hlf.java.rest.client.exception.ErrorCode;
+import hlf.java.rest.client.exception.ServiceException;
+import hlf.java.rest.client.model.BlockEventPrivateDataWriteSet;
 import hlf.java.rest.client.model.BlockEventWriteSet;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
+import org.hyperledger.fabric.protos.ledger.rwset.Rwset;
 import org.hyperledger.fabric.protos.ledger.rwset.kvrwset.KvRwset;
+import org.hyperledger.fabric.protos.peer.EventsPackage;
 import org.hyperledger.fabric.sdk.BlockEvent;
 import org.hyperledger.fabric.sdk.BlockInfo;
 import org.hyperledger.fabric.sdk.TxReadWriteSetInfo;
@@ -21,6 +28,17 @@ public class FabricEventParseUtil {
       throws JsonProcessingException, InvalidProtocolBufferException {
     List<BlockEventWriteSet> writes =
         getBlockEventWriteSet(transactionEvent.getTransactionActionInfos());
+    return mapper.writeValueAsString(writes);
+  }
+
+  public static String getPrivateDataFromBlock(
+      EventsPackage.BlockAndPrivateData blockAndPrivateData)
+      throws InvalidProtocolBufferException, JsonProcessingException {
+    if (blockAndPrivateData == null) {
+      return "";
+    }
+    List<BlockEventPrivateDataWriteSet> writes =
+        getPrivateDataBlockEventWriteSet(blockAndPrivateData.getPrivateDataMapMap());
     return mapper.writeValueAsString(writes);
   }
 
@@ -49,6 +67,42 @@ public class FabricEventParseUtil {
     return writes;
   }
 
+  public static List<BlockEventPrivateDataWriteSet> getPrivateDataBlockEventWriteSet(
+      Map<Long, Rwset.TxPvtReadWriteSet> privateDataMap) throws InvalidProtocolBufferException {
+    List<BlockEventPrivateDataWriteSet> writes = new ArrayList<>();
+    for (Map.Entry<Long, Rwset.TxPvtReadWriteSet> privateData : privateDataMap.entrySet()) {
+      Rwset.TxPvtReadWriteSet privateDataValue = privateData.getValue();
+      Rwset.TxReadWriteSet.DataModel dataModel = privateDataValue.getDataModel();
+      List<Rwset.NsPvtReadWriteSet> privateDataNsList = privateDataValue.getNsPvtRwsetList();
+      for (Rwset.NsPvtReadWriteSet nsRWSet : privateDataNsList) {
+        String namespace = cleanTextContent(nsRWSet.getNamespace());
+        List<Rwset.CollectionPvtReadWriteSet> collectionRwSet = nsRWSet.getCollectionPvtRwsetList();
+        for (Rwset.CollectionPvtReadWriteSet pvtRWSet : collectionRwSet) {
+          String collectionName = cleanTextContent(pvtRWSet.getCollectionName());
+          ByteString serializedRWSet = pvtRWSet.getRwset();
+          switch (dataModel) {
+            case KV:
+              KvRwset.KVRWSet kvrwset = KvRwset.KVRWSet.parseFrom(serializedRWSet);
+              // for each KVRWSet add an entry to send back
+              for (KvRwset.KVWrite writeSet : kvrwset.getWritesList()) {
+                String key = cleanTextContent(writeSet.getKey());
+                String value = cleanTextContent(writeSet.getValue().toStringUtf8());
+                boolean isDelete = writeSet.getIsDelete();
+                writes.add(
+                    getBlockEventPrivateDataWriteSet(
+                        namespace, collectionName, key, value, isDelete));
+              }
+              break;
+            default:
+              throw new ServiceException(
+                  ErrorCode.HYPERLEDGER_FABRIC_NOT_SUPPORTED, "Private Data but not KV Set");
+          }
+        }
+      }
+    }
+    return writes;
+  }
+
   public static List<String> getChaincodeEventWriteSet(
       Iterable<BlockInfo.TransactionEnvelopeInfo.TransactionActionInfo> transactionActionInfos) {
 
@@ -63,6 +117,17 @@ public class FabricEventParseUtil {
   private static BlockEventWriteSet getBlockEventWriteSet(
       String key, String value, boolean isDelete) {
     BlockEventWriteSet blockEventWriteSet = new BlockEventWriteSet();
+    blockEventWriteSet.setKey(key);
+    blockEventWriteSet.setValue(value);
+    blockEventWriteSet.setDelete(isDelete);
+    return blockEventWriteSet;
+  }
+
+  private static BlockEventPrivateDataWriteSet getBlockEventPrivateDataWriteSet(
+      String namespace, String collectionName, String key, String value, boolean isDelete) {
+    BlockEventPrivateDataWriteSet blockEventWriteSet = new BlockEventPrivateDataWriteSet();
+    blockEventWriteSet.setCollectionName(collectionName);
+    blockEventWriteSet.setNamespace(namespace);
     blockEventWriteSet.setKey(key);
     blockEventWriteSet.setValue(value);
     blockEventWriteSet.setDelete(isDelete);

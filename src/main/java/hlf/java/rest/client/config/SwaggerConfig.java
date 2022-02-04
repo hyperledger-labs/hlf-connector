@@ -15,7 +15,7 @@ import org.springframework.context.annotation.Configuration;
  */
 @Slf4j
 @Configuration
-public class SwaggerConfiguration {
+public class SwaggerConfig {
 
   /**
    * This bean is responsible for adding api key header for all the APIs exposed. Open api global

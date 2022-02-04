@@ -7,6 +7,7 @@ import lombok.Data;
 @Builder
 public class EventStructure {
   private String data;
+  private String privateData;
   private String error;
   private String eventURI;
 }

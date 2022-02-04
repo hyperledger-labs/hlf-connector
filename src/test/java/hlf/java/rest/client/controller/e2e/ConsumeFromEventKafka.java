@@ -7,7 +7,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
-import org.apache.kafka.common.TopicPartition;
 import org.apache.kafka.common.header.Header;
 import org.apache.kafka.common.serialization.StringDeserializer;
 
@@ -33,8 +32,6 @@ public class ConsumeFromEventKafka {
     props.put("session.timeout.ms", "30000");
     props.put("key.deserializer", "org.apache.kafka.common.serialization.StringDeserializer");
     props.put("value.deserializer", "org.apache.kafka.common.serialization.StringDeserializer");
-
-    TopicPartition topicPartition = new TopicPartition(topicName, 0);
 
     KafkaConsumer<String, String> consumer = new KafkaConsumer<String, String>(props);
     consumer.subscribe(Arrays.asList(topicName));

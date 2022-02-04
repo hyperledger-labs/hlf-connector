@@ -1,6 +1,6 @@
 package hlf.java.rest.client.listener;
 
-import static hlf.java.rest.client.listener.FabricEventListener.createEventStructure;
+import static hlf.java.rest.client.config.FabricEventListenerConfig.createEventStructure;
 
 import hlf.java.rest.client.model.EventType;
 import hlf.java.rest.client.service.EventPublishService;
@@ -32,25 +32,29 @@ public class BlockEventListener implements BlockListener {
           blockEvent.getTransactionEvents().iterator().next();
       synchronized (this) {
         if (!transactionEvent.getTransactionID().equalsIgnoreCase(BlockEventListener.blockTxId)) {
-          log.info("Channel ID: " + transactionEvent.getChannelId());
-          log.info("Envelop Type: " + transactionEvent.getType().toString());
-          log.info("Transaction ID: " + transactionEvent.getTransactionID());
-          log.info("Is Valid:" + transactionEvent.isValid());
-          log.info("Block Number :" + blockEvent.getBlockNumber());
+          log.info("Channel ID: {}", transactionEvent.getChannelId());
+          log.info("Envelop Type: {}", transactionEvent.getType().toString());
+          log.info("Transaction ID: {}", transactionEvent.getTransactionID());
+          log.info("Is Valid: {}", transactionEvent.isValid());
+          log.info("Block Number: {}", blockEvent.getBlockNumber());
           log.info(
-              "Chaincode Name: "
-                  + transactionEvent.getTransactionActionInfo(0).getChaincodeIDName());
+              "Chaincode Name: {}",
+              transactionEvent.getTransactionActionInfo(0).getChaincodeIDName());
           log.info(
-              "Function Name:"
-                  + new String(
-                      transactionEvent.getTransactionActionInfo(0).getChaincodeInputArgs(0)),
-              StandardCharsets.UTF_8);
-          String payload = FabricEventParseUtil.getWriteInfoFromBlock(transactionEvent);
-          log.info("Block Data: " + payload);
+              "Function Name: {}",
+              new String(
+                  transactionEvent.getTransactionActionInfo(0).getChaincodeInputArgs(0),
+                  StandardCharsets.UTF_8));
+          String privateDataPayload =
+              FabricEventParseUtil.getPrivateDataFromBlock(blockEvent.getBlockAndPrivateData());
+          log.info("Private Data: {}", privateDataPayload);
+          String blockPayload = FabricEventParseUtil.getWriteInfoFromBlock(transactionEvent);
+          log.info("Block Data: {}", blockPayload);
 
           eventPublishServiceImpl.publishBlockEvents(
               createEventStructure(
-                  payload,
+                  blockPayload,
+                  privateDataPayload,
                   transactionEvent.getTransactionID(),
                   blockEvent.getBlockNumber(),
                   EventType.BLOCK_EVENT),

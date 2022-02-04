@@ -47,7 +47,7 @@ import org.springframework.stereotype.Service;
 public class TransactionFulfillmentImpl implements TransactionFulfillment {
 
   @Autowired ApplicationProperties applicationProperties;
-  @Autowired GatewayBuilderSingleton gatewayBuilderSingleton;
+  @Autowired Gateway gateway;
 
   @Value("${fabric.events.enable:}")
   private Boolean enableFabricEvents;
@@ -61,7 +61,6 @@ public class TransactionFulfillmentImpl implements TransactionFulfillment {
     log.info("Initiate the Write Transaction to Ledger process");
     String resultString;
     try {
-      Gateway gateway = gatewayBuilderSingleton.getGatewayConnection();
       Network network = gateway.getNetwork(networkName);
       Contract contract = network.getContract(contractName);
       Transaction fabricTransaction = contract.createTransaction(transactionFunctionName);
@@ -72,9 +71,6 @@ public class TransactionFulfillmentImpl implements TransactionFulfillment {
 
       log.info("Transaction Successfully Submitted - Response: " + resultString);
 
-    } catch (IOException e) {
-      log.error("Action Failed: A problem occured while making the network connection");
-      throw new ServiceException(ErrorCode.HYPERLEDGER_FABRIC_CONNECTION_ERROR, e.getMessage(), e);
     } catch (GatewayRuntimeException gre) {
       log.error("Action Failed: A problem occured with Gateway transaction to the peer");
       throw new FabricTransactionException(
@@ -122,13 +118,10 @@ public class TransactionFulfillmentImpl implements TransactionFulfillment {
     String resultString;
     Collection<Peer> endorsingPeers = new ArrayList<Peer>();
     try {
-      Gateway gateway = gatewayBuilderSingleton.getGatewayConnection();
       Network network = gateway.getNetwork(networkName);
-      Iterator<Peer> itrPeers = network.getChannel().getPeers().iterator();
-      while (itrPeers.hasNext()) {
-        Peer channelPeer = itrPeers.next();
+      for (Peer channelPeer : network.getChannel().getPeers()) {
         log.info("Peer Name: " + channelPeer.getName());
-        if (null != channelPeer && peerNames.contains(channelPeer.getName())) {
+        if (peerNames.contains(channelPeer.getName())) {
           endorsingPeers.add(channelPeer);
         }
       }
@@ -144,9 +137,6 @@ public class TransactionFulfillmentImpl implements TransactionFulfillment {
 
       log.info("Transaction Successfully Submitted - Response: " + resultString);
 
-    } catch (IOException e) {
-      log.error("Action Failed: A problem occured while making the network connection");
-      throw new ServiceException(ErrorCode.HYPERLEDGER_FABRIC_CONNECTION_ERROR, e.getMessage(), e);
     } catch (GatewayRuntimeException gre) {
       log.error("Action Failed: A problem occured with Gateway transaction to the peer");
       throw new FabricTransactionException(
@@ -178,7 +168,6 @@ public class TransactionFulfillmentImpl implements TransactionFulfillment {
     String resultString;
     Map<String, byte[]> transientParam = new HashMap<>();
     try {
-      Gateway gateway = gatewayBuilderSingleton.getGatewayConnection();
       Network network = gateway.getNetwork(networkName);
       Contract contract = network.getContract(contractName);
       Transaction fabricTransaction = contract.createTransaction(transactionFunctionName);
@@ -187,9 +176,6 @@ public class TransactionFulfillmentImpl implements TransactionFulfillment {
       byte[] result = fabricTransaction.submit(collection, transientKey);
       resultString = new String(result, StandardCharsets.UTF_8);
       log.info("Transaction Successfully Submitted - Response: " + resultString);
-    } catch (IOException e) {
-      log.error("Action Failed: A problem occured while making the network connection");
-      throw new ServiceException(ErrorCode.HYPERLEDGER_FABRIC_CONNECTION_ERROR, e.getMessage(), e);
     } catch (GatewayRuntimeException gre) {
       log.error("Action Failed: A problem occured with Gateway transaction to the peer");
       throw new FabricTransactionException(
@@ -222,7 +208,6 @@ public class TransactionFulfillmentImpl implements TransactionFulfillment {
     Collection<Peer> endorsingPeers = new ArrayList<Peer>();
     Map<String, byte[]> transientParam = new HashMap<>();
     try {
-      Gateway gateway = gatewayBuilderSingleton.getGatewayConnection();
       Network network = gateway.getNetwork(networkName);
       Iterator<Peer> itrPeers = network.getChannel().getPeers().iterator();
       while (itrPeers.hasNext()) {
@@ -244,9 +229,6 @@ public class TransactionFulfillmentImpl implements TransactionFulfillment {
       byte[] result = fabricTransaction.submit(collection, transientKey);
       resultString = new String(result, StandardCharsets.UTF_8);
       log.info("Transaction Successfully Submitted - Response: " + resultString);
-    } catch (IOException e) {
-      log.error("Action Failed: A problem occured while making the network connection");
-      throw new ServiceException(ErrorCode.HYPERLEDGER_FABRIC_CONNECTION_ERROR, e.getMessage(), e);
     } catch (GatewayRuntimeException gre) {
       log.error("Action Failed: A problem occured with Gateway transaction to the peer");
       throw new FabricTransactionException(
@@ -275,16 +257,12 @@ public class TransactionFulfillmentImpl implements TransactionFulfillment {
     String resultString;
 
     try {
-      Gateway gateway = gatewayBuilderSingleton.getGatewayConnection();
       Network network = gateway.getNetwork(networkName);
       Contract contract = network.getContract(contractName);
       byte[] result = contract.evaluateTransaction(transactionFunctionName, transactionId);
       resultString = new String(result, StandardCharsets.UTF_8);
       log.info("Result from Query: " + resultString);
 
-    } catch (IOException e) {
-      log.error("Action Failed: A problem occured while retrieving the network connection", e);
-      throw new ServiceException(ErrorCode.HYPERLEDGER_FABRIC_CONNECTION_ERROR, e.getMessage(), e);
     } catch (ContractException e) {
       log.error(
           "Action Failed: A problem occured while retrieving the transaction from the Ledger", e);
@@ -308,7 +286,6 @@ public class TransactionFulfillmentImpl implements TransactionFulfillment {
     Map<String, byte[]> transientParam = new HashMap<>();
 
     try {
-      Gateway gateway = gatewayBuilderSingleton.getGatewayConnection();
       Network network = gateway.getNetwork(networkName);
       Contract contract = network.getContract(contractName);
       transientParam.put(transientKey, transactionId.getBytes());
@@ -318,9 +295,6 @@ public class TransactionFulfillmentImpl implements TransactionFulfillment {
       resultString = new String(result, StandardCharsets.UTF_8);
       log.info("Result from Query: " + resultString);
 
-    } catch (IOException e) {
-      log.error("Action Failed: A problem occured while retrieving the network connection", e);
-      throw new ServiceException(ErrorCode.HYPERLEDGER_FABRIC_CONNECTION_ERROR, e.getMessage(), e);
     } catch (ContractException e) {
       log.error(
           "Action Failed: A problem occurred while retrieving the transaction from the Ledger", e);
@@ -355,7 +329,6 @@ public class TransactionFulfillmentImpl implements TransactionFulfillment {
     List<BlockEventWriteSet> blockEventWriteSets = new ArrayList<>();
     List<String> chainCodeEventSets = new ArrayList<>();
     try {
-      Gateway gateway = gatewayBuilderSingleton.getGatewayConnection();
       Network network = gateway.getNetwork(networkName);
       Channel channel = network.getChannel();
       BlockInfo blockInfo = channel.queryBlockByNumber(blockNumber);
