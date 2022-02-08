@@ -10,16 +10,12 @@ import hlf.java.rest.client.service.EventPublishService;
 import hlf.java.rest.client.service.impl.GatewayBuilderSingleton;
 import hlf.java.rest.client.util.FabricClientConstants;
 import hlf.java.rest.client.util.FabricEventParseUtil;
-import java.nio.charset.StandardCharsets;
 import java.util.regex.Pattern;
-import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.hyperledger.fabric.gateway.Gateway;
 import org.hyperledger.fabric.gateway.Network;
-import org.hyperledger.fabric.sdk.BlockEvent;
-import org.hyperledger.fabric.sdk.BlockEvent.TransactionEvent;
-import org.hyperledger.fabric.sdk.BlockListener;
 import org.hyperledger.fabric.sdk.Channel;
+import org.hyperledger.fabric.sdk.Peer;
 import org.hyperledger.fabric.sdk.exception.InvalidArgumentException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -39,6 +35,8 @@ public class FabricEventListener {
 
   @Autowired EventPublishService eventPublishServiceImpl;
 
+  @Autowired BlockEventListener blockEventListener;
+
   @Value("${fabric.events.chaincode:}")
   private String chaincodeChannelNames;
 
@@ -46,8 +44,6 @@ public class FabricEventListener {
   private String blockChannelNames;
 
   private static String eventTxId = FabricClientConstants.FABRIC_TRANSACTION_ID;
-
-  private static String blockTxId = FabricClientConstants.FABRIC_TRANSACTION_ID;
 
   private String setChaincodeEventListener(Channel channel) throws InvalidArgumentException {
 
@@ -84,61 +80,7 @@ public class FabricEventListener {
         });
   }
 
-  private String setBlockEventListener(Channel channel) throws InvalidArgumentException {
-
-    BlockListener blockListener =
-        new BlockListener() {
-          @SneakyThrows
-          @Override
-          public void received(BlockEvent blockEvent) {
-            if (blockEvent.getTransactionEvents().iterator().hasNext()) {
-              TransactionEvent transactionEvent =
-                  blockEvent.getTransactionEvents().iterator().next();
-              synchronized (this) {
-                if (!transactionEvent
-                    .getTransactionID()
-                    .equalsIgnoreCase(FabricEventListener.blockTxId)) {
-                  log.info("Channel ID: " + transactionEvent.getChannelId());
-                  log.info("Envelop Type: " + transactionEvent.getType().toString());
-                  log.info("Transaction ID: " + transactionEvent.getTransactionID());
-                  log.info("Is Valid:" + transactionEvent.isValid());
-                  log.info("Block Number :" + blockEvent.getBlockNumber());
-                  log.info(
-                      "Chaincode Name: "
-                          + transactionEvent.getTransactionActionInfo(0).getChaincodeIDName());
-                  log.info(
-                      "Function Name:"
-                          + new String(
-                              transactionEvent
-                                  .getTransactionActionInfo(0)
-                                  .getChaincodeInputArgs(0)),
-                      StandardCharsets.UTF_8);
-                  String payload = FabricEventParseUtil.getWriteInfoFromBlock(transactionEvent);
-                  log.info("Block Data: " + payload);
-
-                  eventPublishServiceImpl.publishBlockEvents(
-                      createEventStructure(
-                          payload,
-                          transactionEvent.getTransactionID(),
-                          blockEvent.getBlockNumber(),
-                          EventType.BLOCK_EVENT),
-                      transactionEvent.getTransactionID(),
-                      transactionEvent.getChannelId(),
-                      transactionEvent.getTransactionActionInfo(0).getChaincodeIDName(),
-                      new String(
-                          transactionEvent.getTransactionActionInfo(0).getChaincodeInputArgs(0),
-                          StandardCharsets.UTF_8));
-                  FabricEventListener.blockTxId = transactionEvent.getTransactionID();
-                }
-              }
-            }
-          }
-        };
-
-    return channel.registerBlockListener(blockListener);
-  }
-
-  private String createEventStructure(
+  static String createEventStructure(
       String data, String transactionId, Long blockNumber, EventType eventType) {
     String uri =
         UriComponentsBuilder.fromUriString(
@@ -190,8 +132,14 @@ public class FabricEventListener {
           if (null != network) {
             log.info("Creating block-listener for channel:  " + network);
             Channel channel = network.getChannel();
+            for (Peer peer: channel.getPeers()) {
+              Channel.PeerOptions options = channel.getPeersOptions(peer);
+              options.registerEventsForPrivateData();
+              channel.removePeer(peer);
+              channel.addPeer(peer, options);
+            }
             channel.initialize();
-            setBlockEventListener(channel);
+            channel.registerBlockListener(this.blockEventListener);
           }
         }
       }

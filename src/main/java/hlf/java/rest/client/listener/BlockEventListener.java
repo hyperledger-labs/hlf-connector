@@ -1,0 +1,68 @@
+package hlf.java.rest.client.listener;
+
+import static hlf.java.rest.client.listener.FabricEventListener.createEventStructure;
+
+import hlf.java.rest.client.model.EventType;
+import hlf.java.rest.client.service.EventPublishService;
+import hlf.java.rest.client.util.FabricClientConstants;
+import hlf.java.rest.client.util.FabricEventParseUtil;
+import java.nio.charset.StandardCharsets;
+import lombok.SneakyThrows;
+import lombok.extern.slf4j.Slf4j;
+import org.hyperledger.fabric.sdk.BlockEvent;
+import org.hyperledger.fabric.sdk.BlockListener;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.context.annotation.Configuration;
+
+@Slf4j
+@Configuration
+@ConditionalOnProperty(prefix = "fabric.events", name = "enable", havingValue = "true")
+public class BlockEventListener implements BlockListener {
+
+  @Autowired EventPublishService eventPublishServiceImpl;
+
+  private static String blockTxId = FabricClientConstants.FABRIC_TRANSACTION_ID;
+
+  @SneakyThrows
+  @Override
+  public void received(BlockEvent blockEvent) {
+    if (blockEvent.getTransactionEvents().iterator().hasNext()) {
+      BlockEvent.TransactionEvent transactionEvent =
+          blockEvent.getTransactionEvents().iterator().next();
+      synchronized (this) {
+        if (!transactionEvent.getTransactionID().equalsIgnoreCase(BlockEventListener.blockTxId)) {
+          log.info("Channel ID: " + transactionEvent.getChannelId());
+          log.info("Envelop Type: " + transactionEvent.getType().toString());
+          log.info("Transaction ID: " + transactionEvent.getTransactionID());
+          log.info("Is Valid:" + transactionEvent.isValid());
+          log.info("Block Number :" + blockEvent.getBlockNumber());
+          log.info(
+              "Chaincode Name: "
+                  + transactionEvent.getTransactionActionInfo(0).getChaincodeIDName());
+          log.info(
+              "Function Name:"
+                  + new String(
+                      transactionEvent.getTransactionActionInfo(0).getChaincodeInputArgs(0)),
+              StandardCharsets.UTF_8);
+          String payload = FabricEventParseUtil.getWriteInfoFromBlock(transactionEvent);
+          log.info("Block Data: " + payload);
+
+          eventPublishServiceImpl.publishBlockEvents(
+              createEventStructure(
+                  payload,
+                  transactionEvent.getTransactionID(),
+                  blockEvent.getBlockNumber(),
+                  EventType.BLOCK_EVENT),
+              transactionEvent.getTransactionID(),
+              transactionEvent.getChannelId(),
+              transactionEvent.getTransactionActionInfo(0).getChaincodeIDName(),
+              new String(
+                  transactionEvent.getTransactionActionInfo(0).getChaincodeInputArgs(0),
+                  StandardCharsets.UTF_8));
+          BlockEventListener.blockTxId = transactionEvent.getTransactionID();
+        }
+      }
+    }
+  }
+}

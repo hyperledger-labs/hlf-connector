@@ -17,6 +17,7 @@
 	<properties>
 		<java.version>8</java.version>
 		<jacoco.version>0.8.5</jacoco.version>
+		<protobuf.version>3.19.2</protobuf.version>
 		<spring-cloud.version>Hoxton.SR6</spring-cloud.version>
 	</properties>
 
@@ -103,6 +104,11 @@
 					<artifactId>fabric-sdk-java</artifactId>
 				</exclusion>
 			</exclusions>
+		</dependency>
+		<dependency>
+			<groupId>com.google.protobuf</groupId>
+			<artifactId>protobuf-java</artifactId>
+			<version>${protobuf.version}</version>
 		</dependency>
 		<dependency>
 			<groupId>org.hyperledger.fabric-sdk-java</groupId>

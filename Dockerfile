@@ -12,9 +12,6 @@ RUN addgroup -S -g 10001 appGrp \
     && chown -R 10000:10001 /usr/local/tomcat && chown -R 10000:10001 /usr/local/config
 
 USER 10000
-
 COPY ./config/index.html /usr/local/tomcat/webapps/ROOT/
-
 COPY ./config/setenv.sh /usr/local/tomcat/bin/
-
 COPY ./target/hlf-connector.war /usr/local/tomcat/webapps/hlf-connector.war
