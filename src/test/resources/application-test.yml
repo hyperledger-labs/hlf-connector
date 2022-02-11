@@ -1,0 +1,34 @@
+spring:
+  profiles.active: test
+  
+---
+springdoc:
+  version: 1.0.0
+  swagger-ui:
+    url: /open-api.yml
+  api-docs:
+    enabled: false
+spring:
+  profiles: test
+fabric:
+  localhostReportAddress: true
+  wallet:
+    path: wallet
+    adminUser:
+      name: admin
+    clientUser:
+      name: clientUser
+  orgConnectionConfig:
+    path: config
+    filename: connection-local.yaml
+  client:
+    rest:
+      apikey: ePVYHwAaQ0V1XOTX6U
+kafka:
+  integration:
+    brokerHost: localhost:9093
+    groupId: fabric-consumer
+    topic: hlf-integration-topic
+  event-listener:
+    brokerHost: localhost:9093
+    topic: hlf-offchain-topic

@@ -1,0 +1,126 @@
+openapi: "3.0.0"
+info:
+  version: 1.0.0
+  title: Hyperledger Fabric REST Client
+  description: "Hyperledger Fabric REST Client for invoking and query fabric smart-contract"
+
+  
+paths:
+  /hlf-rest-client/invoke_transaction:
+    post:
+      tags:
+        - Invoke chaincode
+      description: Invoke chaincode functions with JSON payload
+      parameters:
+        - in: header
+          name: api-key
+          schema:
+            type: string
+          required: true
+        - in: header
+          name: chaincode
+          schema:
+            type: string
+          required: true
+        - in: header
+          name: function
+          schema:
+            type: string
+          required: true
+        - in: header
+          name: channel
+          schema:
+            type: string
+          required: true
+        - in: header
+          name: peers
+          schema:
+            type: string
+          required: false
+            
+      requestBody:
+        description: Chaincode function Argument in JSON format payload
+        required: true
+        content:
+          application/json:
+            schema:
+              type: string
+      responses:
+        "200":
+          description: Fabric Transaction Response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InvokeTransactionResponse"
+        "401":
+          description: Unauthorized
+        "404":
+          description: Data Not found
+        "417":
+          description: Input Validation failed
+        "500":
+          description: Internal Server Error occurred
+          
+  /hlf-rest-client/query_transaction:
+    get:
+      tags:
+        - Query chaincode
+      description: Query chaincode function
+      parameters:
+        - in: header
+          name: api-key
+          schema:
+            type: string
+          required: true
+        - in: query
+          name: channel
+          schema:
+            type: string
+          required: true
+        - in: query
+          name: chaincode
+          schema:
+            type: string
+          required: true
+        - in: query
+          name: function
+          schema:
+            type: string
+          required: true
+        - in: query
+          name: key
+          schema:
+            type: string
+          required: true
+            
+      responses:
+        "200":
+          description: Fabric Query Response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InvokeTransactionResponse"
+        "401":
+          description: Unauthorized
+        "404":
+          description: Data Not found
+        "417":
+          description: Input Validation failed
+        "500":
+          description: Internal Server Error occurred    
+          
+components:
+  schemas:
+    InvokeTransactionResponse:
+      type: object
+      description: Invoke Transaction Response Object
+      properties:
+        timestamp:
+          type: string
+          description: Commit timestamp of the transaction
+        transactionId:
+          type: string
+          description: Fabric transaction ID
+        message:
+          type: string
+          description: JSON payload of the transaction in Fabric

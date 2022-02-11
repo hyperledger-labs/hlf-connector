@@ -1,0 +1,21 @@
+version: '3'
+
+services:
+  hlf-connector:
+    container_name: hlf-connector
+    build: .
+    environment:
+      - spring_profiles_active=container
+      - fabric_localhostReportAddress=false
+      - fabric_orgConnectionConfig_filename=connection-org1.yaml
+      - fabric_wallet_clientUser_name=clientUser
+    ports:
+      - 8081:8080
+    volumes:
+      - ./config/application.yml:/usr/local/config/application.yml
+      - ./wallet:/usr/local/config/wallet
+      - ./config/connection-org1.yaml:/usr/local/config/connection-org1.yaml
+networks:
+  default:
+    external:
+      name: net_test

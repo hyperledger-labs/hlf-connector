@@ -1,0 +1,57 @@
+spring:
+  profiles.active: local
+  
+---
+springdoc:
+  version: 1.0.0
+  swagger-ui:
+    url: /open-api.yml
+  api-docs:
+    enabled: false
+spring:
+  profiles: local
+fabric:
+  localhostReportAddress: true
+  wallet:
+    path: wallet
+    adminUser:
+      name: admin
+    clientUser:
+      name: clientUser
+  orgConnectionConfig:
+    path: config
+    filename: connection-local.yaml
+  client:
+    rest:
+      apikey: ePVYHwAaQ0V1XOTX6U
+  events:
+    enable: true
+    chaincode: <comma separated list of channels>
+    block: <comma separated list of channels>
+
+
+---
+spring:
+  profiles: container
+  devtools.add-properties: false
+  localhostReportAddress: false
+  
+---
+spring:
+  profiles: qa
+  devtools.add-properties: false
+  localhostReportAddress: false
+
+---
+spring:
+  profiles: stg
+  devtools.add-properties: false
+  localhostReportAddress: false
+  
+  
+---
+spring:
+  profiles: prod  
+  devtools.add-properties: false
+  localhostReportAddress: false
+  
