@@ -1,0 +1,30 @@
+name: fabric-network
+version: 1.0.0
+client:
+  organization: TestOrg
+  connection:
+    timeout:
+      peer:
+        endorser: '300'
+organizations:
+  TestOrg:
+    mspid: peerMSP
+    peers:
+      - peer
+    certificateAuthorities:
+      - ca
+peers:
+  peer:
+    url: grpcs://peer-url:7051
+    tlsCACerts:
+      pem: |
+        trust certificate
+certificateAuthorities:
+  ca:
+    url: https://ca-url:7054
+    caName: caname
+    tlsCACerts:
+      pem: |
+        trust certificate
+    httpOptions:
+      verify: true

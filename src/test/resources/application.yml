@@ -1,0 +1,71 @@
+spring:
+  profiles.active: test
+
+management:
+  health.db.enabled: false
+  endpoints:
+    web:
+      exposure:
+        include: refresh
+server:
+  config:
+    location: "src/test/resources/application.yml"
+---
+springdoc:
+  version: 1.0.0
+  swagger-ui:
+    url: /open-api.yml
+  api-docs:
+    enabled: false
+spring:
+  profiles: test
+fabric:
+  localhostReportAddress: true
+  wallet:
+    path: "src/test/resources/testwallet"
+    adminUser:
+      name: admin
+    clientUser:
+      name: clientUser
+  orgConnectionConfig:
+    path: "src/test/resources/testconfig"
+    filename: connection.yml
+  client:
+    rest:
+      apikey: ePVYHwAaQ0V1XOTX6U
+kafka:
+  integration-points:
+    -
+      brokerHost: localhost:9093
+      groupId: fabric-consumer
+      topic: hlf-integration-topic1
+    -
+      brokerHost: localhost:9094
+      groupId: fabric-consumer
+      topic: hlf-integration-topic2
+  event-listener:
+    brokerHost: localhost:9093
+    topic: hlf-offchain-topic
+
+
+---
+spring:
+  profiles: intg
+fabric:
+  localhostReportAddress: true
+  wallet:
+    path: wallet
+    adminUser:
+      name: admin
+    clientUser:
+      name: clientUser
+  orgConnectionConfig:
+    path: config
+    filename: connection.yaml
+  events:
+    enable: false
+    chaincode: channel1
+    block: channel1
+  client:
+    rest:
+      apikey: abc

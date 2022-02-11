@@ -1,0 +1,71 @@
+name: Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      releaseType:
+        description: 'Release Type (patch|minor|major)'
+        required: true
+        default: "patch"
+        type: string
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check the release type information
+        run: |
+          if [[ "${type}" != "patch" && "${type}" != "minor" && "${type}" != "major" ]]; then
+            echo "Release type cannot be ${type}"
+            exit -1
+          fi
+        shell: bash
+        env:
+          type: "${{ github.event.inputs.releaseType }}"
+      - name: Clone the repository
+        uses: "actions/checkout@v2"
+      - name: Setup JDK 8
+        uses: "actions/setup-java@v2"
+        with:
+          java-version: '8'
+          distribution: 'adopt-openj9'
+      - name: Run tests and lints
+        run: mvn -B clean verify
+      - name: Run build
+        run: mvn -B clean package -DskipTests=true
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v1
+        with:
+          registry: ghcr.io
+          username: $GITHUB_ACTOR
+          password: "${{ secrets.GITHUB_TOKEN }}"
+      - name: Generate a container image
+        run: |
+          version=$(mvn -q \
+              -Dexec.executable=echo \
+              -Dexec.args='${project.version}' \
+              --non-recursive \
+              exec:exec)
+          docker build . -t ghcr.io/${USERNAME_OR_ORG}/hlf-connector:${version}
+          docker push ghcr.io/${USERNAME_OR_ORG}/hlf-connector:${version}
+        shell: bash
+        env:
+          USERNAME_OR_ORG: "${{ github.repository_owner }}"
+      - name: Increment the pom version
+        run: |
+          mvn build-helper:parse-version help:effective-pom validate -D${type}
+          rm -f pom.xml.versionsBackup
+        shell: bash
+        env:
+          type: "${{ github.event.inputs.releaseType }}"
+      - name: Create Pull Request with new PRs
+        uses: peter-evans/create-pull-request@v3
+        with:
+          token: "${{ secrets.GITHUB_TOKEN }}"
+          branch-suffix: timestamp
+          title: Increment version after release
+          labels: auto-version-increment
+          signoff: true
+          delete-branch: false
+          commit-message: Auto increment version after release
