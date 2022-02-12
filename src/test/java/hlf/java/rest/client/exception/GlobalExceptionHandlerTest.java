@@ -7,25 +7,20 @@ import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-import hlf.java.rest.client.controller.FabricClientController;
 import hlf.java.rest.client.service.TransactionFulfillment;
 import org.hyperledger.fabric.gateway.ContractException;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
+import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
-import org.springframework.context.annotation.ComponentScan;
-import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.test.web.servlet.MockMvc;
 
 @ExtendWith(SpringExtension.class)
-@WebMvcTest(
-    controllers = {FabricClientController.class},
-    properties = {"fabric.client.rest.apikey=ePVYHwAaQ0V1XOTX6U"})
-@DirtiesContext
-@ComponentScan(basePackages = "hlf.java.rest.client")
+@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+@AutoConfigureMockMvc
 public class GlobalExceptionHandlerTest {
 
   @Autowired private MockMvc mockMvc;

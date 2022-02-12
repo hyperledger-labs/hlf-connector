@@ -45,7 +45,7 @@ public class EventPublishServiceImpl implements EventPublishService {
           .add(new RecordHeader(FabricClientConstants.FABRIC_EVENT_NAME, eventName.getBytes()));
       producerRecord
           .headers()
-          .add(new RecordHeader(FabricClientConstants.CHANNEL_NAME, channelName.getBytes()));
+          .add(new RecordHeader(FabricClientConstants.FABRIC_CHANNEL_NAME, channelName.getBytes()));
 
       ListenableFuture<SendResult<String, String>> future = kafkaTemplate.send(producerRecord);
 
@@ -95,7 +95,7 @@ public class EventPublishServiceImpl implements EventPublishService {
           .add(new RecordHeader(FabricClientConstants.FABRIC_EVENT_NAME, eventName.getBytes()));
       producerRecord
           .headers()
-          .add(new RecordHeader(FabricClientConstants.CHANNEL_NAME, channelName.getBytes()));
+          .add(new RecordHeader(FabricClientConstants.FABRIC_CHANNEL_NAME, channelName.getBytes()));
 
       producerRecord
           .headers()
@@ -158,7 +158,7 @@ public class EventPublishServiceImpl implements EventPublishService {
                   FabricClientConstants.FABRIC_CHAINCODE_NAME, chaincodeName.getBytes()));
       producerRecord
           .headers()
-          .add(new RecordHeader(FabricClientConstants.CHANNEL_NAME, channelName.getBytes()));
+          .add(new RecordHeader(FabricClientConstants.FABRIC_CHANNEL_NAME, channelName.getBytes()));
 
       producerRecord
           .headers()
@@ -227,7 +227,7 @@ public class EventPublishServiceImpl implements EventPublishService {
                   FabricClientConstants.FABRIC_CHAINCODE_NAME, contractName.getBytes()));
       producerRecord
           .headers()
-          .add(new RecordHeader(FabricClientConstants.CHANNEL_NAME, networkName.getBytes()));
+          .add(new RecordHeader(FabricClientConstants.FABRIC_CHANNEL_NAME, networkName.getBytes()));
 
       producerRecord
           .headers()

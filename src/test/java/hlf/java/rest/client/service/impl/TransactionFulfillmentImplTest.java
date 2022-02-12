@@ -2,7 +2,7 @@ package hlf.java.rest.client.service.impl;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-import hlf.java.rest.client.config.ApplicationProperties;
+import hlf.java.rest.client.config.FabricProperties;
 import hlf.java.rest.client.config.GatewayConfig;
 import hlf.java.rest.client.exception.ErrorConstants;
 import hlf.java.rest.client.exception.FabricTransactionException;
@@ -32,7 +32,7 @@ import org.springframework.test.annotation.DirtiesContext;
 public class TransactionFulfillmentImplTest {
 
   @InjectMocks TransactionFulfillmentImpl transactionFulfillment;
-  @Mock ApplicationProperties applicationProperties;
+  @Mock FabricProperties fabricProperties;
   @Mock GatewayConfig gatewayConfig;
   @Mock Gateway gatewayConnetion;
   @Mock Network network;
@@ -76,20 +76,6 @@ public class TransactionFulfillmentImplTest {
                 testTransactionFunctionString,
                 testTransactionParamsArrary)
             .getStatusCode());
-  }
-
-  @Test
-  public void writeTransactionToLedgerIOExceptionTest()
-      throws IOException, ContractException, TimeoutException, InterruptedException {
-    Assertions.assertThrows(
-        ServiceException.class,
-        () -> {
-          transactionFulfillment.writeTransactionToLedger(
-              testNetworkString,
-              testContractString,
-              testTransactionFunctionString,
-              testTransactionParamsArrary);
-        });
   }
 
   @Test
@@ -174,20 +160,6 @@ public class TransactionFulfillmentImplTest {
                 testTransactionFunctionString,
                 testTransactionIdString)
             .getStatusCode());
-  }
-
-  @Test
-  public void readTransactionFromLedgerIOExceptionTest()
-      throws IOException, ContractException, TimeoutException, InterruptedException {
-    Assertions.assertThrows(
-        ServiceException.class,
-        () -> {
-          transactionFulfillment.readTransactionFromLedger(
-              testNetworkString,
-              testContractString,
-              testTransactionFunctionString,
-              testTransactionIdString);
-        });
   }
 
   @Test

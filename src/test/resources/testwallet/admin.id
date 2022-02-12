@@ -1,0 +1,10 @@
+{
+    "name": "test",
+    "credentials": {
+        "certificate": "test-cert",
+        "privateKey": "test-key"
+    },
+    "mspId": "TestOrgMSP",
+    "type": "X.509",
+    "version": 1
+}

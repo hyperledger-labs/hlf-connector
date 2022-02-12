@@ -1,6 +1,6 @@
 package hlf.java.rest.client.listener;
 
-import static hlf.java.rest.client.config.FabricEventListenerConfig.createEventStructure;
+import static hlf.java.rest.client.util.FabricEventParseUtil.createEventStructure;
 
 import hlf.java.rest.client.model.EventType;
 import hlf.java.rest.client.service.EventPublishService;
@@ -13,10 +13,10 @@ import org.hyperledger.fabric.sdk.BlockEvent;
 import org.hyperledger.fabric.sdk.BlockListener;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
-import org.springframework.context.annotation.Configuration;
+import org.springframework.stereotype.Component;
 
 @Slf4j
-@Configuration
+@Component
 @ConditionalOnProperty(prefix = "fabric.events", name = "enable", havingValue = "true")
 public class BlockEventListener implements BlockListener {
 

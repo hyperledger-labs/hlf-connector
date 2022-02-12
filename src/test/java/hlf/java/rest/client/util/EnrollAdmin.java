@@ -43,7 +43,7 @@ public class EnrollAdmin {
     caClient.setCryptoSuite(cryptoSuite);
 
     // Create a wallet for managing identities
-    Wallet wallet = Wallets.newFileSystemWallet(Paths.get("wallet"));
+    Wallet wallet = Wallets.newFileSystemWallet(Paths.get("testwallet"));
 
     // Check to see if we've already enrolled the admin user.
     if (wallet.get("admin") != null) {

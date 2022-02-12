@@ -16,7 +16,7 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 public class GatewayConfig {
 
-  @Autowired ApplicationProperties applicationProperties;
+  @Autowired FabricProperties fabricProperties;
 
   /**
    * Create the gateway connection for connecting to the peer.
@@ -25,18 +25,17 @@ public class GatewayConfig {
    * @throws IOException
    */
   @Bean
-  public Gateway createGatewayConnection() throws IOException {
-    Wallet wallet = obtainWallet();
+  public Gateway gateway(Wallet wallet) throws IOException {
     // Load the Network Connection Configuration path
     Path networkConfigPath =
         Paths.get(
-            applicationProperties.getOrgConnectionConfigPath(),
-            applicationProperties.getOrgConnectionConfigFilename());
+            fabricProperties.getOrgConnectionConfig().getPath(),
+            fabricProperties.getOrgConnectionConfig().getFilename());
     // Create the gateway builder based on the path to the org configuration file
     // using the specified user, then connect
     Gateway.Builder builder = Gateway.createBuilder();
     builder
-        .identity(wallet, applicationProperties.getWalletClientUserName())
+        .identity(wallet, fabricProperties.getWallet().getClientUser().getName())
         .networkConfig(networkConfigPath)
         .discovery(true);
     return builder.connect();
@@ -49,10 +48,10 @@ public class GatewayConfig {
    * @throws IOException
    */
   @Bean
-  public Wallet obtainWallet() throws IOException {
+  public Wallet wallet() throws IOException {
     log.info("Obtain the Wallet containing Admin and Client user information");
     // Load a file system based wallet for managing identities.
-    Path walletPath = Paths.get(applicationProperties.getWalletPath());
+    Path walletPath = Paths.get(fabricProperties.getWallet().getPath());
     return Wallets.newFileSystemWallet(walletPath);
   }
 }

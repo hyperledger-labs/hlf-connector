@@ -1,7 +1,6 @@
 package hlf.java.rest.client.config;
 
-import lombok.Getter;
-import lombok.Setter;
+import lombok.Data;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Configuration;
@@ -10,8 +9,7 @@ import org.springframework.context.annotation.Configuration;
  * The type Kafka properties is added for fetching Kafka properties as configuration and can be used
  * in Consumer and Producer using @Autowired
  */
-@Getter
-@Setter
+@Data
 @Configuration
 @ConfigurationProperties(prefix = "kafka")
 public class KafkaProperties {
@@ -19,8 +17,7 @@ public class KafkaProperties {
   private Consumer integration;
   private Producer eventListener;
 
-  @Getter
-  @Setter
+  @Data
   @ConditionalOnProperty("kafka.integration.brokerHost")
   @Configuration
   @ConfigurationProperties(prefix = "kafka.integration")
@@ -31,8 +28,7 @@ public class KafkaProperties {
     private String saslJaasConfig;
   }
 
-  @Getter
-  @Setter
+  @Data
   @ConditionalOnProperty("kafka.event-listener.brokerHost")
   @Configuration
   @ConfigurationProperties(prefix = "kafka.event-listener")
@@ -43,8 +39,7 @@ public class KafkaProperties {
   }
 
   /** The type Ssl properties is added for configuring SSL configuration for Kafka Cluster. */
-  @Getter
-  @Setter
+  @Data
   public static class SSLProperties {
 
     protected boolean sslEnabled;

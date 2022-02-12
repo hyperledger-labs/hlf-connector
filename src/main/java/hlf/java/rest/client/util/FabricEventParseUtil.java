@@ -1,5 +1,10 @@
 package hlf.java.rest.client.util;
 
+import static hlf.java.rest.client.util.FabricClientConstants.URI_PATH_BLOCKS;
+import static hlf.java.rest.client.util.FabricClientConstants.URI_PATH_TRANSACTIONS;
+import static hlf.java.rest.client.util.FabricClientConstants.URI_QUERY_PARAM_EVENTS;
+import static hlf.java.rest.client.util.FabricClientConstants.URI_QUERY_PARAM_EVENT_TYPE;
+
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.protobuf.ByteString;
@@ -8,6 +13,8 @@ import hlf.java.rest.client.exception.ErrorCode;
 import hlf.java.rest.client.exception.ServiceException;
 import hlf.java.rest.client.model.BlockEventPrivateDataWriteSet;
 import hlf.java.rest.client.model.BlockEventWriteSet;
+import hlf.java.rest.client.model.EventStructure;
+import hlf.java.rest.client.model.EventType;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -18,6 +25,7 @@ import org.hyperledger.fabric.protos.peer.EventsPackage;
 import org.hyperledger.fabric.sdk.BlockEvent;
 import org.hyperledger.fabric.sdk.BlockInfo;
 import org.hyperledger.fabric.sdk.TxReadWriteSetInfo;
+import org.springframework.web.util.UriComponentsBuilder;
 
 @Slf4j
 public class FabricEventParseUtil {
@@ -146,5 +154,36 @@ public class FabricEventParseUtil {
 
   public static String stringify(Object obj) throws JsonProcessingException {
     return mapper.writeValueAsString(obj);
+  }
+
+  public static String createEventStructure(
+      String data,
+      String privateDataPayload,
+      String transactionId,
+      Long blockNumber,
+      EventType eventType) {
+    String uri =
+        UriComponentsBuilder.fromUriString(
+                URI_PATH_BLOCKS
+                    + blockNumber
+                    + URI_PATH_TRANSACTIONS
+                    + transactionId
+                    + URI_QUERY_PARAM_EVENTS)
+            .queryParam(URI_QUERY_PARAM_EVENT_TYPE, eventType.toString())
+            .build()
+            .toUriString();
+    String message = null;
+    try {
+      message =
+          FabricEventParseUtil.stringify(
+              EventStructure.builder()
+                  .data(data)
+                  .privateData(privateDataPayload)
+                  .eventURI(uri)
+                  .build());
+    } catch (JsonProcessingException e) {
+      log.error("Error in transforming the event into Json format for Kafka ", e);
+    }
+    return message;
   }
 }

@@ -1,7 +1,6 @@
 package hlf.java.rest.client.service.impl;
 
-import hlf.java.rest.client.config.ApplicationConstants;
-import hlf.java.rest.client.config.ApplicationProperties;
+import hlf.java.rest.client.config.FabricProperties;
 import hlf.java.rest.client.exception.ErrorCode;
 import hlf.java.rest.client.exception.ErrorConstants;
 import hlf.java.rest.client.exception.FabricTransactionException;
@@ -22,8 +21,8 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.TimeoutException;
-import javax.annotation.PostConstruct;
 import lombok.extern.slf4j.Slf4j;
 import org.hyperledger.fabric.gateway.Contract;
 import org.hyperledger.fabric.gateway.ContractException;
@@ -37,7 +36,6 @@ import org.hyperledger.fabric.sdk.Peer;
 import org.hyperledger.fabric.sdk.exception.InvalidArgumentException;
 import org.hyperledger.fabric.sdk.exception.ProposalException;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
@@ -46,11 +44,9 @@ import org.springframework.stereotype.Service;
 @Service
 public class TransactionFulfillmentImpl implements TransactionFulfillment {
 
-  @Autowired ApplicationProperties applicationProperties;
-  @Autowired Gateway gateway;
+  @Autowired private FabricProperties fabricProperties;
 
-  @Value("${fabric.events.enable:}")
-  private Boolean enableFabricEvents;
+  @Autowired private Gateway gateway;
 
   @Override
   public ResponseEntity<ClientResponseModel> writeTransactionToLedger(
@@ -65,8 +61,6 @@ public class TransactionFulfillmentImpl implements TransactionFulfillment {
       Contract contract = network.getContract(contractName);
       Transaction fabricTransaction = contract.createTransaction(transactionFunctionName);
       byte[] result = fabricTransaction.submit(transactionParams);
-      // byte[] result = contract.submitTransaction(transactionFunctionName,
-      // transactionParams);
       resultString = new String(result, StandardCharsets.UTF_8);
 
       log.info("Transaction Successfully Submitted - Response: " + resultString);
@@ -321,7 +315,7 @@ public class TransactionFulfillmentImpl implements TransactionFulfillment {
     log.info(
         "Initiate the Read Transaction from Ledger process by blockNumber, networkName and transactionId based on eventType");
 
-    if (!enableFabricEvents) {
+    if (Objects.isNull(fabricProperties.getEvents())) {
       throw new NotFoundException(
           ErrorCode.NO_EVENTS_FOUND, "Events API not enabled in the configuration.");
     }
@@ -384,18 +378,5 @@ public class TransactionFulfillmentImpl implements TransactionFulfillment {
       log.error("Action Failed: A problem occurred while fetching transaction by block number", e);
       throw new ServiceException(ErrorCode.HYPERLEDGER_FABRIC_CHANNEL_TXN_ERROR, e.getMessage(), e);
     }
-  }
-
-  /**
-   * Forces Hyperledger Service Discovery to report the localhost address for all nodes (peers &
-   * ordering service) when client is running on local machine. This property allows client to node
-   * connectivity when nodes cannot be accessed directly by the client on their public network
-   * address as in the case above.
-   */
-  @PostConstruct
-  private void systemVariableSetup() {
-    System.setProperty(
-        ApplicationConstants.SYSTEM_PROP_FABRIC_SERVICE_DISCOVERY_LOCALHOST,
-        applicationProperties.getLocalhostReportAddress());
   }
 }
