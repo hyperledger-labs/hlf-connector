@@ -15,7 +15,7 @@ import org.springframework.context.annotation.Configuration;
  */
 @Slf4j
 @Configuration
-public class SwaggerConfiguration {
+public class SwaggerConfig {
 
   /**
    * This bean is responsible for adding api key header for all the APIs exposed. Open api global
@@ -41,17 +41,6 @@ public class SwaggerConfiguration {
                 });
   }
 
-  /*
-   * @Bean public OpenAPI customOpenAPI(@Value("${springdoc.version}") String
-   * appVersion) { return new OpenAPI() .components(new Components()
-   * .addParameters("myHeader1", new Parameter().in("header").schema(new
-   * StringSchema()).name("myHeader1")).addHeaders("myHeader2", new
-   * Header().description("myHeader2 header").schema(new StringSchema())))
-   * .info(new Info() .title("Hyperledger Fabric REST Client")
-   * .version(appVersion)
-   * .description("Hyperledger Fabric REST Client for invoking and query fabric smart-contract"
-   * )); }
-   */
   @Bean
   SpringDocConfiguration springDocConfiguration() {
     return new SpringDocConfiguration();

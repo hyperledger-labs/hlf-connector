@@ -2,7 +2,8 @@ package hlf.java.rest.client.service.impl;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-import hlf.java.rest.client.config.ApplicationProperties;
+import hlf.java.rest.client.config.FabricProperties;
+import hlf.java.rest.client.config.GatewayConfig;
 import hlf.java.rest.client.exception.ErrorConstants;
 import hlf.java.rest.client.exception.FabricTransactionException;
 import hlf.java.rest.client.exception.ServiceException;
@@ -31,8 +32,8 @@ import org.springframework.test.annotation.DirtiesContext;
 public class TransactionFulfillmentImplTest {
 
   @InjectMocks TransactionFulfillmentImpl transactionFulfillment;
-  @Mock ApplicationProperties applicationProperties;
-  @Mock GatewayBuilderSingleton gatewayBuilderSingleton;
+  @Mock FabricProperties fabricProperties;
+  @Mock GatewayConfig gatewayConfig;
   @Mock Gateway gatewayConnetion;
   @Mock Network network;
   @Mock Contract contract;
@@ -58,7 +59,6 @@ public class TransactionFulfillmentImplTest {
   @Test
   public void writeTransactionToLedgerTest()
       throws IOException, ContractException, TimeoutException, InterruptedException {
-    Mockito.when(gatewayBuilderSingleton.getGatewayConnection()).thenReturn(gatewayConnetion);
     Mockito.when(gatewayConnetion.getNetwork(Mockito.anyString())).thenReturn(network);
     Mockito.when(network.getContract(Mockito.anyString())).thenReturn(contract);
     Mockito.when(contract.createTransaction(Mockito.anyString())).thenReturn(transaction);
@@ -79,24 +79,8 @@ public class TransactionFulfillmentImplTest {
   }
 
   @Test
-  public void writeTransactionToLedgerIOExceptionTest()
-      throws IOException, ContractException, TimeoutException, InterruptedException {
-    Mockito.when(gatewayBuilderSingleton.getGatewayConnection()).thenThrow(new IOException());
-    Assertions.assertThrows(
-        ServiceException.class,
-        () -> {
-          transactionFulfillment.writeTransactionToLedger(
-              testNetworkString,
-              testContractString,
-              testTransactionFunctionString,
-              testTransactionParamsArrary);
-        });
-  }
-
-  @Test
   public void writeTransactionToLedgerContractExceptionTest()
       throws IOException, ContractException, TimeoutException, InterruptedException {
-    Mockito.when(gatewayBuilderSingleton.getGatewayConnection()).thenReturn(gatewayConnetion);
     Mockito.when(gatewayConnetion.getNetwork(Mockito.anyString())).thenReturn(network);
     Mockito.when(network.getContract(Mockito.anyString())).thenReturn(contract);
     Mockito.when(contract.createTransaction(Mockito.anyString())).thenReturn(transaction);
@@ -119,7 +103,6 @@ public class TransactionFulfillmentImplTest {
   @Test
   public void writeTransactionToLedgerTimeoutExceptionTest()
       throws IOException, ContractException, TimeoutException, InterruptedException {
-    Mockito.when(gatewayBuilderSingleton.getGatewayConnection()).thenReturn(gatewayConnetion);
     Mockito.when(gatewayConnetion.getNetwork(Mockito.anyString())).thenReturn(network);
     Mockito.when(network.getContract(Mockito.anyString())).thenReturn(contract);
     Mockito.when(contract.createTransaction(Mockito.anyString())).thenReturn(transaction);
@@ -142,7 +125,6 @@ public class TransactionFulfillmentImplTest {
   @Test
   public void writeTransactionToLedgerInterruptExceptionTest()
       throws IOException, ContractException, TimeoutException, InterruptedException {
-    Mockito.when(gatewayBuilderSingleton.getGatewayConnection()).thenReturn(gatewayConnetion);
     Mockito.when(gatewayConnetion.getNetwork(Mockito.anyString())).thenReturn(network);
     Mockito.when(network.getContract(Mockito.anyString())).thenReturn(contract);
     Mockito.when(contract.createTransaction(Mockito.anyString())).thenReturn(transaction);
@@ -165,7 +147,6 @@ public class TransactionFulfillmentImplTest {
   /* Read Transaction Tests */
   @Test
   public void readTransactionFromLedgerTest() throws ContractException, IOException {
-    Mockito.when(gatewayBuilderSingleton.getGatewayConnection()).thenReturn(gatewayConnetion);
     Mockito.when(gatewayConnetion.getNetwork(Mockito.anyString())).thenReturn(network);
     Mockito.when(network.getContract(Mockito.anyString())).thenReturn(contract);
     Mockito.when(contract.evaluateTransaction(Mockito.anyString(), Mockito.anyString()))
@@ -182,24 +163,8 @@ public class TransactionFulfillmentImplTest {
   }
 
   @Test
-  public void readTransactionFromLedgerIOExceptionTest()
-      throws IOException, ContractException, TimeoutException, InterruptedException {
-    Mockito.when(gatewayBuilderSingleton.getGatewayConnection()).thenThrow(new IOException());
-    Assertions.assertThrows(
-        ServiceException.class,
-        () -> {
-          transactionFulfillment.readTransactionFromLedger(
-              testNetworkString,
-              testContractString,
-              testTransactionFunctionString,
-              testTransactionIdString);
-        });
-  }
-
-  @Test
   public void readTransactionFromLedgerContractExceptionTest()
       throws IOException, ContractException, TimeoutException, InterruptedException {
-    Mockito.when(gatewayBuilderSingleton.getGatewayConnection()).thenReturn(gatewayConnetion);
     Mockito.when(gatewayConnetion.getNetwork(Mockito.anyString())).thenReturn(network);
     Mockito.when(network.getContract(Mockito.anyString())).thenReturn(contract);
     Mockito.when(contract.evaluateTransaction(Mockito.anyString(), Mockito.anyString()))

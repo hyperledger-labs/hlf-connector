@@ -78,3 +78,5 @@ target/
 /config/application.yml
 /config/connection-*
 docker-compose-*
+secrets
+stores

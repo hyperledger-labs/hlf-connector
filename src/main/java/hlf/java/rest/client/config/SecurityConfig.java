@@ -20,7 +20,7 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
 
   @Autowired private HandlerExceptionResolver handlerExceptionResolver;
 
-  @Autowired private ApplicationProperties applicationProperties;
+  @Autowired private FabricProperties fabricProperties;
 
   /**
    * The configure method sets the permission limits to the Http request. Also, filter has been
@@ -34,7 +34,7 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
         .anyRequest()
         .and()
         .addFilterBefore(
-            new HeaderAuthenticationFilter(applicationProperties, handlerExceptionResolver),
+            new HeaderAuthenticationFilter(fabricProperties, handlerExceptionResolver),
             LogoutFilter.class)
         .csrf()
         .disable(); // NOSONAR

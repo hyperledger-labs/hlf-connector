@@ -18,6 +18,8 @@ public enum ErrorCode {
 
   HYPERLEDGER_FABRIC_TRANSACTION_ERROR(6000, "Hyperledger Fabric transaction related error"),
 
+  HYPERLEDGER_FABRIC_NOT_SUPPORTED(8000, "In Hyperledger Fabric this feature is not supported"),
+
   AUTH_INVALID_API_KEY(9000, "Invalid api key"),
 
   AUTH_EMPTY_USER_ID(9001, "Empty Or null User Id"),

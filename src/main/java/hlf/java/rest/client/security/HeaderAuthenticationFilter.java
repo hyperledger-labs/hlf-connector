@@ -2,7 +2,7 @@ package hlf.java.rest.client.security;
 
 import static hlf.java.rest.client.exception.ErrorCode.AUTH_INVALID_API_KEY;
 
-import hlf.java.rest.client.config.ApplicationProperties;
+import hlf.java.rest.client.config.FabricProperties;
 import hlf.java.rest.client.exception.AuthenticationFailureException;
 import javax.servlet.FilterChain;
 import javax.servlet.http.HttpServletRequest;
@@ -14,20 +14,19 @@ import org.springframework.web.servlet.HandlerExceptionResolver;
 @Slf4j
 public class HeaderAuthenticationFilter extends OncePerRequestFilter {
 
-  private ApplicationProperties applicationProperties;
+  private FabricProperties fabricProperties;
 
   private HandlerExceptionResolver handlerExceptionResolver;
 
   /**
    * Instantiates a new Header authentication filter.
    *
-   * @param applicationProperties the application
+   * @param fabricProperties the application
    * @param handlerExceptionResolver the handler exception resolver
    */
   public HeaderAuthenticationFilter(
-      ApplicationProperties applicationProperties,
-      HandlerExceptionResolver handlerExceptionResolver) {
-    this.applicationProperties = applicationProperties;
+      FabricProperties fabricProperties, HandlerExceptionResolver handlerExceptionResolver) {
+    this.fabricProperties = fabricProperties;
     this.handlerExceptionResolver = handlerExceptionResolver;
   }
 
@@ -55,7 +54,7 @@ public class HeaderAuthenticationFilter extends OncePerRequestFilter {
   private void authenticate(HttpServletRequest request) {
 
     String apiKey = request.getHeader("api-key");
-    if (!applicationProperties.getRestApiKey().equals(apiKey)) {
+    if (!fabricProperties.getClient().getRest().getApikey().equals(apiKey)) {
       log.debug("API Key does not match");
       throw new AuthenticationFailureException(AUTH_INVALID_API_KEY, "Invalid API Key");
     }

@@ -9,8 +9,6 @@ import org.springframework.boot.web.servlet.support.SpringBootServletInitializer
 
 /** Bootstrap for the Fabric-Client application */
 @Slf4j
-// @EnableRetry
-// @EnableAsync
 @SpringBootApplication
 @EnableConfigurationProperties
 public class FabricClientBootstrap extends SpringBootServletInitializer {
