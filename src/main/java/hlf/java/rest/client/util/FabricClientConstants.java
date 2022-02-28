@@ -19,7 +19,7 @@ public class FabricClientConstants {
   public static final String FABRIC_EVENT_FUNC_NAME = "function_name";
   public static final String FABRIC_TRANSIENT_KEY = "transient_key";
   public static final String FABRIC_COLLECTION_NAME = "collection_name";
-
+  public static final String IS_PRIVATE_DATA_PRESENT = "is_private_data_present";
   public static final String URI_PATH_BLOCKS = "/blocks/";
   public static final String URI_PATH_TRANSACTIONS = "/transactions/";
   public static final String URI_QUERY_PARAM_EVENT_TYPE = "eventType";

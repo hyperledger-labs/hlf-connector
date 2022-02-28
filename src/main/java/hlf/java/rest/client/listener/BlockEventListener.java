@@ -9,6 +9,7 @@ import hlf.java.rest.client.util.FabricEventParseUtil;
 import java.nio.charset.StandardCharsets;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 import org.hyperledger.fabric.sdk.BlockEvent;
 import org.hyperledger.fabric.sdk.BlockListener;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -63,7 +64,8 @@ public class BlockEventListener implements BlockListener {
               transactionEvent.getTransactionActionInfo(0).getChaincodeIDName(),
               new String(
                   transactionEvent.getTransactionActionInfo(0).getChaincodeInputArgs(0),
-                  StandardCharsets.UTF_8));
+                  StandardCharsets.UTF_8),
+              StringUtils.isNotEmpty(privateDataPayload));
           BlockEventListener.blockTxId = transactionEvent.getTransactionID();
         }
       }
