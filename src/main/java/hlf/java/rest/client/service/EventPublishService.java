@@ -35,6 +35,7 @@ public interface EventPublishService {
    * @param chaincodeName String chaincode name
    * @param channelName String Name of the channel where the event was generated.
    * @param functionName String Name of the function name.
+   * @param isPrivateDataPresent boolean flag to check if privateData present in payload
    * @return status boolean status of msg sent
    */
   boolean publishBlockEvents(
@@ -42,7 +43,8 @@ public interface EventPublishService {
       String fabricTxId,
       String channelName,
       String chaincodeName,
-      String functionName);
+      String functionName,
+      Boolean isPrivateDataPresent);
 
   /**
    * @param errorMsg contents of the error message

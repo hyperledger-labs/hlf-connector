@@ -139,7 +139,8 @@ public class EventPublishServiceImpl implements EventPublishService {
       String fabricTxId,
       String channelName,
       String chaincodeName,
-      String functionName) {
+      String functionName,
+      Boolean isPrivateDataPresent) {
     boolean status = true;
 
     try {
@@ -172,6 +173,13 @@ public class EventPublishServiceImpl implements EventPublishService {
           .add(
               new RecordHeader(
                   FabricClientConstants.FABRIC_EVENT_FUNC_NAME, functionName.getBytes()));
+
+      producerRecord
+          .headers()
+          .add(
+              new RecordHeader(
+                  FabricClientConstants.IS_PRIVATE_DATA_PRESENT,
+                  isPrivateDataPresent.toString().getBytes()));
 
       ListenableFuture<SendResult<String, String>> future = kafkaTemplate.send(producerRecord);
 
