@@ -67,4 +67,21 @@ public class GlobalExceptionHandler {
     log.error("Not Found Exception raised", cause);
     return getErrorResponse(cause, HttpStatus.NOT_FOUND);
   }
+
+  /**
+   * This ExceptionHandler handles all the remaining exception and returns 500
+   * (INTERNAL_SERVER_ERROR)
+   *
+   * @param request the {@link HttpServletRequest} which caused this error
+   * @param cause the {@link Exception} to be handled
+   * @return the {@link ResponseEntity} having status code as {@link
+   *     HttpStatus#INTERNAL_SERVER_ERROR} and body as an instance of ErrorResponseModel
+   */
+  @ExceptionHandler(Exception.class)
+  public ResponseEntity<ClientResponseModel> handleDefaultException(
+      HttpServletRequest request, Throwable cause) {
+
+    log.error("Exception Exception raised : ", cause);
+    return getErrorResponse(cause, HttpStatus.INTERNAL_SERVER_ERROR);
+  }
 }
