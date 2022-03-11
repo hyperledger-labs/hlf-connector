@@ -11,10 +11,18 @@ public enum ErrorCode {
 
   NO_EVENTS_FOUND(1001, "Not able to find any events for the passed input."),
 
+  NOT_SUPPORTED(1002, "Operation passed not supported."),
+
+  VALIDATION_FAILED(1003, "The data passed fails validation from the resource."),
+
   HYPERLEDGER_FABRIC_CONNECTION_ERROR(5000, "Hyperledger Fabric connection related error"),
 
   HYPERLEDGER_FABRIC_CHANNEL_TXN_ERROR(
       5001, "Hyperledger Fabric channel transaction error by block Number"),
+
+  HYPERLEDGER_FABRIC_CHAINCODE_OPERATIONS_REQUEST_REJECTION(
+      5002,
+      "Hyperledger Fabric chaincode operations request has illegal argument or argument is missing."),
 
   HYPERLEDGER_FABRIC_TRANSACTION_ERROR(6000, "Hyperledger Fabric transaction related error"),
 

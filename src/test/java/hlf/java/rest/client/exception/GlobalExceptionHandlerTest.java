@@ -7,8 +7,11 @@ import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import hlf.java.rest.client.config.GatewayConfig;
 import hlf.java.rest.client.service.TransactionFulfillment;
+import hlf.java.rest.client.service.impl.ChaincodeOperationsServiceImpl;
 import org.hyperledger.fabric.gateway.ContractException;
+import org.hyperledger.fabric.gateway.Gateway;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -26,6 +29,12 @@ public class GlobalExceptionHandlerTest {
   @Autowired private MockMvc mockMvc;
 
   @MockBean TransactionFulfillment transactionFulfillment;
+
+  @MockBean ChaincodeOperationsServiceImpl chaincodeOperationsService;
+
+  @MockBean GatewayConfig gatewayConfig;
+
+  @MockBean Gateway gateway;
 
   private String testNetworkString = "some string";
   private String testContractString = "some string";
