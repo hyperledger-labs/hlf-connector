@@ -1,5 +1,6 @@
 package hlf.java.rest.client.service.impl;
 
+import static hlf.java.rest.client.exception.ErrorCode.SEQUENCE_NUMBER_VALIDATION_FAILED;
 import static hlf.java.rest.client.model.ChaincodeOperationsType.approve;
 import static java.util.Objects.isNull;
 import static org.apache.commons.lang3.StringUtils.isEmpty;
@@ -11,6 +12,8 @@ import hlf.java.rest.client.model.ChaincodeOperationsType;
 import hlf.java.rest.client.service.ChaincodeOperationsService;
 import java.lang.reflect.InvocationTargetException;
 import java.util.Collection;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import lombok.extern.slf4j.Slf4j;
 import org.hyperledger.fabric.gateway.Gateway;
@@ -23,7 +26,9 @@ import org.hyperledger.fabric.sdk.LifecycleApproveChaincodeDefinitionForMyOrgPro
 import org.hyperledger.fabric.sdk.LifecycleApproveChaincodeDefinitionForMyOrgRequest;
 import org.hyperledger.fabric.sdk.LifecycleCommitChaincodeDefinitionProposalResponse;
 import org.hyperledger.fabric.sdk.LifecycleCommitChaincodeDefinitionRequest;
+import org.hyperledger.fabric.sdk.LifecycleQueryChaincodeDefinitionProposalResponse;
 import org.hyperledger.fabric.sdk.Peer;
+import org.hyperledger.fabric.sdk.QueryLifecycleQueryChaincodeDefinitionRequest;
 import org.hyperledger.fabric.sdk.exception.CryptoException;
 import org.hyperledger.fabric.sdk.exception.InvalidArgumentException;
 import org.hyperledger.fabric.sdk.exception.ProposalException;
@@ -77,6 +82,63 @@ public class ChaincodeOperationsServiceImpl implements ChaincodeOperationsServic
         | NoSuchMethodException
         | InvocationTargetException e) {
       throw new ServiceException(ErrorCode.HYPERLEDGER_FABRIC_CONNECTION_ERROR, e.getMessage());
+    }
+  }
+
+  @Override
+  public String getCurrentSequence(
+      String networkName, String chaincodeName, String chaincodeVersion) {
+
+    HFClient hfClient = HFClient.createNewInstance();
+    try {
+      hfClient.setCryptoSuite(CryptoSuite.Factory.getCryptoSuite());
+      X509IdentityProvider.INSTANCE.setUserContext(
+          hfClient, gateway.getIdentity(), "hlf-connector");
+
+      Network network = gateway.getNetwork(networkName);
+      Channel channel = network.getChannel();
+
+      Collection<Peer> peers = channel.getPeers();
+
+      final QueryLifecycleQueryChaincodeDefinitionRequest
+          queryLifecycleQueryChaincodeDefinitionRequest =
+              hfClient.newQueryLifecycleQueryChaincodeDefinitionRequest();
+      queryLifecycleQueryChaincodeDefinitionRequest.setChaincodeName(chaincodeName);
+
+      Collection<LifecycleQueryChaincodeDefinitionProposalResponse>
+          queryChaincodeDefinitionProposalResponses =
+              channel.lifecycleQueryChaincodeDefinition(
+                  queryLifecycleQueryChaincodeDefinitionRequest, peers);
+      Set<Long> sequenceNumbers = new HashSet<>();
+      for (LifecycleQueryChaincodeDefinitionProposalResponse response :
+          queryChaincodeDefinitionProposalResponses) {
+        if (response.getVersion().equals(chaincodeVersion)) {
+          sequenceNumbers.add(response.getSequence());
+        }
+      }
+
+      if (sequenceNumbers.size() == 0) {
+        throw new ServiceException(
+            SEQUENCE_NUMBER_VALIDATION_FAILED,
+            "Sequence Number not present in peers for channel: " + networkName);
+      }
+
+      if (sequenceNumbers.size() > 1) {
+        throw new ServiceException(
+            SEQUENCE_NUMBER_VALIDATION_FAILED,
+            "Different sequence numbers present in peers for channel: " + networkName);
+      }
+      return String.valueOf(sequenceNumbers.stream().findFirst().get());
+    } catch (CryptoException
+        | InvalidArgumentException
+        | IllegalAccessException
+        | InstantiationException
+        | ClassNotFoundException
+        | NoSuchMethodException
+        | InvocationTargetException
+        | ProposalException e) {
+      throw new ServiceException(
+          ErrorCode.HYPERLEDGER_FABRIC_CHAINCODE_OPERATIONS_REQUEST_REJECTION, e.getMessage(), e);
     }
   }
 
