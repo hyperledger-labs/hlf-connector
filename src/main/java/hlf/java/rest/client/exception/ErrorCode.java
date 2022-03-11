@@ -15,6 +15,9 @@ public enum ErrorCode {
 
   VALIDATION_FAILED(1003, "The data passed fails validation from the resource."),
 
+  SEQUENCE_NUMBER_VALIDATION_FAILED(
+      1004, "The sequence number is not same in all the peers or not present."),
+
   HYPERLEDGER_FABRIC_CONNECTION_ERROR(5000, "Hyperledger Fabric connection related error"),
 
   HYPERLEDGER_FABRIC_CHANNEL_TXN_ERROR(

@@ -9,4 +9,6 @@ public interface ChaincodeOperationsService {
       String networkName,
       ChaincodeOperations chaincodeOperationsModel,
       ChaincodeOperationsType operationsType);
+
+  String getCurrentSequence(String networkName, String chaincodeName, String chaincodeVersion);
 }
