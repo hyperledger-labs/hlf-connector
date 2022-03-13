@@ -10,7 +10,6 @@ import hlf.java.rest.client.exception.ServiceException;
 import hlf.java.rest.client.model.ChaincodeOperations;
 import hlf.java.rest.client.model.ChaincodeOperationsType;
 import hlf.java.rest.client.service.ChaincodeOperationsService;
-import java.lang.reflect.InvocationTargetException;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
@@ -18,7 +17,6 @@ import java.util.concurrent.CompletableFuture;
 import lombok.extern.slf4j.Slf4j;
 import org.hyperledger.fabric.gateway.Gateway;
 import org.hyperledger.fabric.gateway.Network;
-import org.hyperledger.fabric.gateway.impl.identity.X509IdentityProvider;
 import org.hyperledger.fabric.sdk.BlockEvent;
 import org.hyperledger.fabric.sdk.Channel;
 import org.hyperledger.fabric.sdk.HFClient;
@@ -29,10 +27,8 @@ import org.hyperledger.fabric.sdk.LifecycleCommitChaincodeDefinitionRequest;
 import org.hyperledger.fabric.sdk.LifecycleQueryChaincodeDefinitionProposalResponse;
 import org.hyperledger.fabric.sdk.Peer;
 import org.hyperledger.fabric.sdk.QueryLifecycleQueryChaincodeDefinitionRequest;
-import org.hyperledger.fabric.sdk.exception.CryptoException;
 import org.hyperledger.fabric.sdk.exception.InvalidArgumentException;
 import org.hyperledger.fabric.sdk.exception.ProposalException;
-import org.hyperledger.fabric.sdk.security.CryptoSuite;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -42,6 +38,8 @@ public class ChaincodeOperationsServiceImpl implements ChaincodeOperationsServic
 
   @Autowired private Gateway gateway;
 
+  @Autowired private HFClient hfClient;
+
   @Override
   public String performChaincodeOperation(
       String networkName,
@@ -49,51 +47,31 @@ public class ChaincodeOperationsServiceImpl implements ChaincodeOperationsServic
       ChaincodeOperationsType operationsType) {
 
     validateChaincodeOperationsInput(chaincodeOperationsModel, operationsType);
-    HFClient hfClient = HFClient.createNewInstance();
-    try {
-      hfClient.setCryptoSuite(CryptoSuite.Factory.getCryptoSuite());
-      X509IdentityProvider.INSTANCE.setUserContext(
-          hfClient, gateway.getIdentity(), "hlf-connector");
 
-      Network network = gateway.getNetwork(networkName);
-      Channel channel = network.getChannel();
+    Network network = gateway.getNetwork(networkName);
+    Channel channel = network.getChannel();
 
-      switch (operationsType) {
-        case approve:
-          {
-            return approveChaincode(hfClient, channel, chaincodeOperationsModel);
-          }
-        case commit:
-          {
-            return commitChaincode(hfClient, channel, chaincodeOperationsModel);
-          }
-        default:
-          {
-            throw new ServiceException(
-                ErrorCode.NOT_SUPPORTED, "The passed chaincode operation not supported.");
-          }
-      }
-
-    } catch (CryptoException
-        | InvalidArgumentException
-        | IllegalAccessException
-        | InstantiationException
-        | ClassNotFoundException
-        | NoSuchMethodException
-        | InvocationTargetException e) {
-      throw new ServiceException(ErrorCode.HYPERLEDGER_FABRIC_CONNECTION_ERROR, e.getMessage());
+    switch (operationsType) {
+      case approve:
+        {
+          return approveChaincode(hfClient, channel, chaincodeOperationsModel);
+        }
+      case commit:
+        {
+          return commitChaincode(hfClient, channel, chaincodeOperationsModel);
+        }
+      default:
+        {
+          throw new ServiceException(
+              ErrorCode.NOT_SUPPORTED, "The passed chaincode operation not supported.");
+        }
     }
   }
 
   @Override
   public String getCurrentSequence(
       String networkName, String chaincodeName, String chaincodeVersion) {
-
-    HFClient hfClient = HFClient.createNewInstance();
     try {
-      hfClient.setCryptoSuite(CryptoSuite.Factory.getCryptoSuite());
-      X509IdentityProvider.INSTANCE.setUserContext(
-          hfClient, gateway.getIdentity(), "hlf-connector");
 
       Network network = gateway.getNetwork(networkName);
       Channel channel = network.getChannel();
@@ -129,14 +107,7 @@ public class ChaincodeOperationsServiceImpl implements ChaincodeOperationsServic
             "Different sequence numbers present in peers for channel: " + networkName);
       }
       return String.valueOf(sequenceNumbers.stream().findFirst().get());
-    } catch (CryptoException
-        | InvalidArgumentException
-        | IllegalAccessException
-        | InstantiationException
-        | ClassNotFoundException
-        | NoSuchMethodException
-        | InvocationTargetException
-        | ProposalException e) {
+    } catch (ProposalException | InvalidArgumentException e) {
       throw new ServiceException(
           ErrorCode.HYPERLEDGER_FABRIC_CHAINCODE_OPERATIONS_REQUEST_REJECTION, e.getMessage(), e);
     }

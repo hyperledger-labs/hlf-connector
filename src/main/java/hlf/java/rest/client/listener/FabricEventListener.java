@@ -7,11 +7,9 @@ import javax.annotation.PostConstruct;
 import lombok.extern.slf4j.Slf4j;
 import org.hyperledger.fabric.gateway.Gateway;
 import org.hyperledger.fabric.gateway.Network;
-import org.hyperledger.fabric.gateway.impl.identity.X509IdentityProvider;
 import org.hyperledger.fabric.sdk.Channel;
 import org.hyperledger.fabric.sdk.HFClient;
 import org.hyperledger.fabric.sdk.Peer;
-import org.hyperledger.fabric.sdk.security.CryptoSuite;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
@@ -26,6 +24,8 @@ public class FabricEventListener {
   @Autowired private BlockEventListener blockEventListener;
 
   @Autowired private Gateway gateway;
+
+  @Autowired private HFClient hfClient;
 
   @Autowired private ChaincodeEventListener chaincodeEventService;
 
@@ -42,10 +42,6 @@ public class FabricEventListener {
             log.info("Creating block-listener for channel: {}", network);
             Channel channel = network.getChannel();
             channel.initialize();
-            HFClient hfClient = HFClient.createNewInstance();
-            hfClient.setCryptoSuite(CryptoSuite.Factory.getCryptoSuite());
-            X509IdentityProvider.INSTANCE.setUserContext(
-                hfClient, gateway.getIdentity(), "hlf-rest-client");
             Channel newChannel = hfClient.deSerializeChannel(channel.serializeChannel());
             log.info("Channel {} is initialized {}", channelName, newChannel.isInitialized());
             for (Peer peer : channel.getPeers()) {
