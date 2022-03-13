@@ -1,5 +1,6 @@
 package hlf.java.rest.client.service.impl;
 
+import static hlf.java.rest.client.exception.ErrorCode.CHAINCODE_PACKAGE_ID_VALIDATION_FAILED;
 import static hlf.java.rest.client.exception.ErrorCode.SEQUENCE_NUMBER_VALIDATION_FAILED;
 import static hlf.java.rest.client.model.ChaincodeOperationsType.approve;
 import static java.util.Objects.isNull;
@@ -25,6 +26,7 @@ import org.hyperledger.fabric.sdk.LifecycleApproveChaincodeDefinitionForMyOrgReq
 import org.hyperledger.fabric.sdk.LifecycleCommitChaincodeDefinitionProposalResponse;
 import org.hyperledger.fabric.sdk.LifecycleCommitChaincodeDefinitionRequest;
 import org.hyperledger.fabric.sdk.LifecycleQueryChaincodeDefinitionProposalResponse;
+import org.hyperledger.fabric.sdk.LifecycleQueryInstalledChaincodesProposalResponse;
 import org.hyperledger.fabric.sdk.Peer;
 import org.hyperledger.fabric.sdk.QueryLifecycleQueryChaincodeDefinitionRequest;
 import org.hyperledger.fabric.sdk.exception.InvalidArgumentException;
@@ -108,6 +110,49 @@ public class ChaincodeOperationsServiceImpl implements ChaincodeOperationsServic
       }
       return String.valueOf(sequenceNumbers.stream().findFirst().get());
     } catch (ProposalException | InvalidArgumentException e) {
+      throw new ServiceException(
+          ErrorCode.HYPERLEDGER_FABRIC_CHAINCODE_OPERATIONS_REQUEST_REJECTION, e.getMessage(), e);
+    }
+  }
+
+  @Override
+  public String getCurrentPackageId(
+      String networkName, String chaincodeName, String chaincodeVersion) {
+
+    Network network = gateway.getNetwork(networkName);
+    Channel channel = network.getChannel();
+
+    Collection<Peer> peers = channel.getPeers();
+
+    try {
+      Collection<LifecycleQueryInstalledChaincodesProposalResponse> results =
+          hfClient.sendLifecycleQueryInstalledChaincodes(
+              hfClient.newLifecycleQueryInstalledChaincodesRequest(), peers);
+      Set<String> packageIds = new HashSet<>();
+      for (LifecycleQueryInstalledChaincodesProposalResponse peerResults : results) {
+        for (LifecycleQueryInstalledChaincodesProposalResponse
+                .LifecycleQueryInstalledChaincodesResult
+            lifecycleQueryInstalledChaincodeResult :
+                peerResults.getLifecycleQueryInstalledChaincodesResult()) {
+          packageIds.add(lifecycleQueryInstalledChaincodeResult.getPackageId());
+        }
+      }
+
+      if (packageIds.size() == 0) {
+        throw new ServiceException(
+            CHAINCODE_PACKAGE_ID_VALIDATION_FAILED,
+            "Chaincode PackageId not present in peers for channel: " + networkName);
+      }
+
+      // packageIds will be same in all fabric peers as per design
+      if (packageIds.size() > 1) {
+        throw new ServiceException(
+            CHAINCODE_PACKAGE_ID_VALIDATION_FAILED,
+            "Different packageIds present in peers for channel: " + networkName);
+      }
+
+      return packageIds.stream().findFirst().get();
+    } catch (InvalidArgumentException | ProposalException e) {
       throw new ServiceException(
           ErrorCode.HYPERLEDGER_FABRIC_CHAINCODE_OPERATIONS_REQUEST_REJECTION, e.getMessage(), e);
     }

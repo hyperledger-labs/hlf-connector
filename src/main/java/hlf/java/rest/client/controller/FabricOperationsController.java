@@ -40,4 +40,15 @@ public class FabricOperationsController {
         chaincodeOperationsService.getCurrentSequence(networkName, chaincodeName, chaincodeVersion),
         HttpStatus.OK);
   }
+
+  @GetMapping(value = "/chaincode/packageId")
+  public ResponseEntity<String> getCurrentPackageId(
+      @RequestParam("network_name") @Validated String networkName,
+      @RequestParam("chaincode_name") @Validated String chaincodeName,
+      @RequestParam("chaincode_version") @Validated String chaincodeVersion) {
+    return new ResponseEntity<>(
+        chaincodeOperationsService.getCurrentPackageId(
+            networkName, chaincodeName, chaincodeVersion),
+        HttpStatus.OK);
+  }
 }
