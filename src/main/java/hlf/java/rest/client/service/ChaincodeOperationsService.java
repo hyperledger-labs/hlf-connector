@@ -2,6 +2,10 @@ package hlf.java.rest.client.service;
 
 import hlf.java.rest.client.model.ChaincodeOperations;
 import hlf.java.rest.client.model.ChaincodeOperationsType;
+import java.util.Optional;
+import java.util.Set;
+import org.hyperledger.fabric.sdk.ChaincodeCollectionConfiguration;
+import org.hyperledger.fabric.sdk.LifecycleChaincodeEndorsementPolicy;
 
 public interface ChaincodeOperationsService {
 
@@ -37,4 +41,10 @@ public interface ChaincodeOperationsService {
    * @return the current package id
    */
   String getCurrentPackageId(String networkName, String chaincodeName, String chaincodeVersion);
+
+  Set<String> getApprovedOrganizations(
+      String networkName,
+      ChaincodeOperations chaincodeOperationsModel,
+      Optional<LifecycleChaincodeEndorsementPolicy> chaincodeEndorsementPolicyOptional,
+      Optional<ChaincodeCollectionConfiguration> chaincodeCollectionConfigurationOptional);
 }
