@@ -13,16 +13,22 @@ import hlf.java.rest.client.model.ChaincodeOperationsType;
 import hlf.java.rest.client.service.ChaincodeOperationsService;
 import java.util.Collection;
 import java.util.HashSet;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import lombok.extern.slf4j.Slf4j;
 import org.hyperledger.fabric.gateway.Gateway;
 import org.hyperledger.fabric.gateway.Network;
 import org.hyperledger.fabric.sdk.BlockEvent;
+import org.hyperledger.fabric.sdk.ChaincodeCollectionConfiguration;
+import org.hyperledger.fabric.sdk.ChaincodeResponse;
 import org.hyperledger.fabric.sdk.Channel;
 import org.hyperledger.fabric.sdk.HFClient;
 import org.hyperledger.fabric.sdk.LifecycleApproveChaincodeDefinitionForMyOrgProposalResponse;
 import org.hyperledger.fabric.sdk.LifecycleApproveChaincodeDefinitionForMyOrgRequest;
+import org.hyperledger.fabric.sdk.LifecycleChaincodeEndorsementPolicy;
+import org.hyperledger.fabric.sdk.LifecycleCheckCommitReadinessProposalResponse;
+import org.hyperledger.fabric.sdk.LifecycleCheckCommitReadinessRequest;
 import org.hyperledger.fabric.sdk.LifecycleCommitChaincodeDefinitionProposalResponse;
 import org.hyperledger.fabric.sdk.LifecycleCommitChaincodeDefinitionRequest;
 import org.hyperledger.fabric.sdk.LifecycleQueryChaincodeDefinitionProposalResponse;
@@ -156,6 +162,57 @@ public class ChaincodeOperationsServiceImpl implements ChaincodeOperationsServic
       throw new ServiceException(
           ErrorCode.HYPERLEDGER_FABRIC_CHAINCODE_OPERATIONS_REQUEST_REJECTION, e.getMessage(), e);
     }
+  }
+
+  @Override
+  public Set<String> getApprovedOrganizations(
+      String networkName,
+      ChaincodeOperations chaincodeOperationsModel,
+      Optional<LifecycleChaincodeEndorsementPolicy> chaincodeEndorsementPolicyOptional,
+      Optional<ChaincodeCollectionConfiguration> chaincodeCollectionConfigurationOptional) {
+    Set<String> organizationSet = new HashSet<>();
+    try {
+
+      Network network = gateway.getNetwork(networkName);
+      Channel channel = network.getChannel();
+
+      LifecycleCheckCommitReadinessRequest lifecycleCheckCommitReadinessRequest =
+          hfClient.newLifecycleSimulateCommitChaincodeDefinitionRequest();
+      lifecycleCheckCommitReadinessRequest.setSequence(chaincodeOperationsModel.getSequence());
+
+      lifecycleCheckCommitReadinessRequest.setChaincodeName(
+          chaincodeOperationsModel.getChaincodeName());
+      lifecycleCheckCommitReadinessRequest.setChaincodeVersion(
+          chaincodeOperationsModel.getChaincodeVersion());
+
+      if (chaincodeEndorsementPolicyOptional.isPresent()) {
+        lifecycleCheckCommitReadinessRequest.setChaincodeEndorsementPolicy(
+            chaincodeEndorsementPolicyOptional.get());
+      }
+      if (chaincodeCollectionConfigurationOptional.isPresent()) {
+        lifecycleCheckCommitReadinessRequest.setChaincodeCollectionConfiguration(
+            chaincodeCollectionConfigurationOptional.get());
+      }
+
+      lifecycleCheckCommitReadinessRequest.setInitRequired(true);
+
+      Collection<LifecycleCheckCommitReadinessProposalResponse>
+          lifecycleSimulateCommitChaincodeDefinitionProposalResponse =
+              channel.sendLifecycleCheckCommitReadinessRequest(
+                  lifecycleCheckCommitReadinessRequest, channel.getPeers());
+      for (LifecycleCheckCommitReadinessProposalResponse resp :
+          lifecycleSimulateCommitChaincodeDefinitionProposalResponse) {
+        final Peer peer = resp.getPeer();
+        if (resp.getStatus() == ChaincodeResponse.Status.SUCCESS) {
+          organizationSet.addAll(resp.getApprovedOrgs());
+        }
+      }
+
+    } catch (InvalidArgumentException | ProposalException e) {
+      throw new ServiceException(ErrorCode.HYPERLEDGER_FABRIC_CONNECTION_ERROR, e.getMessage());
+    }
+
+    return organizationSet;
   }
 
   private String approveChaincode(

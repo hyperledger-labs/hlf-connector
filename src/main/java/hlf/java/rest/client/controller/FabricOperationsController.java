@@ -3,6 +3,7 @@ package hlf.java.rest.client.controller;
 import hlf.java.rest.client.model.ChaincodeOperations;
 import hlf.java.rest.client.model.ChaincodeOperationsType;
 import hlf.java.rest.client.service.ChaincodeOperationsService;
+import java.util.Set;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -49,6 +50,24 @@ public class FabricOperationsController {
     return new ResponseEntity<>(
         chaincodeOperationsService.getCurrentPackageId(
             networkName, chaincodeName, chaincodeVersion),
+        HttpStatus.OK);
+  }
+
+  @GetMapping(value = "/chaincode/approved-organisations")
+  public ResponseEntity<Set<String>> getApprovedOrganisationListForSmartContract(
+      @RequestParam("network_name") @Validated String networkName,
+      @RequestParam("chaincode_name") String chaincodeName,
+      @RequestParam("chaincode_version") String chaincodeVersion,
+      @RequestParam("sequence") Long sequence) {
+    ChaincodeOperations chaincodeOperations =
+        ChaincodeOperations.builder()
+            .chaincodeName(chaincodeName)
+            .chaincodeVersion(chaincodeVersion)
+            .sequence(sequence)
+            .build();
+    return new ResponseEntity<>(
+        chaincodeOperationsService.getApprovedOrganizations(
+            networkName, chaincodeOperations, null, null),
         HttpStatus.OK);
   }
 }
