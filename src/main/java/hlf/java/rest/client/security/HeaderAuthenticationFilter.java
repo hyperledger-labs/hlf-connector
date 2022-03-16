@@ -1,9 +1,8 @@
 package hlf.java.rest.client.security;
 
-import static hlf.java.rest.client.exception.ErrorCode.AUTH_INVALID_API_KEY;
-
 import hlf.java.rest.client.config.FabricProperties;
 import hlf.java.rest.client.exception.AuthenticationFailureException;
+import hlf.java.rest.client.exception.ErrorCode;
 import javax.servlet.FilterChain;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -56,7 +55,7 @@ public class HeaderAuthenticationFilter extends OncePerRequestFilter {
     String apiKey = request.getHeader("api-key");
     if (!fabricProperties.getClient().getRest().getApikey().equals(apiKey)) {
       log.debug("API Key does not match");
-      throw new AuthenticationFailureException(AUTH_INVALID_API_KEY, "Invalid API Key");
+      throw new AuthenticationFailureException(ErrorCode.AUTH_INVALID_API_KEY, "Invalid API Key");
     }
   }
 }

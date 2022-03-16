@@ -1,7 +1,5 @@
 package hlf.java.rest.client.listener;
 
-import static hlf.java.rest.client.util.FabricEventParseUtil.createEventStructure;
-
 import hlf.java.rest.client.model.EventType;
 import hlf.java.rest.client.service.EventPublishService;
 import hlf.java.rest.client.util.FabricClientConstants;
@@ -21,7 +19,8 @@ import org.springframework.stereotype.Component;
 @ConditionalOnProperty(prefix = "fabric.events", name = "enable", havingValue = "true")
 public class BlockEventListener implements BlockListener {
 
-  @Autowired EventPublishService eventPublishServiceImpl;
+  @Autowired(required = false)
+  EventPublishService eventPublishServiceImpl;
 
   private static String blockTxId = FabricClientConstants.FABRIC_TRANSACTION_ID;
 
@@ -53,7 +52,7 @@ public class BlockEventListener implements BlockListener {
           log.info("Block Data: {}", blockPayload);
 
           eventPublishServiceImpl.publishBlockEvents(
-              createEventStructure(
+              FabricEventParseUtil.createEventStructure(
                   blockPayload,
                   privateDataPayload,
                   transactionEvent.getTransactionID(),

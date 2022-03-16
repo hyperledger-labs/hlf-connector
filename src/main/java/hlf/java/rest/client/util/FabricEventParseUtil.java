@@ -1,10 +1,5 @@
 package hlf.java.rest.client.util;
 
-import static hlf.java.rest.client.util.FabricClientConstants.URI_PATH_BLOCKS;
-import static hlf.java.rest.client.util.FabricClientConstants.URI_PATH_TRANSACTIONS;
-import static hlf.java.rest.client.util.FabricClientConstants.URI_QUERY_PARAM_EVENTS;
-import static hlf.java.rest.client.util.FabricClientConstants.URI_QUERY_PARAM_EVENT_TYPE;
-
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.protobuf.ByteString;
@@ -164,12 +159,12 @@ public class FabricEventParseUtil {
       EventType eventType) {
     String uri =
         UriComponentsBuilder.fromUriString(
-                URI_PATH_BLOCKS
+                FabricClientConstants.URI_PATH_BLOCKS
                     + blockNumber
-                    + URI_PATH_TRANSACTIONS
+                    + FabricClientConstants.URI_PATH_TRANSACTIONS
                     + transactionId
-                    + URI_QUERY_PARAM_EVENTS)
-            .queryParam(URI_QUERY_PARAM_EVENT_TYPE, eventType.toString())
+                    + FabricClientConstants.URI_QUERY_PARAM_EVENTS)
+            .queryParam(FabricClientConstants.URI_QUERY_PARAM_EVENT_TYPE, eventType.toString())
             .build()
             .toUriString();
     String message = null;
