@@ -3,6 +3,7 @@ package hlf.java.rest.client.controller;
 import hlf.java.rest.client.model.ChaincodeOperations;
 import hlf.java.rest.client.model.ChaincodeOperationsType;
 import hlf.java.rest.client.service.ChaincodeOperationsService;
+import java.util.Optional;
 import java.util.Set;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -12,16 +13,18 @@ import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 @Slf4j
 @RestController
-public class FabricOperationsController {
+@RequestMapping("/chaincode")
+public class ChaincodeOperationsController {
 
   @Autowired private ChaincodeOperationsService chaincodeOperationsService;
 
-  @PutMapping(value = "/chaincode/operations")
+  @PutMapping(value = "/operations")
   public ResponseEntity<String> performChaincodeOperation(
       @RequestParam("network_name") @Validated String networkName,
       @RequestParam("operations_type") @Validated ChaincodeOperationsType operationsType,
@@ -32,7 +35,7 @@ public class FabricOperationsController {
         HttpStatus.OK);
   }
 
-  @GetMapping(value = "/chaincode/sequence")
+  @GetMapping(value = "/sequence")
   public ResponseEntity<String> getCurrentSequence(
       @RequestParam("network_name") @Validated String networkName,
       @RequestParam("chaincode_name") @Validated String chaincodeName,
@@ -42,7 +45,7 @@ public class FabricOperationsController {
         HttpStatus.OK);
   }
 
-  @GetMapping(value = "/chaincode/packageId")
+  @GetMapping(value = "/packageId")
   public ResponseEntity<String> getCurrentPackageId(
       @RequestParam("network_name") @Validated String networkName,
       @RequestParam("chaincode_name") @Validated String chaincodeName,
@@ -53,7 +56,7 @@ public class FabricOperationsController {
         HttpStatus.OK);
   }
 
-  @GetMapping(value = "/chaincode/approved-organisations")
+  @GetMapping(value = "/approved-organisations")
   public ResponseEntity<Set<String>> getApprovedOrganisationListForSmartContract(
       @RequestParam("network_name") @Validated String networkName,
       @RequestParam("chaincode_name") String chaincodeName,
@@ -67,7 +70,7 @@ public class FabricOperationsController {
             .build();
     return new ResponseEntity<>(
         chaincodeOperationsService.getApprovedOrganizations(
-            networkName, chaincodeOperations, null, null),
+            networkName, chaincodeOperations, Optional.empty(), Optional.empty()),
         HttpStatus.OK);
   }
 }

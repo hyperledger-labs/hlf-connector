@@ -10,6 +10,7 @@ import org.hyperledger.fabric.gateway.Wallet;
 import org.hyperledger.fabric.gateway.Wallets;
 import org.hyperledger.fabric.gateway.impl.identity.X509IdentityProvider;
 import org.hyperledger.fabric.sdk.HFClient;
+import org.hyperledger.fabric.sdk.User;
 import org.hyperledger.fabric.sdk.exception.CryptoException;
 import org.hyperledger.fabric.sdk.exception.InvalidArgumentException;
 import org.hyperledger.fabric.sdk.security.CryptoSuite;
@@ -84,5 +85,10 @@ public class GatewayConfig {
     hfClient.setCryptoSuite(CryptoSuite.Factory.getCryptoSuite());
     X509IdentityProvider.INSTANCE.setUserContext(hfClient, gateway.getIdentity(), "hlf-connector");
     return hfClient;
+  }
+
+  @Bean
+  public User user(HFClient hfClient) throws IOException {
+    return hfClient.getUserContext();
   }
 }

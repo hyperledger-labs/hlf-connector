@@ -4,6 +4,8 @@ target/
 !**/src/main/**/target/
 !**/src/test/**/target/
 /wallet
+/config/truststore
+/config/**
 
 ### STS ###
 .apt_generated

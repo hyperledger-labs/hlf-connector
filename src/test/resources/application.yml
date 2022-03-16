@@ -32,3 +32,26 @@ kafka:
   event-listener:
     brokerHost: localhost:9093
     topic: hlf-offchain-topic
+
+
+---
+spring:
+  profiles: intg
+fabric:
+  localhostReportAddress: true
+  wallet:
+    path: wallet
+    adminUser:
+      name: admin
+    clientUser:
+      name: clientUser
+  orgConnectionConfig:
+    path: config
+    filename: connection.yaml
+  events:
+    enable: false
+    chaincode: channel1
+    block: channel1
+  client:
+    rest:
+      apikey: abc

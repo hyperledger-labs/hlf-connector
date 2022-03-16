@@ -1,10 +1,9 @@
 package hlf.java.rest.client.listener;
 
-import static hlf.java.rest.client.util.FabricEventParseUtil.createEventStructure;
-
 import hlf.java.rest.client.model.EventType;
 import hlf.java.rest.client.service.EventPublishService;
 import hlf.java.rest.client.util.FabricClientConstants;
+import hlf.java.rest.client.util.FabricEventParseUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.hyperledger.fabric.sdk.BlockEvent;
 import org.hyperledger.fabric.sdk.ChaincodeEvent;
@@ -16,7 +15,8 @@ import org.springframework.stereotype.Component;
 @Component
 @ConditionalOnProperty(prefix = "fabric.events", name = "enable", havingValue = "true")
 public class ChaincodeEventListener {
-  @Autowired private EventPublishService eventPublishService;
+  @Autowired(required = false)
+  private EventPublishService eventPublishService;
 
   private static String eventTxnId = FabricClientConstants.FABRIC_TRANSACTION_ID;
 
@@ -34,7 +34,7 @@ public class ChaincodeEventListener {
         log.info("Event Source: {}", es);
         log.info("Channel Name: {}", channelName);
         eventPublishService.publishChaincodeEvents(
-            createEventStructure(
+            FabricEventParseUtil.createEventStructure(
                 new String(chaincodeEvent.getPayload()),
                 "",
                 chaincodeEvent.getTxId(),

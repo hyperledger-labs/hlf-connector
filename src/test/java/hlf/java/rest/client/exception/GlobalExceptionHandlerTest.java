@@ -10,6 +10,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import hlf.java.rest.client.config.GatewayConfig;
 import hlf.java.rest.client.service.TransactionFulfillment;
 import hlf.java.rest.client.service.impl.ChaincodeOperationsServiceImpl;
+import hlf.java.rest.client.service.impl.ChannelServiceImpl;
 import org.hyperledger.fabric.gateway.ContractException;
 import org.hyperledger.fabric.gateway.Gateway;
 import org.junit.jupiter.api.Test;
@@ -35,6 +36,8 @@ public class GlobalExceptionHandlerTest {
   @MockBean GatewayConfig gatewayConfig;
 
   @MockBean Gateway gateway;
+
+  @MockBean ChannelServiceImpl channelService;
 
   private String testNetworkString = "some string";
   private String testContractString = "some string";

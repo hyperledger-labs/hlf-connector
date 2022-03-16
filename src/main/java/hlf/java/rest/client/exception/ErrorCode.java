@@ -21,6 +21,24 @@ public enum ErrorCode {
   CHAINCODE_PACKAGE_ID_VALIDATION_FAILED(
       1005, "The chaincode packageId is not same in all the peers or not present."),
 
+  CHANNEL_JOIN_FAILED(3006, "Failed to join channel"),
+
+  CHANNEL_CREATION_MISSING_ORDERER(4000, "Orderer is missing"),
+
+  CHANNEL_CREATION_MISSING_PEER(4001, "Peer is missing"),
+
+  CHANNEL_CREATION_MISSING_CHANNEL_NAME(4002, "Channel name is missing"),
+
+  CHANNEL_CREATION_MISSING_CONSORTIUM_NAME(4003, "Consortium name is missing"),
+
+  CHANNEL_CREATION_CHANNEL_NOT_FOUND(4004, "Channel is not found"),
+
+  CHANNEL_CREATION_CHANNEL_EXISTS(4005, "Channel exists"),
+
+  CHANNEL_MISSING_CERTIFICATE(4006, "Certificate is missing"),
+
+  CHANNEL_PAYLOAD_ERROR(4999, "Unknown error"),
+
   HYPERLEDGER_FABRIC_CONNECTION_ERROR(5000, "Hyperledger Fabric connection related error"),
 
   HYPERLEDGER_FABRIC_CHANNEL_TXN_ERROR(

@@ -3,6 +3,7 @@ package hlf.java.rest.client.model;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import hlf.java.rest.client.exception.ErrorConstants;
+import hlf.java.rest.client.exception.GlobalExceptionHandler;
 import java.io.Serializable;
 import java.time.Instant;
 import lombok.Data;
@@ -10,7 +11,7 @@ import org.slf4j.MDC;
 
 /**
  * ErrorResponseModel class is used as the standard response body for all the successful responses
- * or exceptions handled by the {@link hlf.java.rest.client.exception.GlobalExceptionHandler}
+ * or exceptions handled by the {@link GlobalExceptionHandler}
  */
 @Data
 public class ClientResponseModel {
@@ -29,6 +30,13 @@ public class ClientResponseModel {
     this.fabricTransactionId = errorId;
     this.code = code;
     this.message = message;
+  }
+
+  public ClientResponseModel() {
+    this.timestamp = null;
+    this.fabricTransactionId = null;
+    this.code = 0;
+    this.message = null;
   }
 
   /** End timestamp of the response in UTC format * */
