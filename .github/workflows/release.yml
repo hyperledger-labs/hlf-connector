@@ -2,12 +2,27 @@ name: Release
 
 on:
   workflow_dispatch:
+    inputs:
+      releaseType:
+        description: 'Release Type (patch|minor|major)'
+        required: true
+        default: "patch"
+        type: string
 
 jobs:
   build:
     runs-on: ubuntu-latest
 
     steps:
+      - name: Check the release type information
+        run: |
+          if [[ "${type}" != "patch" && "${type}" != "minor" && "${type}" != "major" ]]; then
+            echo "Release type cannot be ${type}"
+            exit -1
+          fi
+        shell: bash
+        env:
+          type: "${{ github.event.inputs.releaseType }}"
       - name: Clone the repository
         uses: "actions/checkout@v2"
       - name: Setup JDK 8
@@ -37,3 +52,20 @@ jobs:
         shell: bash
         env:
           USERNAME_OR_ORG: "${{ github.repository_owner }}"
+      - name: Increment the pom version
+        run: |
+          mvn build-helper:parse-version help:effective-pom validate -D${type}
+          rm -f pom.xml.versionsBackup
+        shell: bash
+        env:
+          type: "${{ github.event.inputs.releaseType }}"
+      - name: Create Pull Request with new PRs
+        uses: peter-evans/create-pull-request@v3
+        with:
+          token: "${{ secrets.GITHUB_TOKEN }}"
+          branch-suffix: timestamp
+          title: Increment version after release
+          labels: auto-version-increment
+          signoff: true
+          delete-branch: false
+          commit-message: Auto increment version after release
