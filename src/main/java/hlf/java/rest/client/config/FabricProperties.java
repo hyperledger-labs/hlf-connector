@@ -1,10 +1,12 @@
 package hlf.java.rest.client.config;
 
-import javax.annotation.PostConstruct;
 import lombok.Data;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Configuration;
+
+import javax.annotation.PostConstruct;
+import java.util.List;
 
 /**
  * FabricProperties reads and binds with the application.yml and provide all the configuration as a
@@ -61,8 +63,8 @@ public class FabricProperties {
   @ConditionalOnProperty(prefix = "fabric.events", name = "enable", havingValue = "true")
   public static class Events {
     private boolean enable;
-    private String chaincode;
-    private String block;
+    private List<String> chaincode;
+    private List<String> block;
   }
 
   /**

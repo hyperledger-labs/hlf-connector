@@ -1,9 +1,6 @@
 package hlf.java.rest.client.listener;
 
 import hlf.java.rest.client.config.FabricProperties;
-import io.micrometer.core.instrument.util.StringUtils;
-import java.util.regex.Pattern;
-import javax.annotation.PostConstruct;
 import lombok.extern.slf4j.Slf4j;
 import org.hyperledger.fabric.gateway.Gateway;
 import org.hyperledger.fabric.gateway.Network;
@@ -13,6 +10,11 @@ import org.hyperledger.fabric.sdk.Peer;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
+import org.springframework.util.CollectionUtils;
+
+import javax.annotation.PostConstruct;
+import java.util.List;
+import java.util.regex.Pattern;
 
 @Slf4j
 @Component
@@ -33,9 +35,10 @@ public class FabricEventListener {
   public void startEventListener() {
 
     try {
-      if (!StringUtils.isEmpty(fabricProperties.getEvents().getBlock())) {
-        String[] listBlockChannelNames = fabricProperties.getEvents().getBlock().split(",");
-        for (String channelName : listBlockChannelNames) {
+      List<String> blockChannelNames = fabricProperties.getEvents().getBlock();
+      if (!CollectionUtils.isEmpty(blockChannelNames)) {
+
+        for (String channelName : blockChannelNames) {
           Network network = gateway.getNetwork(channelName);
 
           if (null != network) {
@@ -56,10 +59,10 @@ public class FabricEventListener {
         }
       }
 
-      if (!StringUtils.isEmpty(fabricProperties.getEvents().getChaincode())) {
-        String[] listChaincodeChannelNames = fabricProperties.getEvents().getChaincode().split(",");
+      List<String> chaincodeChannelNames = fabricProperties.getEvents().getChaincode();
+      if (!CollectionUtils.isEmpty(chaincodeChannelNames)) {
 
-        for (String channelName : listChaincodeChannelNames) {
+        for (String channelName : chaincodeChannelNames) {
           Network network = gateway.getNetwork(channelName);
 
           if (null != network) {
