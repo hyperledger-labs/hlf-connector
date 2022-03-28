@@ -14,12 +14,14 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 import org.hyperledger.fabric.protos.ledger.rwset.Rwset;
 import org.hyperledger.fabric.protos.ledger.rwset.kvrwset.KvRwset;
 import org.hyperledger.fabric.protos.peer.EventsPackage;
 import org.hyperledger.fabric.sdk.BlockEvent;
 import org.hyperledger.fabric.sdk.BlockInfo;
 import org.hyperledger.fabric.sdk.TxReadWriteSetInfo;
+import org.springframework.util.CollectionUtils;
 import org.springframework.web.util.UriComponentsBuilder;
 
 @Slf4j
@@ -38,11 +40,11 @@ public class FabricEventParseUtil {
       EventsPackage.BlockAndPrivateData blockAndPrivateData)
       throws InvalidProtocolBufferException, JsonProcessingException {
     if (blockAndPrivateData == null) {
-      return "";
+      return StringUtils.EMPTY;
     }
     List<BlockEventPrivateDataWriteSet> writes =
         getPrivateDataBlockEventWriteSet(blockAndPrivateData.getPrivateDataMapMap());
-    return mapper.writeValueAsString(writes);
+    return CollectionUtils.isEmpty(writes) ? StringUtils.EMPTY : mapper.writeValueAsString(writes);
   }
 
   public static List<BlockEventWriteSet> getBlockEventWriteSet(
