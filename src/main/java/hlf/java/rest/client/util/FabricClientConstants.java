@@ -33,4 +33,47 @@ public class FabricClientConstants {
   public static final Integer KAFKA_INTG_MAX_POLL_INTERVAL = 500000;
   public static final Integer KAFKA_INTG_MAX_POLL_RECORDS = 100;
   public static final Integer KAFKA_INTG_SESSION_TIMEOUT = 30000;
+  
+  public static final String CHANNEL_CONFIG_GROUP_APPLICATION = "Application";
+  public static final String CHANNEL_CONFIG_MOD_POLICY_ADMINS = "Admins";
+  
+  public static final String CHANNEL_CONFIG_POLICY_TYPE_WRITERS = "Writers";
+  public static final String CHANNEL_CONFIG_POLICY_TYPE_ENDORSEMENT = "Endorsement";
+  public static final String CHANNEL_CONFIG_POLICY_TYPE_LIFECYCLE_ENDORSEMENT = "LifecycleEndorsement";
+  public static final String CHANNEL_CONFIG_POLICY_TYPE_READERS = "Readers";
+  public static final String CHANNEL_CONFIG_POLICY_TYPE_ADMINS = "Admins";
+  
+  public static final String CHANNEL_CONFIG_ORGANIZATIONAL_UNIT_ID_ADMIN = "admin";
+  public static final String CHANNEL_CONFIG_ORGANIZATIONAL_UNIT_ID_CLIENT = "client";
+  public static final String CHANNEL_CONFIG_ORGANIZATIONAL_UNIT_ID_ORDERER = "orderer";
+  public static final String CHANNEL_CONFIG_ORGANIZATIONAL_UNIT_ID_PEER = "peer";
+  
+  public static final String CHANNEL_CONFIG_GROUP_VALUE_MSP = "MSP";
+  public static final String CHANNEL_CONFIG_GROUP_VALUE_ANCHORPEERS= "AnchorPeers";
+
+
+  public static final String CHANNEL_CONFIG_IDENTITY_IDENTIFIER_SHA256 = "SHA256";
+  public static final String CHANNEL_CONFIG_SIGNATURE_HASH_FAMILY_SHA2 = "SHA2";
+
+  public static final String JSON_PATH_ANCHORPEERS_VALUE = "$..AnchorPeers.value";
+  public static final String JSON_PATH_MSP_VALUE = "$..MSP.value";
+  public static final String JSON_PATH_POLICY_TYPE_ONE_VALUE = "$..['policy'][?(@['type'] == " + 1 + ")]";
+  public static final String JSON_PATH_POLICY_TYPE_THREE_VALUE = "$..['policy'][?(@['type'] == " + 3 + ")]";
+  public static final String JSON_PATH_VALUE = "value";
+  public static final String JSON_PATH_CAPABILITIES_VALUE = "$..Capabilities.value";
+  public static final String JSON_PATH_ENDPOINTS_VALUE = "$..Endpoints.value";
+  public static final String JSON_PATH_CONSENSUS_VALUE = "$..ConsensusType.value";
+  public static final String JSON_PATH_BATCHSIZE_VALUE = "$..BatchSize.value";
+  public static final String JSON_PATH_BATCHTIMEOUT_VALUE = "$..BatchTimeout.value";
+  public static final String JSON_PATH_CONSORTIUM_VALUE ="$..Consortium.value";
+  public static final String JSON_PATH_HASHINGALGORITHM_VALUE = "$..HashingAlgorithm.value";
+  public static final String JSON_PATH_BLOCKHASHINGALGORITHM_VALUE = "$..BlockDataHashingStructure.value";
+  public static final String JSON_PATH_METADATA_VALUE = "$..metadata";
+  public static final String JSON_PATH_PRINCIPAL_VALUE = "$..principal";
+  public static final String JSON_PATH_MSP_VALUE_CONFIG = "$..MSP.value.config";
+  public static final String JSON_PATH_ROOTCERTS = "$..rootCerts";
+  public static final String JSON_PATH_TLS_ROOT_CERTS = "$..tls_root_certs";
+  public static final String JSON_PATH_CERTIFICATE = "$..certificate";
+
+  
 }

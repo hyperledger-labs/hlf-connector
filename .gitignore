@@ -78,6 +78,7 @@ target/
 #env
 .env
 /config/application.yml
+application.yml
 /config/connection-*
 docker-compose-*
 secrets
