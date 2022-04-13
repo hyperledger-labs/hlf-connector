@@ -5,6 +5,8 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Configuration;
 
+import java.util.List;
+
 /**
  * The type Kafka properties is added for fetching Kafka properties as configuration and can be used
  * in Consumer and Producer using @Autowired
@@ -14,18 +16,14 @@ import org.springframework.context.annotation.Configuration;
 @ConfigurationProperties(prefix = "kafka")
 public class KafkaProperties {
 
-  private Consumer integration;
+  private ConsumerProperties integration;
   private Producer eventListener;
 
   @Data
-  @ConditionalOnProperty("kafka.integration.brokerHost")
   @Configuration
-  @ConfigurationProperties(prefix = "kafka.integration")
-  public static class Consumer extends SSLProperties {
-    private String brokerHost;
-    private String groupId;
-    private String topic;
-    private String saslJaasConfig;
+  @ConfigurationProperties(prefix = "kafka")
+  public static class ConsumerProperties {
+    private List<Consumer> integrationPoints;
   }
 
   @Data
@@ -49,5 +47,14 @@ public class KafkaProperties {
     protected String sslTruststoreLocation;
     protected String sslTruststorePassword;
     protected String sslKeyPassword;
+  }
+
+  @Data
+  @Configuration
+  public static class Consumer extends SSLProperties {
+    private String brokerHost;
+    private String groupId;
+    private String topic;
+    private String saslJaasConfig;
   }
 }

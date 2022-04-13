@@ -4,25 +4,23 @@ import hlf.java.rest.client.exception.FabricTransactionException;
 import hlf.java.rest.client.service.EventPublishService;
 import hlf.java.rest.client.service.TransactionFulfillment;
 import hlf.java.rest.client.util.FabricClientConstants;
-import java.nio.charset.StandardCharsets;
-import java.util.Arrays;
-import java.util.List;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.common.header.Header;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
-import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.kafka.support.Acknowledgment;
 import org.springframework.stereotype.Controller;
+
+import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
+import java.util.List;
 
 /*
  * This class has the consumer logic for processing and adding transaction to fabric
  */
 @Slf4j
 @Controller
-@ConditionalOnProperty("kafka.integration.topic")
 public class TransactionConsumer {
 
   @Autowired TransactionFulfillment transactionFulfillment;
@@ -30,15 +28,12 @@ public class TransactionConsumer {
   @Autowired EventPublishService eventPublishServiceImpl;
 
   /**
-   * This method listens to kafka topics for messages, routes them to appropriate methods and
+   * This method routes the kafka messages to appropriate methods and
    * acknowledges once processing is complete
    *
-   * @param message ConsumerRecord payload from upstream system
+   * @param message        ConsumerRecord payload from upstream system
    * @param acknowledgment Acknowledgment manual commit offset
    */
-  @KafkaListener(
-      topics = "#{'${kafka.integration.topic}'}",
-      containerFactory = "kafkaListenerContainerFactory")
   public void listen(ConsumerRecord<String, String> message, Acknowledgment acknowledgment) {
     log.info(
         "Incoming Message details : Topic : "

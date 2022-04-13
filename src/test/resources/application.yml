@@ -25,10 +25,15 @@ fabric:
     rest:
       apikey: ePVYHwAaQ0V1XOTX6U
 kafka:
-  integration:
-    brokerHost: localhost:9093
-    groupId: fabric-consumer
-    topic: hlf-integration-topic
+  integration-points:
+    -
+      brokerHost: localhost:9093
+      groupId: fabric-consumer
+      topic: hlf-integration-topic1
+    -
+      brokerHost: localhost:9094
+      groupId: fabric-consumer
+      topic: hlf-integration-topic2
   event-listener:
     brokerHost: localhost:9093
     topic: hlf-offchain-topic
