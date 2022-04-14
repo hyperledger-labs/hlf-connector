@@ -42,8 +42,13 @@ This component supports event-based architecture by consuming transactions throu
 To configure it, use the below configuration in the application.yml file.
 ```
 kafka:
-  integration:
-    brokerHost: <Hostname with Port>
+  integration-points:
+  -
+    brokerHost: <Hostname1 with Port>
+    groupId: <Group ID>
+    topic: <Topic Name>
+  -
+    brokerHost: <Hostname2 with Port>
     groupId: <Group ID>
     topic: <Topic Name>
     # For Azure EventHub
