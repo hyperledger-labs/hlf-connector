@@ -1,12 +1,11 @@
 package hlf.java.rest.client.config;
 
+import java.util.List;
+import javax.annotation.PostConstruct;
 import lombok.Data;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Configuration;
-
-import javax.annotation.PostConstruct;
-import java.util.List;
 
 /**
  * FabricProperties reads and binds with the application.yml and provide all the configuration as a

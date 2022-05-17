@@ -4,6 +4,9 @@ import hlf.java.rest.client.exception.FabricTransactionException;
 import hlf.java.rest.client.service.EventPublishService;
 import hlf.java.rest.client.service.TransactionFulfillment;
 import hlf.java.rest.client.util.FabricClientConstants;
+import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
+import java.util.List;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
@@ -11,10 +14,6 @@ import org.apache.kafka.common.header.Header;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.kafka.support.Acknowledgment;
 import org.springframework.stereotype.Controller;
-
-import java.nio.charset.StandardCharsets;
-import java.util.Arrays;
-import java.util.List;
 
 /*
  * This class has the consumer logic for processing and adding transaction to fabric
@@ -25,13 +24,14 @@ public class TransactionConsumer {
 
   @Autowired TransactionFulfillment transactionFulfillment;
 
-  @Autowired EventPublishService eventPublishServiceImpl;
+  @Autowired(required = false)
+  EventPublishService eventPublishServiceImpl;
 
   /**
-   * This method routes the kafka messages to appropriate methods and
-   * acknowledges once processing is complete
+   * This method routes the kafka messages to appropriate methods and acknowledges once processing
+   * is complete
    *
-   * @param message        ConsumerRecord payload from upstream system
+   * @param message ConsumerRecord payload from upstream system
    * @param acknowledgment Acknowledgment manual commit offset
    */
   public void listen(ConsumerRecord<String, String> message, Acknowledgment acknowledgment) {

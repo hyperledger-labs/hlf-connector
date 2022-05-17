@@ -1,11 +1,10 @@
 package hlf.java.rest.client.config;
 
+import java.util.List;
 import lombok.Data;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Configuration;
-
-import java.util.List;
 
 /**
  * The type Kafka properties is added for fetching Kafka properties as configuration and can be used
