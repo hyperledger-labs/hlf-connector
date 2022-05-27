@@ -9,17 +9,21 @@ import org.hyperledger.fabric.sdk.BlockEvent;
 import org.hyperledger.fabric.sdk.ChaincodeEvent;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
-import org.springframework.stereotype.Component;
+import org.springframework.cloud.context.config.annotation.RefreshScope;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.context.event.EventListener;
 
 @Slf4j
-@Component
+@Configuration
 @ConditionalOnProperty(prefix = "fabric.events", name = "enable", havingValue = "true")
+@RefreshScope
 public class ChaincodeEventListener {
   @Autowired(required = false)
   private EventPublishService eventPublishService;
 
   private static String eventTxnId = FabricClientConstants.FABRIC_TRANSACTION_ID;
 
+  @EventListener
   public void listener(
       String handle, BlockEvent blockEvent, ChaincodeEvent chaincodeEvent, String channelName) {
     String es = blockEvent.getPeer() != null ? blockEvent.getPeer().getName() : "peer was null!!!";

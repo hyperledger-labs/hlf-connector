@@ -9,6 +9,7 @@ import org.apache.kafka.clients.CommonClientConfigs;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.common.config.SslConfigs;
 import org.apache.kafka.common.serialization.StringDeserializer;
+import org.springframework.cloud.context.config.annotation.RefreshScope;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.kafka.core.DefaultKafkaConsumerFactory;
 
@@ -18,6 +19,7 @@ import org.springframework.kafka.core.DefaultKafkaConsumerFactory;
  */
 @Slf4j
 @Configuration
+@RefreshScope
 public class KafkaConsumerConfig {
 
   public DefaultKafkaConsumerFactory<String, String> consumerFactory(

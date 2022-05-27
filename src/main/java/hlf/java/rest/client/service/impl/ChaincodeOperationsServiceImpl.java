@@ -16,6 +16,8 @@ import java.util.HashSet;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
+
+import hlf.java.rest.client.service.HFClientWrapper;
 import lombok.extern.slf4j.Slf4j;
 import org.hyperledger.fabric.gateway.Gateway;
 import org.hyperledger.fabric.gateway.Network;
@@ -45,8 +47,8 @@ import org.springframework.stereotype.Service;
 public class ChaincodeOperationsServiceImpl implements ChaincodeOperationsService {
 
   @Autowired private Gateway gateway;
-
-  @Autowired private HFClient hfClient;
+  @Autowired private HFClientWrapper hfClientWrapper;
+  private HFClient hfClient = hfClientWrapper.getHfClient();
 
   @Override
   public String performChaincodeOperation(
@@ -62,11 +64,11 @@ public class ChaincodeOperationsServiceImpl implements ChaincodeOperationsServic
     switch (operationsType) {
       case approve:
         {
-          return approveChaincode(hfClient, channel, chaincodeOperationsModel);
+          return approveChaincode(channel, chaincodeOperationsModel);
         }
       case commit:
         {
-          return commitChaincode(hfClient, channel, chaincodeOperationsModel);
+          return commitChaincode(channel, chaincodeOperationsModel);
         }
       default:
         {
@@ -87,8 +89,8 @@ public class ChaincodeOperationsServiceImpl implements ChaincodeOperationsServic
       Collection<Peer> peers = channel.getPeers();
 
       final QueryLifecycleQueryChaincodeDefinitionRequest
-          queryLifecycleQueryChaincodeDefinitionRequest =
-              hfClient.newQueryLifecycleQueryChaincodeDefinitionRequest();
+          queryLifecycleQueryChaincodeDefinitionRequest = hfClient
+      .newQueryLifecycleQueryChaincodeDefinitionRequest();
       queryLifecycleQueryChaincodeDefinitionRequest.setChaincodeName(chaincodeName);
 
       Collection<LifecycleQueryChaincodeDefinitionProposalResponse>
@@ -127,7 +129,6 @@ public class ChaincodeOperationsServiceImpl implements ChaincodeOperationsServic
 
     Network network = gateway.getNetwork(networkName);
     Channel channel = network.getChannel();
-
     Collection<Peer> peers = channel.getPeers();
 
     try {
@@ -216,13 +217,13 @@ public class ChaincodeOperationsServiceImpl implements ChaincodeOperationsServic
   }
 
   private String approveChaincode(
-      HFClient hfClient, Channel channel, ChaincodeOperations chaincodeOperationsModel) {
+      Channel channel, ChaincodeOperations chaincodeOperationsModel) {
 
     Collection<Peer> peers = channel.getPeers();
     try {
       LifecycleApproveChaincodeDefinitionForMyOrgRequest
           lifecycleApproveChaincodeDefinitionForMyOrgRequest =
-              hfClient.newLifecycleApproveChaincodeDefinitionForMyOrgRequest();
+          hfClient.newLifecycleApproveChaincodeDefinitionForMyOrgRequest();
       lifecycleApproveChaincodeDefinitionForMyOrgRequest.setSequence(
           chaincodeOperationsModel.getSequence());
       lifecycleApproveChaincodeDefinitionForMyOrgRequest.setChaincodeName(
@@ -263,7 +264,7 @@ public class ChaincodeOperationsServiceImpl implements ChaincodeOperationsServic
   }
 
   private String commitChaincode(
-      HFClient hfClient, Channel channel, ChaincodeOperations chaincodeOperationsModel) {
+      Channel channel, ChaincodeOperations chaincodeOperationsModel) {
 
     Collection<Peer> peers = channel.getPeers();
     try {
