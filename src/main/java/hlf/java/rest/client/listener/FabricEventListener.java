@@ -4,20 +4,24 @@ import hlf.java.rest.client.config.FabricProperties;
 import java.util.List;
 import java.util.regex.Pattern;
 import javax.annotation.PostConstruct;
+
+import hlf.java.rest.client.service.HFClientWrapper;
 import lombok.extern.slf4j.Slf4j;
 import org.hyperledger.fabric.gateway.Gateway;
 import org.hyperledger.fabric.gateway.Network;
 import org.hyperledger.fabric.sdk.Channel;
-import org.hyperledger.fabric.sdk.HFClient;
 import org.hyperledger.fabric.sdk.Peer;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
-import org.springframework.stereotype.Component;
+import org.springframework.cloud.context.config.annotation.RefreshScope;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.context.event.EventListener;
 import org.springframework.util.CollectionUtils;
 
 @Slf4j
-@Component
+@Configuration
 @ConditionalOnProperty(prefix = "fabric.events", name = "enable", havingValue = "true")
+@RefreshScope
 public class FabricEventListener {
 
   @Autowired private FabricProperties fabricProperties;
@@ -26,11 +30,12 @@ public class FabricEventListener {
 
   @Autowired private Gateway gateway;
 
-  @Autowired private HFClient hfClient;
+  @Autowired private HFClientWrapper hfClientWrapper;
 
   @Autowired private ChaincodeEventListener chaincodeEventService;
 
   @PostConstruct
+  @EventListener
   public void startEventListener() {
 
     try {
@@ -38,18 +43,19 @@ public class FabricEventListener {
       if (!CollectionUtils.isEmpty(blockChannelNames)) {
 
         for (String channelName : blockChannelNames) {
+          log.info("channe; names{}", channelName);
           Network network = gateway.getNetwork(channelName);
 
           if (null != network) {
             log.info("Creating block-listener for channel: {}", network);
             Channel channel = network.getChannel();
             channel.initialize();
-            Channel newChannel = hfClient.deSerializeChannel(channel.serializeChannel());
+            Channel newChannel = hfClientWrapper.getHfClient().deSerializeChannel(channel.serializeChannel());
             log.info("Channel {} is initialized {}", channelName, newChannel.isInitialized());
             for (Peer peer : channel.getPeers()) {
               Channel.PeerOptions options = channel.getPeersOptions(peer);
               options.registerEventsForPrivateData();
-              Peer newPeer = hfClient.newPeer(peer.getName(), peer.getUrl(), peer.getProperties());
+              Peer newPeer = hfClientWrapper.getHfClient().newPeer(peer.getName(), peer.getUrl(), peer.getProperties());
               newChannel.addPeer(newPeer, options);
             }
             newChannel.initialize();

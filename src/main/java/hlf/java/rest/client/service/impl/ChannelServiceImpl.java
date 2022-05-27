@@ -9,6 +9,8 @@ import hlf.java.rest.client.model.ChannelOperationType;
 import hlf.java.rest.client.model.ClientResponseModel;
 import hlf.java.rest.client.service.ChannelService;
 import java.util.*;
+
+import hlf.java.rest.client.service.HFClientWrapper;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.HttpStatus;
@@ -23,8 +25,7 @@ import org.springframework.util.CollectionUtils;
 @Slf4j
 public class ChannelServiceImpl implements ChannelService {
 
-  @Autowired private HFClient hfClient;
-
+  @Autowired private HFClientWrapper hfClientWrapper;
   @Autowired private User user;
 
   private static final String DEFAULT_MOD_POLICY = "Admins";
@@ -47,12 +48,12 @@ public class ChannelServiceImpl implements ChannelService {
     }
 
     try {
-      List<Peer> peers = channelOperationRequest.getFabricPeers(hfClient);
+      List<Peer> peers = channelOperationRequest.getFabricPeers(hfClientWrapper.getHfClient());
       String channelName = channelOperationRequest.getChannelName();
 
       // check if the channel exists in any peer, operation fails
       for (Peer peer : peers) {
-        Set<String> channels = hfClient.queryChannels(peer);
+        Set<String> channels = hfClientWrapper.getHfClient().queryChannels(peer);
         if (channels.contains(channelName)) {
           log.error(
               "{} {} {}", ErrorCode.CHANNEL_CREATION_CHANNEL_EXISTS.getReason(), channelName, peer);
@@ -60,14 +61,14 @@ public class ChannelServiceImpl implements ChannelService {
         }
       }
 
-      List<Orderer> orderers = channelOperationRequest.getFabricOrderers(hfClient);
+      List<Orderer> orderers = channelOperationRequest.getFabricOrderers(hfClientWrapper.getHfClient());
       // TODO: Loop through all orderers in case of failing to talk to one of them
       Orderer orderer = orderers.get(0);
 
       // generate new channel config
       ChannelConfiguration channelConfiguration = newChannelConfig(channelOperationRequest);
-      byte[] orgSignature = hfClient.getChannelConfigurationSignature(channelConfiguration, user);
-      hfClient.newChannel(channelName, orderer, channelConfiguration, orgSignature);
+      byte[] orgSignature = hfClientWrapper.getHfClient().getChannelConfigurationSignature(channelConfiguration, user);
+      hfClientWrapper.getHfClient().newChannel(channelName, orderer, channelConfiguration, orgSignature);
 
       return new ClientResponseModel(HttpStatus.SC_OK, channelName + " is created");
     } catch (Exception e) {
@@ -90,17 +91,17 @@ public class ChannelServiceImpl implements ChannelService {
     try {
       String channelName = channelOperationRequest.getChannelName();
 
-      List<Peer> peers = channelOperationRequest.getFabricPeers(hfClient);
-      List<Orderer> orderers = channelOperationRequest.getFabricOrderers(hfClient);
+      List<Peer> peers = channelOperationRequest.getFabricPeers(hfClientWrapper.getHfClient());
+      List<Orderer> orderers = channelOperationRequest.getFabricOrderers(hfClientWrapper.getHfClient());
       Orderer orderer = orderers.get(0);
 
-      channel = hfClient.getChannel(channelName);
+      channel = hfClientWrapper.getHfClient().getChannel(channelName);
       if (channel == null) {
-        channel = hfClient.newChannel(channelName);
+        channel = hfClientWrapper.getHfClient().newChannel(channelName);
       }
 
       for (Peer peer : peers) {
-        Set<String> channels = hfClient.queryChannels(peer);
+        Set<String> channels = hfClientWrapper.getHfClient().queryChannels(peer);
         if (!channels.contains(channelName)) {
           channel.addOrderer(orderer);
           channel.joinPeer(peer);

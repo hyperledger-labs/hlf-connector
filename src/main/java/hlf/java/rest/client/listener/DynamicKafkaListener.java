@@ -7,6 +7,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.cloud.context.config.annotation.RefreshScope;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.event.ContextRefreshedEvent;
 import org.springframework.context.event.EventListener;
@@ -23,6 +24,7 @@ import org.springframework.kafka.support.Acknowledgment;
 @Slf4j
 @Configuration
 @ConditionalOnProperty("kafka.integration")
+@RefreshScope
 public class DynamicKafkaListener {
 
   @Autowired KafkaProperties.ConsumerProperties consumerProperties;

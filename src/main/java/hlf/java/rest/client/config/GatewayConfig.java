@@ -4,6 +4,9 @@ import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+
+import hlf.java.rest.client.service.HFClientWrapper;
+import hlf.java.rest.client.service.impl.HFClientWrapperImpl;
 import lombok.extern.slf4j.Slf4j;
 import org.hyperledger.fabric.gateway.Gateway;
 import org.hyperledger.fabric.gateway.Wallet;
@@ -15,6 +18,7 @@ import org.hyperledger.fabric.sdk.exception.CryptoException;
 import org.hyperledger.fabric.sdk.exception.InvalidArgumentException;
 import org.hyperledger.fabric.sdk.security.CryptoSuite;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cloud.context.config.annotation.RefreshScope;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -23,7 +27,7 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 public class GatewayConfig {
 
-  @Autowired FabricProperties fabricProperties;
+  @Autowired private FabricProperties fabricProperties;
 
   /**
    * Create the gateway connection for connecting to the peer.
@@ -31,6 +35,7 @@ public class GatewayConfig {
    * @return gateway Gateway object to connect to Fabric network
    * @throws IOException
    */
+  @RefreshScope
   @Bean
   public Gateway gateway(Wallet wallet) throws IOException {
     // Load the Network Connection Configuration path
@@ -54,6 +59,7 @@ public class GatewayConfig {
    * @return wallet Wallet pull credentials from wallet
    * @throws IOException
    */
+  @RefreshScope
   @Bean
   public Wallet wallet() throws IOException {
     log.info("Obtain the Wallet containing Admin and Client user information");
@@ -75,20 +81,24 @@ public class GatewayConfig {
    * @throws InstantiationException the instantiation exception
    * @throws NoSuchMethodException the no such method exception
    */
+
   @Bean
-  public HFClient hfClient(Gateway gateway)
-      throws InvalidArgumentException, CryptoException, ClassNotFoundException,
-          InvocationTargetException, IllegalAccessException, InstantiationException,
-          NoSuchMethodException {
+  @RefreshScope
+  public HFClientWrapper hfClient(Gateway gateway) throws InvalidArgumentException, CryptoException, ClassNotFoundException,
+  InvocationTargetException, IllegalAccessException, InstantiationException,
+  NoSuchMethodException {
     log.info("Setting up HFClient for operations APIs.");
     HFClient hfClient = HFClient.createNewInstance();
     hfClient.setCryptoSuite(CryptoSuite.Factory.getCryptoSuite());
     X509IdentityProvider.INSTANCE.setUserContext(hfClient, gateway.getIdentity(), "hlf-connector");
-    return hfClient;
+    HFClientWrapperImpl hfCientWrapper = new HFClientWrapperImpl(hfClient);
+    return hfCientWrapper;
   }
 
   @Bean
-  public User user(HFClient hfClient) throws IOException {
-    return hfClient.getUserContext();
+  @RefreshScope
+  public User user(HFClientWrapper hfClient) throws IOException {
+    return hfClient.getHfClient().getUserContext();
   }
+
 }

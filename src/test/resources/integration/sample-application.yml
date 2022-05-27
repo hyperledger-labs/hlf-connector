@@ -7,6 +7,7 @@ management:
     web:
       exposure:
         include: refresh
+
 server:
   config:
     location: "src/test/resources/application.yml"
@@ -32,20 +33,24 @@ fabric:
     filename: connection.yml
   client:
     rest:
-      apikey: ePVYHwAaQ0V1XOTX6U
+      apikey: expected-key
+  events:
+    enable: true
+    chaincode: chaincode12, chaincode2
+    block: block111, block2
 kafka:
   integration-points:
     -
-      brokerHost: localhost:9093
-      groupId: fabric-consumer
-      topic: hlf-integration-topic1
+      brokerHost: localhost:90931
+      groupId: fabric-consumer1
+      topic: hlf-integration-topic11
     -
-      brokerHost: localhost:9094
-      groupId: fabric-consumer
-      topic: hlf-integration-topic2
+      brokerHost: localhost:90941
+      groupId: fabric-consumer1
+      topic: hlf-integration-topic21
   event-listener:
-    brokerHost: localhost:9093
-    topic: hlf-offchain-topic
+    brokerHost: localhost:90931
+    topic: hlf-offchain-topic1
 
 
 ---

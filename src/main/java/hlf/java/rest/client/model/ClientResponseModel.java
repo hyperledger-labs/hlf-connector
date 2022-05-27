@@ -19,7 +19,7 @@ public class ClientResponseModel {
   public ClientResponseModel(Integer code, Serializable message) {
     Instant instant = Instant.now();
     this.timestamp = instant.toString();
-    this.fabricTransactionId = MDC.get(ErrorConstants.LOG_SPAN_ID);
+    this.transactionId = MDC.get(ErrorConstants.LOG_SPAN_ID);
     this.code = code;
     this.message = message;
   }
@@ -27,14 +27,14 @@ public class ClientResponseModel {
   public ClientResponseModel(String errorId, Integer code, Serializable message) {
     Instant instant = Instant.now();
     this.timestamp = instant.toString();
-    this.fabricTransactionId = errorId;
+    this.transactionId = errorId;
     this.code = code;
     this.message = message;
   }
 
   public ClientResponseModel() {
     this.timestamp = null;
-    this.fabricTransactionId = null;
+    this.transactionId = null;
     this.code = 0;
     this.message = null;
   }
@@ -46,7 +46,7 @@ public class ClientResponseModel {
    * An UUID value which can be used to trace the log of all the events which led to this response
    * or error
    */
-  private String fabricTransactionId;
+  private String transactionId;
 
   @JsonInclude(value = Include.NON_NULL)
   /** Used to uniquely identify the exception instance causing this error */

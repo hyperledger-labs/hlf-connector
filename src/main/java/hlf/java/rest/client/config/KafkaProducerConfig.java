@@ -9,6 +9,7 @@ import org.apache.kafka.clients.CommonClientConfigs;
 import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.common.config.SslConfigs;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.cloud.context.config.annotation.RefreshScope;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.DependsOn;
@@ -26,6 +27,7 @@ import org.springframework.kafka.core.ProducerFactory;
 @DependsOn({"kafkaProperties"})
 public class KafkaProducerConfig {
 
+  @RefreshScope
   @Bean
   public ProducerFactory<String, String> eventProducerFactory(
       KafkaProperties.Producer kafkaProducerProperties) {
@@ -78,6 +80,7 @@ public class KafkaProducerConfig {
     return new DefaultKafkaProducerFactory<>(props);
   }
 
+  @RefreshScope
   @Bean
   public KafkaTemplate<String, String> kafkaTemplate(
       KafkaProperties.Producer kafkaProducerProperties) {
