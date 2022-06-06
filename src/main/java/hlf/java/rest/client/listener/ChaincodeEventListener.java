@@ -44,6 +44,7 @@ public class ChaincodeEventListener {
                 chaincodeEvent.getTxId(),
                 blockEvent.getBlockNumber(),
                 EventType.CHAINCODE_EVENT),
+            chaincodeEvent.getChaincodeId(),
             chaincodeEvent.getTxId(),
             chaincodeEvent.getEventName(),
             channelName);

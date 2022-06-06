@@ -311,7 +311,11 @@ public class TransactionFulfillmentImpl implements TransactionFulfillment {
    */
   @Override
   public ResponseEntity<EventAPIResponseModel> readTransactionEventByBlockNumber(
-      Long blockNumber, String networkName, String transactionId, String eventType) {
+      Long blockNumber,
+      String networkName,
+      String transactionId,
+      String chaincode,
+      String eventType) {
     log.info(
         "Initiate the Read Transaction from Ledger process by blockNumber, networkName and transactionId based on eventType");
 
@@ -330,6 +334,7 @@ public class TransactionFulfillmentImpl implements TransactionFulfillment {
       Iterable<BlockInfo.EnvelopeInfo> envelopeInfos = blockInfo.getEnvelopeInfos();
       for (BlockInfo.EnvelopeInfo info : envelopeInfos) {
         BlockInfo.TransactionEnvelopeInfo envelopeInfo = (BlockInfo.TransactionEnvelopeInfo) info;
+
         if (envelopeInfo.getTransactionID().equals(transactionId)) {
 
           // Getting the BLOCK_EVENT for the transactionId and blockNumber
@@ -337,14 +342,14 @@ public class TransactionFulfillmentImpl implements TransactionFulfillment {
 
             blockEventWriteSets.addAll(
                 FabricEventParseUtil.getBlockEventWriteSet(
-                    envelopeInfo.getTransactionActionInfos()));
+                    envelopeInfo.getTransactionActionInfos(), chaincode));
 
             // Getting the CHAINCODE_EVENT for the transactionId and blockNumber
           } else if (eventType.equals(EventType.CHAINCODE_EVENT.toString())) {
 
             chainCodeEventSets.addAll(
                 FabricEventParseUtil.getChaincodeEventWriteSet(
-                    envelopeInfo.getTransactionActionInfos()));
+                    envelopeInfo.getTransactionActionInfos(), chaincode));
           }
         }
       }

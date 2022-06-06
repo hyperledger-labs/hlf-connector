@@ -6,6 +6,7 @@ import hlf.java.rest.client.service.TransactionFulfillment;
 import java.util.Arrays;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
@@ -101,10 +102,7 @@ public class FabricClientController {
               channelName, chaincodeName, functionName, lstPeerNames, payload);
         }
       } else {
-        if (null != collections
-            && !collections.isEmpty()
-            && null != transientKey
-            && !transientKey.isEmpty()) {
+        if (StringUtils.isNotBlank(collections) && StringUtils.isNotBlank(transientKey)) {
 
           return transactionFulfillment.writePrivateTransactionToLedger(
               channelName, chaincodeName, functionName, collections, transientKey, payload);
@@ -115,10 +113,7 @@ public class FabricClientController {
         }
       }
     } else {
-      if (null != collections
-          && !collections.isEmpty()
-          && null != transientKey
-          && !transientKey.isEmpty()) {
+      if (StringUtils.isNotBlank(collections) && StringUtils.isNotBlank(transientKey)) {
         return transactionFulfillment.writePrivateTransactionToLedger(
             channelName, chaincodeName, functionName, collections, transientKey, payload);
       } else {
@@ -185,12 +180,13 @@ public class FabricClientController {
       @PathVariable("transaction-id") String transactionId,
       @PathVariable("block-number") Long blockNumber,
       @RequestParam("channel") @Validated String networkName,
+      @RequestParam(value = "chaincode", required = false) String chaincode,
       @RequestParam("eventType") @Validated String eventType) {
     log.info(
         "Initiated Transaction Read for Network Name: {}, Block Number: {}",
         networkName,
         blockNumber);
     return transactionFulfillment.readTransactionEventByBlockNumber(
-        blockNumber, networkName, transactionId, eventType);
+        blockNumber, networkName, transactionId, chaincode, eventType);
   }
 }

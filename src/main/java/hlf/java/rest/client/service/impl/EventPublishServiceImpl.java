@@ -78,7 +78,7 @@ public class EventPublishServiceImpl implements EventPublishService {
 
   @Override
   public boolean publishChaincodeEvents(
-      String payload, String fabricTxId, String eventName, String channelName) {
+      String payload, String chaincodeName, String fabricTxId, String eventName, String channelName) {
     boolean status = true;
 
     try {
@@ -90,6 +90,11 @@ public class EventPublishServiceImpl implements EventPublishService {
           .headers()
           .add(
               new RecordHeader(FabricClientConstants.FABRIC_TRANSACTION_ID, fabricTxId.getBytes()));
+      producerRecord
+          .headers()
+          .add(
+              new RecordHeader(
+                  FabricClientConstants.FABRIC_CHAINCODE_NAME, chaincodeName.getBytes()));
       producerRecord
           .headers()
           .add(new RecordHeader(FabricClientConstants.FABRIC_EVENT_NAME, eventName.getBytes()));

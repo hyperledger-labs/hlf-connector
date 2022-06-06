@@ -10,9 +10,6 @@ import hlf.java.rest.client.model.BlockEventPrivateDataWriteSet;
 import hlf.java.rest.client.model.BlockEventWriteSet;
 import hlf.java.rest.client.model.EventStructure;
 import hlf.java.rest.client.model.EventType;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.hyperledger.fabric.protos.ledger.rwset.Rwset;
@@ -24,6 +21,10 @@ import org.hyperledger.fabric.sdk.TxReadWriteSetInfo;
 import org.springframework.util.CollectionUtils;
 import org.springframework.web.util.UriComponentsBuilder;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+
 @Slf4j
 public class FabricEventParseUtil {
 
@@ -32,7 +33,7 @@ public class FabricEventParseUtil {
   public static String getWriteInfoFromBlock(BlockEvent.TransactionEvent transactionEvent)
       throws JsonProcessingException, InvalidProtocolBufferException {
     List<BlockEventWriteSet> writes =
-        getBlockEventWriteSet(transactionEvent.getTransactionActionInfos());
+        getBlockEventWriteSet(transactionEvent.getTransactionActionInfos(), StringUtils.EMPTY);
     return mapper.writeValueAsString(writes);
   }
 
@@ -48,12 +49,19 @@ public class FabricEventParseUtil {
   }
 
   public static List<BlockEventWriteSet> getBlockEventWriteSet(
-      Iterable<BlockInfo.TransactionEnvelopeInfo.TransactionActionInfo> transactionActionInfos)
+      Iterable<BlockInfo.TransactionEnvelopeInfo.TransactionActionInfo> transactionActionInfos,
+      String chaincodeName)
       throws InvalidProtocolBufferException {
 
     List<KvRwset.KVWrite> writeList = new ArrayList<>();
     for (BlockInfo.TransactionEnvelopeInfo.TransactionActionInfo txnActionInfo :
         transactionActionInfos) {
+
+      if (StringUtils.isNotBlank(chaincodeName)
+          && !txnActionInfo.getChaincodeIDName().equals(chaincodeName)) {
+        continue;
+      }
+
       Iterable<TxReadWriteSetInfo.NsRwsetInfo> rwSetInfos =
           txnActionInfo.getTxReadWriteSet().getNsRwsetInfos();
       for (TxReadWriteSetInfo.NsRwsetInfo rwSetInfo : rwSetInfos) {
@@ -109,11 +117,18 @@ public class FabricEventParseUtil {
   }
 
   public static List<String> getChaincodeEventWriteSet(
-      Iterable<BlockInfo.TransactionEnvelopeInfo.TransactionActionInfo> transactionActionInfos) {
+      Iterable<BlockInfo.TransactionEnvelopeInfo.TransactionActionInfo> transactionActionInfos,
+      String chaincodeName) {
 
     List<String> chaincodeEvents = new ArrayList<>();
     for (BlockInfo.TransactionEnvelopeInfo.TransactionActionInfo transactionActionInfo :
         transactionActionInfos) {
+
+      if (StringUtils.isNotBlank(chaincodeName)
+          && !transactionActionInfo.getChaincodeIDName().equals(chaincodeName)) {
+        continue;
+      }
+
       chaincodeEvents.add(new String(transactionActionInfo.getEvent().getPayload()));
     }
     return chaincodeEvents;
