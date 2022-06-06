@@ -127,5 +127,9 @@ public interface TransactionFulfillment {
       String transientKey);
 
   ResponseEntity<EventAPIResponseModel> readTransactionEventByBlockNumber(
-      Long blockNumber, String networkName, String transactionId, String eventType);
+      Long blockNumber,
+      String networkName,
+      String transactionId,
+      String chaincode,
+      String eventType);
 }

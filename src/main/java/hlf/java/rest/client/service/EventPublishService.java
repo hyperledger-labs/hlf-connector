@@ -27,7 +27,7 @@ public interface EventPublishService {
    * @return status boolean status of msg sent
    */
   boolean publishChaincodeEvents(
-      final String payload, String fabricTxId, String eventName, String channelName);
+      final String payload, String chaincodeName, String fabricTxId, String eventName, String channelName);
 
   /**
    * @param payload String message payload
