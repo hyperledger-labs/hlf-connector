@@ -27,7 +27,7 @@ import java.io.IOException;
 @Slf4j
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
-public class ConfigHandlerControllerIT {
+public class ConfigHandlerControllerIntegrationTest {
   @LocalServerPort
   private int randomServerPort;
   @Autowired private FabricProperties fabricProperties;
