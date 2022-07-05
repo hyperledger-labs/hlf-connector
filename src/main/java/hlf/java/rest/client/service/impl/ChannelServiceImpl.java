@@ -8,18 +8,30 @@ import hlf.java.rest.client.model.ChannelOperationRequest;
 import hlf.java.rest.client.model.ChannelOperationType;
 import hlf.java.rest.client.model.ClientResponseModel;
 import hlf.java.rest.client.service.ChannelService;
-import java.util.*;
-
 import hlf.java.rest.client.service.HFClientWrapper;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.HttpStatus;
-import org.hyperledger.fabric.protos.common.*;
-import org.hyperledger.fabric.sdk.*;
+import org.hyperledger.fabric.gateway.Gateway;
+import org.hyperledger.fabric.gateway.Network;
+import org.hyperledger.fabric.protos.common.Common;
+import org.hyperledger.fabric.protos.common.Configtx;
+import org.hyperledger.fabric.protos.common.Configuration;
+import org.hyperledger.fabric.protos.common.Policies;
+import org.hyperledger.fabric.sdk.Channel;
+import org.hyperledger.fabric.sdk.ChannelConfiguration;
+import org.hyperledger.fabric.sdk.Orderer;
+import org.hyperledger.fabric.sdk.Peer;
+import org.hyperledger.fabric.sdk.User;
 import org.hyperledger.fabric.sdk.exception.InvalidArgumentException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
+
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 
 @Service
 @Slf4j
@@ -27,6 +39,7 @@ public class ChannelServiceImpl implements ChannelService {
 
   @Autowired private HFClientWrapper hfClientWrapper;
   @Autowired private User user;
+  @Autowired private Gateway gateway;
 
   private static final String DEFAULT_MOD_POLICY = "Admins";
   private static final String EMPTY_MOD_POLICY = "";
@@ -114,6 +127,17 @@ public class ChannelServiceImpl implements ChannelService {
       throw new ChannelOperationException(
           ErrorCode.CHANNEL_JOIN_FAILED, "channel join failed", e.getCause());
     }
+  }
+
+  @Override
+  public Set<String> getChannelMembersMSPID(String channelName) {
+
+    if (StringUtils.isBlank(channelName)) {
+      throw new ChannelOperationException(ErrorCode.CHANNEL_NAME_MISSING);
+    }
+    Network network = gateway.getNetwork(channelName);
+    Channel channel = network.getChannel();
+    return new HashSet<>(channel.getPeersOrganizationMSPIDs());
   }
 
   /**
@@ -362,7 +386,7 @@ public class ChannelServiceImpl implements ChannelService {
   private ErrorCode validateRequest(
       ChannelOperationRequest channelOperationRequest, ChannelOperationType channelOperationType) {
     if (StringUtils.isEmpty(channelOperationRequest.getChannelName())) {
-      return ErrorCode.CHANNEL_CREATION_MISSING_CHANNEL_NAME;
+      return ErrorCode.CHANNEL_NAME_MISSING;
     }
     if (ChannelOperationType.CREATE.equals(channelOperationType)
         && StringUtils.isEmpty(channelOperationRequest.getConsortiumName())) {

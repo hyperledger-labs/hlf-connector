@@ -2,6 +2,7 @@ package hlf.java.rest.client.service;
 
 import hlf.java.rest.client.model.ChannelOperationRequest;
 import hlf.java.rest.client.model.ClientResponseModel;
+import java.util.Set;
 
 public interface ChannelService {
 
@@ -22,4 +23,12 @@ public interface ChannelService {
    * @return channel operation response
    */
   ClientResponseModel joinChannel(ChannelOperationRequest channelOperationRequest);
+
+  /**
+   * get channel members mspid
+   *
+   * @param channelName
+   * @return
+   */
+  Set<String> getChannelMembersMSPID(String channelName);
 }

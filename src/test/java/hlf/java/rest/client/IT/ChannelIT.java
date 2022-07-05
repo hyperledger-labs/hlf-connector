@@ -18,6 +18,7 @@ import java.io.IOException;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 
 @SpringBootTest
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
@@ -95,5 +96,19 @@ public class ChannelIT {
     }
     ClientResponseModel clientResponseModel = channelService.joinChannel(channelOperationRequest);
     Assertions.assertEquals(clientResponseModel.getCode(), new Integer(200));
+  }
+
+  @Test
+  @Order(3)
+  public void getChannelMembersMSPIDTest() {
+    Set<String> mspidSet = channelService.getChannelMembersMSPID("testChannel");
+    Assertions.assertEquals("Org1MSP", mspidSet.iterator().next());
+  }
+
+  @Test
+  public void getChannelMembersMSPIDTestForNonExistingChannel(){
+    Set<String> mspidSet = channelService.getChannelMembersMSPID("dummyChannel");
+    //channel will get created based on details provided in connection.yml
+    Assertions.assertEquals("Org1MSP", mspidSet.iterator().next());
   }
 }
