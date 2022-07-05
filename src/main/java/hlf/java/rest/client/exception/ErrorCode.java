@@ -27,11 +27,9 @@ public enum ErrorCode {
 
   CHANNEL_CREATION_MISSING_PEER(4001, "Peer is missing"),
 
-  CHANNEL_CREATION_MISSING_CHANNEL_NAME(4002, "Channel name is missing"),
+  CHANNEL_NAME_MISSING(4002, "Channel name is missing"),
 
   CHANNEL_CREATION_MISSING_CONSORTIUM_NAME(4003, "Consortium name is missing"),
-
-  CHANNEL_CREATION_CHANNEL_NOT_FOUND(4004, "Channel is not found"),
 
   CHANNEL_CREATION_CHANNEL_EXISTS(4005, "Channel exists"),
 
