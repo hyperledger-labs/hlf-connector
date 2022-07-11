@@ -9,6 +9,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.util.CollectionUtils;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -45,7 +46,7 @@ public class FabricClientController {
       @RequestParam("transaction_function_name") @Validated String transactionFunctionName,
       @RequestParam("transaction_params") @Validated String... transactionParams) {
     log.info(
-        "Initiated Transcation Write for Network Name: {}, Contract Name: {}, Transaction Function Name: {}, Transaction Parameters: {}",
+        "Initiated Transaction Write for Network Name: {}, Contract Name: {}, Transaction Function Name: {}, Transaction Parameters: {}",
         networkName,
         contractName,
         transactionFunctionName,
@@ -76,7 +77,7 @@ public class FabricClientController {
       @RequestHeader(value = "transientKey", required = false) String transientKey,
       @RequestBody @Validated String payload) {
     log.info(
-        "Initiated Transcation Write for Network Name: {}, Contract Name: {}, Transaction Function Name: {}, Endorsing Peers: {},Transaction Parameters: {}",
+        "Initiated Transaction Write for Network Name: {}, Contract Name: {}, Transaction Function Name: {}, Endorsing Peers: {},Transaction Parameters: {}",
         channelName,
         chaincodeName,
         functionName,
@@ -84,11 +85,8 @@ public class FabricClientController {
         payload);
     if (null != peerNames && !peerNames.isEmpty()) {
       List<String> lstPeerNames = Arrays.asList(peerNames.split(","));
-      if (null != lstPeerNames && !lstPeerNames.isEmpty()) {
-        if (null != collections
-            && !collections.isEmpty()
-            && null != transientKey
-            && !transientKey.isEmpty()) {
+      if (!CollectionUtils.isEmpty(lstPeerNames)) {
+        if (StringUtils.isNotBlank(collections) && StringUtils.isNotBlank(transientKey)) {
           return transactionFulfillment.writePrivateTransactionToLedger(
               channelName,
               chaincodeName,
@@ -143,15 +141,12 @@ public class FabricClientController {
       @RequestParam(value = "collection", required = false) String collections,
       @RequestParam(value = "transientKey", required = false) String transientKey) {
     log.info(
-        "Initiated Transcation Read for Network Name: {}, Contract Name: {}, Transaction Function Name: {}, Transaction Id: {}",
+        "Initiated Transaction Read for Network Name: {}, Contract Name: {}, Transaction Function Name: {}, Transaction Id: {}",
         networkName,
         contractName,
         transactionFunctionName,
         transactionId);
-    if (null != collections
-        && !collections.isEmpty()
-        && null != transientKey
-        && !transientKey.isEmpty()) {
+    if (StringUtils.isNotBlank(collections) && StringUtils.isNotBlank(transientKey)) {
       return transactionFulfillment.readTransactionFromPrivateLedger(
           networkName,
           contractName,

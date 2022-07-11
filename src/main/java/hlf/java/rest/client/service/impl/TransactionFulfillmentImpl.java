@@ -26,6 +26,7 @@ import java.util.concurrent.TimeoutException;
 import lombok.extern.slf4j.Slf4j;
 import org.hyperledger.fabric.gateway.Contract;
 import org.hyperledger.fabric.gateway.ContractException;
+import org.hyperledger.fabric.gateway.DefaultCommitHandlers;
 import org.hyperledger.fabric.gateway.Gateway;
 import org.hyperledger.fabric.gateway.GatewayRuntimeException;
 import org.hyperledger.fabric.gateway.Network;
@@ -39,6 +40,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
+import org.springframework.util.CollectionUtils;
 
 @Slf4j
 @Service
@@ -54,12 +56,40 @@ public class TransactionFulfillmentImpl implements TransactionFulfillment {
       String contractName,
       String transactionFunctionName,
       String... transactionParams) {
+    return writeTransactionToLedger(
+        networkName, contractName, transactionFunctionName, null, transactionParams);
+  }
+
+  @Override
+  public ResponseEntity<ClientResponseModel> writeTransactionToLedger(
+      String networkName,
+      String contractName,
+      String transactionFunctionName,
+      List<String> peerNames,
+      String... transactionParams) {
     log.info("Initiate the Write Transaction to Ledger process");
     String resultString;
+    Collection<Peer> endorsingPeers = new ArrayList<>();
     try {
       Network network = gateway.getNetwork(networkName);
       Contract contract = network.getContract(contractName);
       Transaction fabricTransaction = contract.createTransaction(transactionFunctionName);
+      // override default commithandler to wait for any response from msp
+      fabricTransaction.setCommitHandler(DefaultCommitHandlers.MSPID_SCOPE_ANYFORTX);
+
+      if (!CollectionUtils.isEmpty(peerNames)) {
+        for (Peer channelPeer : network.getChannel().getPeers()) {
+          log.info("Peer Name: " + channelPeer.getName());
+          if (peerNames.contains(channelPeer.getName())) {
+            endorsingPeers.add(channelPeer);
+          }
+        }
+        if (!endorsingPeers.isEmpty()) {
+          fabricTransaction.setEndorsingPeers(endorsingPeers);
+        } else {
+          log.warn("Peer names don't match channel peers");
+        }
+      }
       byte[] result = fabricTransaction.submit(transactionParams);
       resultString = new String(result, StandardCharsets.UTF_8);
 
@@ -102,54 +132,6 @@ public class TransactionFulfillmentImpl implements TransactionFulfillment {
   }
 
   @Override
-  public ResponseEntity<ClientResponseModel> writeTransactionToLedger(
-      String networkName,
-      String contractName,
-      String transactionFunctionName,
-      List<String> peerNames,
-      String... transactionParams) {
-    log.info("Initiate the Write Transaction to Ledger process");
-    String resultString;
-    Collection<Peer> endorsingPeers = new ArrayList<Peer>();
-    try {
-      Network network = gateway.getNetwork(networkName);
-      for (Peer channelPeer : network.getChannel().getPeers()) {
-        log.info("Peer Name: " + channelPeer.getName());
-        if (peerNames.contains(channelPeer.getName())) {
-          endorsingPeers.add(channelPeer);
-        }
-      }
-      Contract contract = network.getContract(contractName);
-      Transaction fabricTransaction = contract.createTransaction(transactionFunctionName);
-      if (null != endorsingPeers && !endorsingPeers.isEmpty()) {
-        fabricTransaction.setEndorsingPeers(endorsingPeers);
-      } else {
-        log.warn("Peer names don't match channel peers");
-      }
-      byte[] result = fabricTransaction.submit(transactionParams);
-      resultString = new String(result, StandardCharsets.UTF_8);
-
-      log.info("Transaction Successfully Submitted - Response: " + resultString);
-
-    } catch (GatewayRuntimeException gre) {
-      log.error("Action Failed: A problem occured with Gateway transaction to the peer");
-      throw new FabricTransactionException(
-          ErrorCode.HYPERLEDGER_FABRIC_TRANSACTION_ERROR, gre.getMessage(), gre);
-    } catch (ContractException | TimeoutException e) {
-      log.error("Action Failed: A problem occured while submitting the transaction to the peer");
-      throw new FabricTransactionException(
-          ErrorCode.HYPERLEDGER_FABRIC_TRANSACTION_ERROR, e.getMessage(), e);
-    } catch (InterruptedException e) {
-      log.error("Action Failed: A problem occured while submitting the transaction to the peer");
-      Thread.currentThread().interrupt();
-      throw new FabricTransactionException(
-          ErrorCode.HYPERLEDGER_FABRIC_TRANSACTION_ERROR, e.getMessage(), e);
-    }
-    return new ResponseEntity<>(
-        new ClientResponseModel(ErrorConstants.NO_ERROR, resultString), HttpStatus.OK);
-  }
-
-  @Override
   public ResponseEntity<ClientResponseModel> writePrivateTransactionToLedger(
       String networkName,
       String contractName,
@@ -157,35 +139,14 @@ public class TransactionFulfillmentImpl implements TransactionFulfillment {
       String collection,
       String transientKey,
       String jsonPayload) {
-
-    log.info("Initiate the Write Transaction to Ledger process");
-    String resultString;
-    Map<String, byte[]> transientParam = new HashMap<>();
-    try {
-      Network network = gateway.getNetwork(networkName);
-      Contract contract = network.getContract(contractName);
-      Transaction fabricTransaction = contract.createTransaction(transactionFunctionName);
-      transientParam.put(transientKey, jsonPayload.getBytes());
-      fabricTransaction.setTransient(transientParam);
-      byte[] result = fabricTransaction.submit(collection, transientKey);
-      resultString = new String(result, StandardCharsets.UTF_8);
-      log.info("Transaction Successfully Submitted - Response: " + resultString);
-    } catch (GatewayRuntimeException gre) {
-      log.error("Action Failed: A problem occured with Gateway transaction to the peer");
-      throw new FabricTransactionException(
-          ErrorCode.HYPERLEDGER_FABRIC_TRANSACTION_ERROR, gre.getMessage(), gre);
-    } catch (ContractException | TimeoutException e) {
-      log.error("Action Failed: A problem occured while submitting the transaction to the peer");
-      throw new FabricTransactionException(
-          ErrorCode.HYPERLEDGER_FABRIC_TRANSACTION_ERROR, e.getMessage(), e);
-    } catch (InterruptedException e) {
-      log.error("Action Failed: A problem occured while submitting the transaction to the peer");
-      Thread.currentThread().interrupt();
-      throw new FabricTransactionException(
-          ErrorCode.HYPERLEDGER_FABRIC_TRANSACTION_ERROR, e.getMessage(), e);
-    }
-    return new ResponseEntity<>(
-        new ClientResponseModel(ErrorConstants.NO_ERROR, resultString), HttpStatus.OK);
+    return writePrivateTransactionToLedger(
+        networkName,
+        contractName,
+        transactionFunctionName,
+        collection,
+        transientKey,
+        null,
+        jsonPayload);
   }
 
   @Override
@@ -199,40 +160,46 @@ public class TransactionFulfillmentImpl implements TransactionFulfillment {
       String jsonPayload) {
     log.info("Initiate the Write Transaction to Ledger process");
     String resultString;
-    Collection<Peer> endorsingPeers = new ArrayList<Peer>();
+    Collection<Peer> endorsingPeers = new ArrayList<>();
     Map<String, byte[]> transientParam = new HashMap<>();
     try {
       Network network = gateway.getNetwork(networkName);
-      Iterator<Peer> itrPeers = network.getChannel().getPeers().iterator();
-      while (itrPeers.hasNext()) {
-        Peer channelPeer = itrPeers.next();
-        log.info("Peer Name: " + channelPeer.getName());
-        if (null != channelPeer && peerNames.contains(channelPeer.getName())) {
-          endorsingPeers.add(channelPeer);
-        }
-      }
       Contract contract = network.getContract(contractName);
       Transaction fabricTransaction = contract.createTransaction(transactionFunctionName);
-      if (null != endorsingPeers && !endorsingPeers.isEmpty()) {
-        fabricTransaction.setEndorsingPeers(endorsingPeers);
-      } else {
-        log.warn("Peer names don't match channel peers");
+      // override default commithandler to wait for any response from msp
+      fabricTransaction.setCommitHandler(DefaultCommitHandlers.MSPID_SCOPE_ANYFORTX);
+
+      if (!CollectionUtils.isEmpty(peerNames)) {
+        Iterator<Peer> itrPeers = network.getChannel().getPeers().iterator();
+        while (itrPeers.hasNext()) {
+          Peer channelPeer = itrPeers.next();
+          log.info("Peer Name: " + channelPeer.getName());
+          if (null != channelPeer && peerNames.contains(channelPeer.getName())) {
+            endorsingPeers.add(channelPeer);
+          }
+        }
+        if (!endorsingPeers.isEmpty()) {
+          fabricTransaction.setEndorsingPeers(endorsingPeers);
+        } else {
+          log.warn("Peer names don't match channel peers");
+        }
       }
+
       transientParam.put(transientKey, jsonPayload.getBytes());
       fabricTransaction.setTransient(transientParam);
       byte[] result = fabricTransaction.submit(collection, transientKey);
       resultString = new String(result, StandardCharsets.UTF_8);
       log.info("Transaction Successfully Submitted - Response: " + resultString);
     } catch (GatewayRuntimeException gre) {
-      log.error("Action Failed: A problem occured with Gateway transaction to the peer");
+      log.error("Action Failed: A problem occurred with Gateway transaction to the peer");
       throw new FabricTransactionException(
           ErrorCode.HYPERLEDGER_FABRIC_TRANSACTION_ERROR, gre.getMessage(), gre);
     } catch (ContractException | TimeoutException e) {
-      log.error("Action Failed: A problem occured while submitting the transaction to the peer");
+      log.error("Action Failed: A problem occurred while submitting the transaction to the peer");
       throw new FabricTransactionException(
           ErrorCode.HYPERLEDGER_FABRIC_TRANSACTION_ERROR, e.getMessage(), e);
     } catch (InterruptedException e) {
-      log.error("Action Failed: A problem occured while submitting the transaction to the peer");
+      log.error("Action Failed: A problem occurred while submitting the transaction to the peer");
       Thread.currentThread().interrupt();
       throw new FabricTransactionException(
           ErrorCode.HYPERLEDGER_FABRIC_TRANSACTION_ERROR, e.getMessage(), e);

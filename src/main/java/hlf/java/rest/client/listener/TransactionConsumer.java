@@ -14,6 +14,7 @@ import org.apache.kafka.common.header.Header;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.kafka.support.Acknowledgment;
 import org.springframework.stereotype.Controller;
+import org.springframework.util.CollectionUtils;
 
 /*
  * This class has the consumer logic for processing and adding transaction to fabric
@@ -81,22 +82,26 @@ public class TransactionConsumer {
             collections = new String(msgHeader.value(), StandardCharsets.UTF_8);
             break;
           default:
-            log.info(
-                "Header-Key : "
-                    + msgHeader.key()
-                    + " Header-Value: "
-                    + new String(msgHeader.value(), StandardCharsets.UTF_8));
+            break;
         }
       }
+      log.info(
+          "Invoking channel: {}, chaincode: {}, function: {}, peerNames: {}, transientKey: {}, collections: {}",
+          networkName,
+          contractName,
+          transactionFunctionName,
+          peerNames,
+          transientKey,
+          collections);
 
       if (!networkName.isEmpty()
           && !contractName.isEmpty()
           && !transactionFunctionName.isEmpty()
           && !transactionParams.isEmpty()) {
 
-        if (null != peerNames && !peerNames.isEmpty()) {
+        if (StringUtils.isNotBlank(peerNames)) {
           List<String> lstPeerNames = Arrays.asList(peerNames.split(","));
-          if (null != lstPeerNames && !lstPeerNames.isEmpty()) {
+          if (!CollectionUtils.isEmpty(lstPeerNames)) {
             if (StringUtils.isNotBlank(collections) && StringUtils.isNotBlank(transientKey)) {
               transactionFulfillment.writePrivateTransactionToLedger(
                   networkName,
@@ -139,10 +144,9 @@ public class TransactionConsumer {
       acknowledgment.acknowledge();
       eventPublishServiceImpl.publishTransactionFailureEvent(
           fte.getMessage(), networkName, contractName, transactionFunctionName, transactionParams);
-      log.error("Error in Submitting Transaction - Exception - " + fte.getMessage());
+      log.error("Error in Submitting Transaction - Exception - ", fte);
     } catch (Exception ex) {
-      log.error("Error in Kafka Listener - Message Format exception - " + ex.getMessage());
-      ex.printStackTrace();
+      log.error("Error in Kafka Listener - Message Format exception - ", ex);
     }
   }
 }

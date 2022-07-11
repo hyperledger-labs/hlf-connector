@@ -23,8 +23,8 @@ import org.springframework.kafka.support.Acknowledgment;
  */
 @Slf4j
 @Configuration
-@ConditionalOnProperty("kafka.integration")
 @RefreshScope
+@ConditionalOnProperty("kafka.integration-points[0].brokerHost")
 public class DynamicKafkaListener {
 
   @Autowired KafkaProperties.ConsumerProperties consumerProperties;
@@ -35,6 +35,7 @@ public class DynamicKafkaListener {
 
   @EventListener
   public void handleEvent(ContextRefreshedEvent event) {
+    log.info("Start Listening to Kafka topics");
     List<KafkaProperties.Consumer> consumerList = consumerProperties.getIntegrationPoints();
     consumerList.forEach(consumer -> generateAndStartConsumerGroup(consumer));
   }
