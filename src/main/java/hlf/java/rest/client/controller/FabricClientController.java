@@ -52,11 +52,7 @@ public class FabricClientController {
         transactionFunctionName,
         transactionParams);
     return transactionFulfillment.writeTransactionToLedger(
-        networkName,
-        contractName,
-        transactionFunctionName,
-        Optional.ofNullable(null),
-        transactionParams);
+        networkName, contractName, transactionFunctionName, Optional.empty(), transactionParams);
   }
 
   /**

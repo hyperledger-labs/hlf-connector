@@ -46,6 +46,7 @@ public class TransactionFulfillmentImplTest {
   private String testTransactionIdString = "some string";
   byte[] byteArrayResponse = new byte[10];
 
+  // Read more about @Captor here - https://www.baeldung.com/mockito-annotations#captor-annotationq
   @Captor private ArgumentCaptor<Optional<List<String>>> peerNames;
 
   private ResponseEntity<ClientResponseModel> response;
