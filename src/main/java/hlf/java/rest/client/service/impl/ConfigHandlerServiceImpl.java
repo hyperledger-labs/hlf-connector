@@ -3,13 +3,12 @@ package hlf.java.rest.client.service.impl;
 import hlf.java.rest.client.config.ServerProperties;
 import hlf.java.rest.client.model.ClientResponseModel;
 import hlf.java.rest.client.service.ConfigHandlerService;
+import java.io.File;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.FileUtils;
 import org.apache.http.HttpStatus;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-
-import java.io.File;
 
 @Slf4j
 @Service

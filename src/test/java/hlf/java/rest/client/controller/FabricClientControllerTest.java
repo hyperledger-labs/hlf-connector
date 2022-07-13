@@ -5,12 +5,12 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import hlf.java.rest.client.exception.ErrorConstants;
 import hlf.java.rest.client.model.ClientResponseModel;
 import hlf.java.rest.client.service.TransactionFulfillment;
+import java.util.List;
+import java.util.Optional;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
-import org.mockito.Mockito;
+import org.mockito.*;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -33,6 +33,8 @@ public class FabricClientControllerTest {
   private String testTransactionTransientKey = "some string";
   private static ResponseEntity<ClientResponseModel> response;
 
+  @Captor private ArgumentCaptor<Optional<List<String>>> peerNames;
+
   @BeforeAll
   public static void setup() {
     response =
@@ -47,6 +49,7 @@ public class FabricClientControllerTest {
                 Mockito.anyString(),
                 Mockito.anyString(),
                 Mockito.anyString(),
+                peerNames.capture(),
                 Mockito.<String>any()))
         .thenReturn(response);
     assertEquals(

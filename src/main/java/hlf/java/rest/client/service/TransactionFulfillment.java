@@ -3,6 +3,7 @@ package hlf.java.rest.client.service;
 import hlf.java.rest.client.model.ClientResponseModel;
 import hlf.java.rest.client.model.EventAPIResponseModel;
 import java.util.List;
+import java.util.Optional;
 import org.springframework.http.ResponseEntity;
 
 /**
@@ -19,22 +20,6 @@ public interface TransactionFulfillment {
    * @param networkName String channel name
    * @param contractName String chaincode name
    * @param transactionFunctionName String function name in chaincode
-   * @param transactionParams String[] String array for arguments to the chaincode.
-   * @return responseEntity ResponseEntity Transaction Response
-   */
-  ResponseEntity<ClientResponseModel> writeTransactionToLedger(
-      String networkName,
-      String contractName,
-      String transactionFunctionName,
-      String... transactionParams);
-
-  /**
-   * Business logic for writing a transaction to the ledger. Returns TRUE when the action is
-   * successful and FALSE otherwise.
-   *
-   * @param networkName String channel name
-   * @param contractName String chaincode name
-   * @param transactionFunctionName String function name in chaincode
    * @param peerNames List of String type peer name for endorsement
    * @param transactionParams String[] String array for arguments to the chaincode.
    * @return responseEntity ResponseEntity Transaction Response
@@ -43,7 +28,7 @@ public interface TransactionFulfillment {
       String networkName,
       String contractName,
       String transactionFunctionName,
-      List<String> peerNames,
+      Optional<List<String>> peerNames,
       String... transactionParams);
 
   /**

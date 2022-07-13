@@ -1,11 +1,10 @@
 package hlf.java.rest.client.listener;
 
 import hlf.java.rest.client.config.FabricProperties;
+import hlf.java.rest.client.service.HFClientWrapper;
 import java.util.List;
 import java.util.regex.Pattern;
 import javax.annotation.PostConstruct;
-
-import hlf.java.rest.client.service.HFClientWrapper;
 import lombok.extern.slf4j.Slf4j;
 import org.hyperledger.fabric.gateway.Gateway;
 import org.hyperledger.fabric.gateway.Network;
@@ -50,12 +49,16 @@ public class FabricEventListener {
             log.info("Creating block-listener for channel: {}", network);
             Channel channel = network.getChannel();
             channel.initialize();
-            Channel newChannel = hfClientWrapper.getHfClient().deSerializeChannel(channel.serializeChannel());
+            Channel newChannel =
+                hfClientWrapper.getHfClient().deSerializeChannel(channel.serializeChannel());
             log.info("Channel {} is initialized {}", channelName, newChannel.isInitialized());
             for (Peer peer : channel.getPeers()) {
               Channel.PeerOptions options = channel.getPeersOptions(peer);
               options.registerEventsForPrivateData();
-              Peer newPeer = hfClientWrapper.getHfClient().newPeer(peer.getName(), peer.getUrl(), peer.getProperties());
+              Peer newPeer =
+                  hfClientWrapper
+                      .getHfClient()
+                      .newPeer(peer.getName(), peer.getUrl(), peer.getProperties());
               newChannel.addPeer(newPeer, options);
             }
             newChannel.initialize();

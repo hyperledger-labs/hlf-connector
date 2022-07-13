@@ -7,6 +7,7 @@ import org.hyperledger.fabric.sdk.HFClient;
 @Getter
 public class HFClientWrapperImpl implements HFClientWrapper {
   private final HFClient hfClient;
+
   public HFClientWrapperImpl(HFClient hfClient) {
     this.hfClient = hfClient;
   }

@@ -5,6 +5,7 @@ import hlf.java.rest.client.model.EventAPIResponseModel;
 import hlf.java.rest.client.service.TransactionFulfillment;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -51,7 +52,11 @@ public class FabricClientController {
         transactionFunctionName,
         transactionParams);
     return transactionFulfillment.writeTransactionToLedger(
-        networkName, contractName, transactionFunctionName, transactionParams);
+        networkName,
+        contractName,
+        transactionFunctionName,
+        Optional.ofNullable(null),
+        transactionParams);
   }
 
   /**
@@ -99,7 +104,7 @@ public class FabricClientController {
               payload);
         } else {
           return transactionFulfillment.writeTransactionToLedger(
-              channelName, chaincodeName, functionName, lstPeerNames, payload);
+              channelName, chaincodeName, functionName, Optional.ofNullable(lstPeerNames), payload);
         }
       } else {
         if (StringUtils.isNotBlank(collections) && StringUtils.isNotBlank(transientKey)) {
@@ -109,7 +114,7 @@ public class FabricClientController {
         } else {
           log.warn("Incorrect Peer name format");
           return transactionFulfillment.writeTransactionToLedger(
-              channelName, chaincodeName, functionName, payload);
+              channelName, chaincodeName, functionName, Optional.ofNullable(null), payload);
         }
       }
     } else {
@@ -118,7 +123,7 @@ public class FabricClientController {
             channelName, chaincodeName, functionName, collections, transientKey, payload);
       } else {
         return transactionFulfillment.writeTransactionToLedger(
-            channelName, chaincodeName, functionName, payload);
+            channelName, chaincodeName, functionName, Optional.ofNullable(null), payload);
       }
     }
   }

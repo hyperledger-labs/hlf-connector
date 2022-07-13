@@ -9,6 +9,7 @@ import hlf.java.rest.client.exception.FabricTransactionException;
 import hlf.java.rest.client.exception.ServiceException;
 import hlf.java.rest.client.model.ClientResponseModel;
 import java.io.IOException;
+import java.util.Optional;
 import java.util.concurrent.TimeoutException;
 import org.hyperledger.fabric.gateway.Contract;
 import org.hyperledger.fabric.gateway.ContractException;
@@ -74,6 +75,7 @@ public class TransactionFulfillmentImplTest {
                 testNetworkString,
                 testContractString,
                 testTransactionFunctionString,
+                Optional.ofNullable(null),
                 testTransactionParamsArrary)
             .getStatusCode());
   }
@@ -96,6 +98,7 @@ public class TransactionFulfillmentImplTest {
               testNetworkString,
               testContractString,
               testTransactionFunctionString,
+              Optional.ofNullable(null),
               testTransactionParamsArrary);
         });
   }
@@ -118,6 +121,7 @@ public class TransactionFulfillmentImplTest {
               testNetworkString,
               testContractString,
               testTransactionFunctionString,
+              Optional.ofNullable(null),
               testTransactionParamsArrary);
         });
   }
@@ -140,6 +144,7 @@ public class TransactionFulfillmentImplTest {
               testNetworkString,
               testContractString,
               testTransactionFunctionString,
+              Optional.ofNullable(null),
               testTransactionParamsArrary);
         });
   }

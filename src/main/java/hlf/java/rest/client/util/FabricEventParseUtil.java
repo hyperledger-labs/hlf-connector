@@ -10,6 +10,9 @@ import hlf.java.rest.client.model.BlockEventPrivateDataWriteSet;
 import hlf.java.rest.client.model.BlockEventWriteSet;
 import hlf.java.rest.client.model.EventStructure;
 import hlf.java.rest.client.model.EventType;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.hyperledger.fabric.protos.ledger.rwset.Rwset;
@@ -20,10 +23,6 @@ import org.hyperledger.fabric.sdk.BlockInfo;
 import org.hyperledger.fabric.sdk.TxReadWriteSetInfo;
 import org.springframework.util.CollectionUtils;
 import org.springframework.web.util.UriComponentsBuilder;
-
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
 
 @Slf4j
 public class FabricEventParseUtil {

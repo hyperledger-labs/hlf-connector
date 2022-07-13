@@ -11,13 +11,12 @@ import hlf.java.rest.client.exception.ServiceException;
 import hlf.java.rest.client.model.ChaincodeOperations;
 import hlf.java.rest.client.model.ChaincodeOperationsType;
 import hlf.java.rest.client.service.ChaincodeOperationsService;
+import hlf.java.rest.client.service.HFClientWrapper;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
-
-import hlf.java.rest.client.service.HFClientWrapper;
 import lombok.extern.slf4j.Slf4j;
 import org.hyperledger.fabric.gateway.Gateway;
 import org.hyperledger.fabric.gateway.Network;
@@ -25,7 +24,6 @@ import org.hyperledger.fabric.sdk.BlockEvent;
 import org.hyperledger.fabric.sdk.ChaincodeCollectionConfiguration;
 import org.hyperledger.fabric.sdk.ChaincodeResponse;
 import org.hyperledger.fabric.sdk.Channel;
-import org.hyperledger.fabric.sdk.HFClient;
 import org.hyperledger.fabric.sdk.LifecycleApproveChaincodeDefinitionForMyOrgProposalResponse;
 import org.hyperledger.fabric.sdk.LifecycleApproveChaincodeDefinitionForMyOrgRequest;
 import org.hyperledger.fabric.sdk.LifecycleChaincodeEndorsementPolicy;
@@ -48,6 +46,7 @@ public class ChaincodeOperationsServiceImpl implements ChaincodeOperationsServic
 
   @Autowired private Gateway gateway;
   @Autowired private HFClientWrapper hfClientWrapper;
+
   @Override
   public String performChaincodeOperation(
       String networkName,
@@ -87,8 +86,8 @@ public class ChaincodeOperationsServiceImpl implements ChaincodeOperationsServic
       Collection<Peer> peers = channel.getPeers();
 
       final QueryLifecycleQueryChaincodeDefinitionRequest
-          queryLifecycleQueryChaincodeDefinitionRequest = hfClientWrapper.getHfClient()
-      .newQueryLifecycleQueryChaincodeDefinitionRequest();
+          queryLifecycleQueryChaincodeDefinitionRequest =
+              hfClientWrapper.getHfClient().newQueryLifecycleQueryChaincodeDefinitionRequest();
       queryLifecycleQueryChaincodeDefinitionRequest.setChaincodeName(chaincodeName);
 
       Collection<LifecycleQueryChaincodeDefinitionProposalResponse>
@@ -131,8 +130,11 @@ public class ChaincodeOperationsServiceImpl implements ChaincodeOperationsServic
 
     try {
       Collection<LifecycleQueryInstalledChaincodesProposalResponse> results =
-          hfClientWrapper.getHfClient().sendLifecycleQueryInstalledChaincodes(
-              hfClientWrapper.getHfClient().newLifecycleQueryInstalledChaincodesRequest(), peers);
+          hfClientWrapper
+              .getHfClient()
+              .sendLifecycleQueryInstalledChaincodes(
+                  hfClientWrapper.getHfClient().newLifecycleQueryInstalledChaincodesRequest(),
+                  peers);
       Set<String> packageIds = new HashSet<>();
       for (LifecycleQueryInstalledChaincodesProposalResponse peerResults : results) {
         for (LifecycleQueryInstalledChaincodesProposalResponse
@@ -214,14 +216,13 @@ public class ChaincodeOperationsServiceImpl implements ChaincodeOperationsServic
     return organizationSet;
   }
 
-  private String approveChaincode(
-      Channel channel, ChaincodeOperations chaincodeOperationsModel) {
+  private String approveChaincode(Channel channel, ChaincodeOperations chaincodeOperationsModel) {
 
     Collection<Peer> peers = channel.getPeers();
     try {
       LifecycleApproveChaincodeDefinitionForMyOrgRequest
           lifecycleApproveChaincodeDefinitionForMyOrgRequest =
-          hfClientWrapper.getHfClient().newLifecycleApproveChaincodeDefinitionForMyOrgRequest();
+              hfClientWrapper.getHfClient().newLifecycleApproveChaincodeDefinitionForMyOrgRequest();
       lifecycleApproveChaincodeDefinitionForMyOrgRequest.setSequence(
           chaincodeOperationsModel.getSequence());
       lifecycleApproveChaincodeDefinitionForMyOrgRequest.setChaincodeName(
@@ -261,8 +262,7 @@ public class ChaincodeOperationsServiceImpl implements ChaincodeOperationsServic
     }
   }
 
-  private String commitChaincode(
-      Channel channel, ChaincodeOperations chaincodeOperationsModel) {
+  private String commitChaincode(Channel channel, ChaincodeOperations chaincodeOperationsModel) {
 
     Collection<Peer> peers = channel.getPeers();
     try {

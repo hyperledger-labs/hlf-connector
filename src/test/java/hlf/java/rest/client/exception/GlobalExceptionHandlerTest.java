@@ -11,10 +11,14 @@ import hlf.java.rest.client.config.GatewayConfig;
 import hlf.java.rest.client.service.TransactionFulfillment;
 import hlf.java.rest.client.service.impl.ChaincodeOperationsServiceImpl;
 import hlf.java.rest.client.service.impl.ChannelServiceImpl;
+import java.util.List;
+import java.util.Optional;
 import org.hyperledger.fabric.gateway.ContractException;
 import org.hyperledger.fabric.gateway.Gateway;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
+import org.mockito.Captor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -44,10 +48,12 @@ public class GlobalExceptionHandlerTest {
   private String testTransactionFunctionString = "some string";
   private String[] testTransactionParamsArrary = {"test param", "test param 2"};
 
+  @Captor private ArgumentCaptor<Optional<List<String>>> peerNames;
+
   @Test
   public void checkHyperledgerFabricExceptionTest() throws Exception {
     when(transactionFulfillment.writeTransactionToLedger(
-            anyString(), anyString(), anyString(), any()))
+            anyString(), anyString(), anyString(), peerNames.capture(), any()))
         .thenThrow(
             new FabricTransactionException(
                 ErrorCode.HYPERLEDGER_FABRIC_CONNECTION_ERROR,
@@ -64,12 +70,14 @@ public class GlobalExceptionHandlerTest {
         .andExpect(status().isConflict())
         .andReturn();
   }
+  // Optional.ofNullable(null)
 
   @Test
   public void checkServiceFabricExceptionTest() throws Exception {
     doThrow(new ServiceException(ErrorCode.HYPERLEDGER_FABRIC_CONNECTION_ERROR, "some message"))
         .when(transactionFulfillment)
-        .writeTransactionToLedger(anyString(), anyString(), anyString(), any());
+        .writeTransactionToLedger(
+            anyString(), anyString(), anyString(), peerNames.capture(), any());
     mockMvc
         .perform(
             get("/write_transaction")
