@@ -130,7 +130,7 @@ public class TransactionConsumer {
                 networkName,
                 contractName,
                 transactionFunctionName,
-                Optional.ofNullable(null),
+                Optional.empty(),
                 transactionParams);
           }
         }

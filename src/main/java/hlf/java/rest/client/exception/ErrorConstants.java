@@ -18,11 +18,4 @@ public final class ErrorConstants {
   public static final Integer NO_ERROR = null;
 
   private ErrorConstants() {}
-
-  // Error messages from Fabric while connecting to chaincode from peer
-  public static final String FABRIC_FAILED_ORDERER_ERROR =
-      "Failed to send transaction to the orderer";
-  public static final String FABRIC_GRPC_CONNECTION_ERROR = "error creating grpc connection";
-  public static final String FABRIC_CONNECTION_CREATE_ERROR = "error cannot create connection";
-  public static final String FABRIC_CHAINCODE_LAUNCH_ERROR = "could not launch chaincode";
 }
