@@ -70,7 +70,6 @@ public class GlobalExceptionHandlerTest {
         .andExpect(status().isConflict())
         .andReturn();
   }
-  // Optional.ofNullable(null)
 
   @Test
   public void checkServiceFabricExceptionTest() throws Exception {
