@@ -1,12 +1,11 @@
 package hlf.java.rest.client.config;
 
+import hlf.java.rest.client.service.HFClientWrapper;
+import hlf.java.rest.client.service.impl.HFClientWrapperImpl;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-
-import hlf.java.rest.client.service.HFClientWrapper;
-import hlf.java.rest.client.service.impl.HFClientWrapperImpl;
 import lombok.extern.slf4j.Slf4j;
 import org.hyperledger.fabric.gateway.Gateway;
 import org.hyperledger.fabric.gateway.Wallet;
@@ -81,12 +80,12 @@ public class GatewayConfig {
    * @throws InstantiationException the instantiation exception
    * @throws NoSuchMethodException the no such method exception
    */
-
   @Bean
   @RefreshScope
-  public HFClientWrapper hfClient(Gateway gateway) throws InvalidArgumentException, CryptoException, ClassNotFoundException,
-  InvocationTargetException, IllegalAccessException, InstantiationException,
-  NoSuchMethodException {
+  public HFClientWrapper hfClient(Gateway gateway)
+      throws InvalidArgumentException, CryptoException, ClassNotFoundException,
+          InvocationTargetException, IllegalAccessException, InstantiationException,
+          NoSuchMethodException {
     log.info("Setting up HFClient for operations APIs.");
     HFClient hfClient = HFClient.createNewInstance();
     hfClient.setCryptoSuite(CryptoSuite.Factory.getCryptoSuite());
@@ -100,5 +99,4 @@ public class GatewayConfig {
   public User user(HFClientWrapper hfClient) throws IOException {
     return hfClient.getHfClient().getUserContext();
   }
-
 }

@@ -78,7 +78,11 @@ public class EventPublishServiceImpl implements EventPublishService {
 
   @Override
   public boolean publishChaincodeEvents(
-      String payload, String chaincodeName, String fabricTxId, String eventName, String channelName) {
+      String payload,
+      String chaincodeName,
+      String fabricTxId,
+      String eventName,
+      String channelName) {
     boolean status = true;
 
     try {

@@ -33,4 +33,11 @@ public class FabricClientConstants {
   public static final Integer KAFKA_INTG_MAX_POLL_INTERVAL = 500000;
   public static final Integer KAFKA_INTG_MAX_POLL_RECORDS = 100;
   public static final Integer KAFKA_INTG_SESSION_TIMEOUT = 30000;
+
+  // Error messages from Fabric
+  public static final String FABRIC_INVALID_RESPONSE_ERROR = "invalid response from peer";
+  public static final String FABRIC_GRPC_CONNECTION_ERROR = "error creating grpc connection";
+  public static final String FABRIC_CONNECTION_ERROR = "error cannot create connection";
+  public static final String FABRIC_INVALID_PROPOSAL_ERROR = "No valid proposal responses received";
+  public static final String FABRIC_CHAINCODE_LAUNCH_ERROR = "could not launch chaincode";
 }

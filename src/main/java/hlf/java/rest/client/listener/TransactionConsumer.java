@@ -7,6 +7,7 @@ import hlf.java.rest.client.util.FabricClientConstants;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
@@ -111,7 +112,7 @@ public class TransactionConsumer {
                   networkName,
                   contractName,
                   transactionFunctionName,
-                  lstPeerNames,
+                  Optional.ofNullable(lstPeerNames),
                   transactionParams);
             }
           }
@@ -126,7 +127,11 @@ public class TransactionConsumer {
                 transactionParams);
           } else {
             transactionFulfillment.writeTransactionToLedger(
-                networkName, contractName, transactionFunctionName, transactionParams);
+                networkName,
+                contractName,
+                transactionFunctionName,
+                Optional.ofNullable(null),
+                transactionParams);
           }
         }
 

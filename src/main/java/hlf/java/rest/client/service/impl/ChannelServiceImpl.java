@@ -9,6 +9,7 @@ import hlf.java.rest.client.model.ChannelOperationType;
 import hlf.java.rest.client.model.ClientResponseModel;
 import hlf.java.rest.client.service.ChannelService;
 import hlf.java.rest.client.service.HFClientWrapper;
+import java.util.*;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.HttpStatus;
@@ -74,14 +75,20 @@ public class ChannelServiceImpl implements ChannelService {
         }
       }
 
-      List<Orderer> orderers = channelOperationRequest.getFabricOrderers(hfClientWrapper.getHfClient());
+      List<Orderer> orderers =
+          channelOperationRequest.getFabricOrderers(hfClientWrapper.getHfClient());
       // TODO: Loop through all orderers in case of failing to talk to one of them
       Orderer orderer = orderers.get(0);
 
       // generate new channel config
       ChannelConfiguration channelConfiguration = newChannelConfig(channelOperationRequest);
-      byte[] orgSignature = hfClientWrapper.getHfClient().getChannelConfigurationSignature(channelConfiguration, user);
-      hfClientWrapper.getHfClient().newChannel(channelName, orderer, channelConfiguration, orgSignature);
+      byte[] orgSignature =
+          hfClientWrapper
+              .getHfClient()
+              .getChannelConfigurationSignature(channelConfiguration, user);
+      hfClientWrapper
+          .getHfClient()
+          .newChannel(channelName, orderer, channelConfiguration, orgSignature);
 
       return new ClientResponseModel(HttpStatus.SC_OK, channelName + " is created");
     } catch (Exception e) {
@@ -105,7 +112,8 @@ public class ChannelServiceImpl implements ChannelService {
       String channelName = channelOperationRequest.getChannelName();
 
       List<Peer> peers = channelOperationRequest.getFabricPeers(hfClientWrapper.getHfClient());
-      List<Orderer> orderers = channelOperationRequest.getFabricOrderers(hfClientWrapper.getHfClient());
+      List<Orderer> orderers =
+          channelOperationRequest.getFabricOrderers(hfClientWrapper.getHfClient());
       Orderer orderer = orderers.get(0);
 
       channel = hfClientWrapper.getHfClient().getChannel(channelName);
