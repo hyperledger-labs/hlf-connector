@@ -58,7 +58,7 @@ public class TransactionFulfillmentImpl implements TransactionFulfillment {
       String... transactionParams) {
     log.info("Initiate the Write Transaction to Ledger process");
     String resultString;
-    Collection<Peer> endorsingPeers = new ArrayList<Peer>();
+    List<Peer> endorsingPeers = new ArrayList<>();
     try {
       Network network = gateway.getNetwork(networkName);
       Contract contract = network.getContract(contractName);
@@ -71,7 +71,7 @@ public class TransactionFulfillmentImpl implements TransactionFulfillment {
           }
         }
 
-        if (null != endorsingPeers && !endorsingPeers.isEmpty()) {
+        if (!endorsingPeers.isEmpty()) {
           fabricTransaction.setEndorsingPeers(endorsingPeers);
         } else {
           log.warn("Peer names don't match channel peers");
@@ -102,10 +102,9 @@ public class TransactionFulfillmentImpl implements TransactionFulfillment {
       // attempted.
 
       if (e.getCause() instanceof IOException
-          || e.getMessage().contains(ErrorConstants.FABRIC_INVALID_RESPONSE_ERROR)
+          || e.getMessage().contains(ErrorConstants.FABRIC_FAILED_ORDERER_ERROR)
           || e.getMessage().contains(ErrorConstants.FABRIC_GRPC_CONNECTION_ERROR)
           || e.getMessage().contains(ErrorConstants.FABRIC_CONNECTION_CREATE_ERROR)
-          || e.getMessage().contains(ErrorConstants.FABRIC_INVALID_PROPOSAL_ERROR)
           || e.getMessage().contains(ErrorConstants.FABRIC_CHAINCODE_LAUNCH_ERROR)) {
         log.error("Action Failed: A problem occurred with the network connection");
         throw new ServiceException(

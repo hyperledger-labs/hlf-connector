@@ -114,7 +114,7 @@ public class FabricClientController {
         } else {
           log.warn("Incorrect Peer name format");
           return transactionFulfillment.writeTransactionToLedger(
-              channelName, chaincodeName, functionName, Optional.ofNullable(null), payload);
+              channelName, chaincodeName, functionName, Optional.empty(), payload);
         }
       }
     } else {
@@ -123,7 +123,7 @@ public class FabricClientController {
             channelName, chaincodeName, functionName, collections, transientKey, payload);
       } else {
         return transactionFulfillment.writeTransactionToLedger(
-            channelName, chaincodeName, functionName, Optional.ofNullable(null), payload);
+            channelName, chaincodeName, functionName, Optional.empty(), payload);
       }
     }
   }

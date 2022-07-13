@@ -9,6 +9,7 @@ import hlf.java.rest.client.exception.FabricTransactionException;
 import hlf.java.rest.client.exception.ServiceException;
 import hlf.java.rest.client.model.ClientResponseModel;
 import java.io.IOException;
+import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.TimeoutException;
 import org.hyperledger.fabric.gateway.Contract;
@@ -20,9 +21,7 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
-import org.mockito.Mockito;
+import org.mockito.*;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -46,6 +45,8 @@ public class TransactionFulfillmentImplTest {
   private String[] testTransactionParamsArrary = {"test param", "test param 2"};
   private String testTransactionIdString = "some string";
   byte[] byteArrayResponse = new byte[10];
+
+  @Captor private ArgumentCaptor<Optional<List<String>>> peerNames;
 
   private ResponseEntity<ClientResponseModel> response;
 
@@ -75,7 +76,7 @@ public class TransactionFulfillmentImplTest {
                 testNetworkString,
                 testContractString,
                 testTransactionFunctionString,
-                Optional.ofNullable(null),
+                Optional.empty(),
                 testTransactionParamsArrary)
             .getStatusCode());
   }
@@ -98,7 +99,7 @@ public class TransactionFulfillmentImplTest {
               testNetworkString,
               testContractString,
               testTransactionFunctionString,
-              Optional.ofNullable(null),
+              Optional.empty(),
               testTransactionParamsArrary);
         });
   }
@@ -121,7 +122,7 @@ public class TransactionFulfillmentImplTest {
               testNetworkString,
               testContractString,
               testTransactionFunctionString,
-              Optional.ofNullable(null),
+              Optional.empty(),
               testTransactionParamsArrary);
         });
   }
@@ -144,7 +145,7 @@ public class TransactionFulfillmentImplTest {
               testNetworkString,
               testContractString,
               testTransactionFunctionString,
-              Optional.ofNullable(null),
+              Optional.empty(),
               testTransactionParamsArrary);
         });
   }
