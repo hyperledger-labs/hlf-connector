@@ -49,12 +49,6 @@ public class TransactionFulfillmentImpl implements TransactionFulfillment {
 
   @Autowired private Gateway gateway;
 
-  // Error messages from Fabric while connecting to chaincode from peer
-  private String FABRIC_FAILED_ORDERER_ERROR = "Failed to send transaction to the orderer";
-  private String FABRIC_GRPC_CONNECTION_ERROR = "error creating grpc connection";
-  private String FABRIC_CONNECTION_CREATE_ERROR = "error cannot create connection";
-  private String FABRIC_CHAINCODE_LAUNCH_ERROR = "could not launch chaincode";
-
   @Override
   public ResponseEntity<ClientResponseModel> writeTransactionToLedger(
       String networkName,
@@ -107,11 +101,15 @@ public class TransactionFulfillmentImpl implements TransactionFulfillment {
       // information to know if it was an IOException so that a retry can be
       // attempted.
 
+      // Error messages from Fabric while connecting to chaincode from peer
+      List<String> fabricErrorList = new ArrayList<>();
+      fabricErrorList.add("Failed to send transaction to the orderer");
+      fabricErrorList.add("error creating grpc connection");
+      fabricErrorList.add("error cannot create connection");
+      fabricErrorList.add("could not launch chaincode");
+
       if (e.getCause() instanceof IOException
-          || e.getMessage().contains(FABRIC_FAILED_ORDERER_ERROR)
-          || e.getMessage().contains(FABRIC_GRPC_CONNECTION_ERROR)
-          || e.getMessage().contains(FABRIC_CONNECTION_CREATE_ERROR)
-          || e.getMessage().contains(FABRIC_CHAINCODE_LAUNCH_ERROR)) {
+          || fabricErrorList.stream().anyMatch(e.getMessage()::contains)){
         log.error("Action Failed: A problem occurred with the network connection");
         throw new ServiceException(
             ErrorCode.HYPERLEDGER_FABRIC_CONNECTION_ERROR, e.getMessage(), e);
