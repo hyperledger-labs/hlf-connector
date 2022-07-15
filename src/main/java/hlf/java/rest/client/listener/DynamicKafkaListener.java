@@ -23,7 +23,7 @@ import org.springframework.kafka.support.Acknowledgment;
  */
 @Slf4j
 @Configuration
-@ConditionalOnProperty("kafka.integration")
+@ConditionalOnProperty("kafka.integration-points[0].brokerHost")
 @RefreshScope
 public class DynamicKafkaListener {
 

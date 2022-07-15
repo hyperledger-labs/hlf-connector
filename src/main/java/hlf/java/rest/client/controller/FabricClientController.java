@@ -46,7 +46,7 @@ public class FabricClientController {
       @RequestParam("transaction_function_name") @Validated String transactionFunctionName,
       @RequestParam("transaction_params") @Validated String... transactionParams) {
     log.info(
-        "Initiated Transcation Write for Network Name: {}, Contract Name: {}, Transaction Function Name: {}, Transaction Parameters: {}",
+        "Initiated Transaction Write for Network Name: {}, Contract Name: {}, Transaction Function Name: {}, Transaction Parameters: {}",
         networkName,
         contractName,
         transactionFunctionName,
@@ -77,7 +77,7 @@ public class FabricClientController {
       @RequestHeader(value = "transientKey", required = false) String transientKey,
       @RequestBody @Validated String payload) {
     log.info(
-        "Initiated Transcation Write for Network Name: {}, Contract Name: {}, Transaction Function Name: {}, Endorsing Peers: {},Transaction Parameters: {}",
+        "Initiated Transaction Write for Network Name: {}, Contract Name: {}, Transaction Function Name: {}, Endorsing Peers: {},Transaction Parameters: {}",
         channelName,
         chaincodeName,
         functionName,
@@ -96,7 +96,7 @@ public class FabricClientController {
               functionName,
               collections,
               transientKey,
-              lstPeerNames,
+              Optional.of(lstPeerNames),
               payload);
         } else {
           return transactionFulfillment.writeTransactionToLedger(
@@ -144,7 +144,7 @@ public class FabricClientController {
       @RequestParam(value = "collection", required = false) String collections,
       @RequestParam(value = "transientKey", required = false) String transientKey) {
     log.info(
-        "Initiated Transcation Read for Network Name: {}, Contract Name: {}, Transaction Function Name: {}, Transaction Id: {}",
+        "Initiated Transaction Read for Network Name: {}, Contract Name: {}, Transaction Function Name: {}, Transaction Id: {}",
         networkName,
         contractName,
         transactionFunctionName,
