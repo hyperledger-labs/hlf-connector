@@ -72,7 +72,7 @@ public interface TransactionFulfillment {
       String transactionFunctionName,
       String collection,
       String transientKey,
-      List<String> peerNames,
+      Optional<List<String>> peerNames,
       String jsonPayload);
 
   /**

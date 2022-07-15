@@ -105,7 +105,7 @@ public class TransactionConsumer {
                   transactionFunctionName,
                   collections,
                   transientKey,
-                  lstPeerNames,
+                  Optional.ofNullable(lstPeerNames),
                   transactionParams);
             } else {
               transactionFulfillment.writeTransactionToLedger(
