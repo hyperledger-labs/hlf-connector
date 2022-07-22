@@ -3,6 +3,8 @@ package hlf.java.rest.client.controller;
 import hlf.java.rest.client.model.ClientResponseModel;
 import hlf.java.rest.client.model.EventAPIResponseModel;
 import hlf.java.rest.client.service.TransactionFulfillment;
+
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
@@ -56,6 +58,39 @@ public class FabricClientController {
   }
 
   /**
+   * The REST Endpoint for initializing a chaincode once it is committed
+   * to a specific sequence number.
+   *
+   * @param channelName String channel name
+   * @param chaincodeName String chaincode name
+   * @param functionName String function name in CC
+   * @param peerNames String endorsing peers
+   * @param payload JSON String for arguments to the chaincode.
+   * @return responseEntity ResponseEntity Transaction Response
+   */
+  @PostMapping(value = "/init_transaction")
+  public ResponseEntity<ClientResponseModel> initTransaction(
+      @RequestHeader("channel") @Validated String channelName,
+      @RequestHeader("chaincode") @Validated String chaincodeName,
+      @RequestHeader("function") @Validated String functionName,
+      @RequestHeader(value = "peers", required = false) String peerNames,
+      @RequestBody @Validated String payload) {
+    log.info(
+        "Smart Contract init request Network Name: {}, Contract Name: {}, Function Name: {}, Endorsing Peers: {}, Transaction Parameters: {}",
+        functionName,
+        channelName,
+        chaincodeName,
+        peerNames,
+        payload);
+    List<String> lstPeerNames = new ArrayList<>();
+    if (null != peerNames) {
+      lstPeerNames = Arrays.asList(peerNames.split(","));
+    }
+    return transactionFulfillment.initSmartContract(
+        channelName, chaincodeName, functionName, Optional.of(lstPeerNames), payload);
+  }
+
+  /**
    * The REST Endpoint for writing a transaction to the ledger
    *
    * @param channelName String channel name
@@ -85,7 +120,7 @@ public class FabricClientController {
         payload);
     if (null != peerNames && !peerNames.isEmpty()) {
       List<String> lstPeerNames = Arrays.asList(peerNames.split(","));
-      if (null != lstPeerNames && !lstPeerNames.isEmpty()) {
+      if (!lstPeerNames.isEmpty()) {
         if (null != collections
             && !collections.isEmpty()
             && null != transientKey
@@ -100,7 +135,7 @@ public class FabricClientController {
               payload);
         } else {
           return transactionFulfillment.writeTransactionToLedger(
-              channelName, chaincodeName, functionName, Optional.ofNullable(lstPeerNames), payload);
+              channelName, chaincodeName, functionName, Optional.of(lstPeerNames), payload);
         }
       } else {
         if (StringUtils.isNotBlank(collections) && StringUtils.isNotBlank(transientKey)) {

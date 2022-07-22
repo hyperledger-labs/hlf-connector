@@ -10,6 +10,7 @@ import hlf.java.rest.client.model.BlockEventWriteSet;
 import hlf.java.rest.client.model.ClientResponseModel;
 import hlf.java.rest.client.model.EventAPIResponseModel;
 import hlf.java.rest.client.model.EventType;
+import hlf.java.rest.client.service.HFClientWrapper;
 import hlf.java.rest.client.service.TransactionFulfillment;
 import hlf.java.rest.client.util.FabricEventParseUtil;
 import java.io.IOException;
@@ -18,12 +19,13 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.hyperledger.fabric.gateway.Contract;
 import org.hyperledger.fabric.gateway.ContractException;
@@ -32,9 +34,13 @@ import org.hyperledger.fabric.gateway.Gateway;
 import org.hyperledger.fabric.gateway.GatewayRuntimeException;
 import org.hyperledger.fabric.gateway.Network;
 import org.hyperledger.fabric.gateway.Transaction;
+import org.hyperledger.fabric.gateway.spi.CommitHandler;
 import org.hyperledger.fabric.sdk.BlockInfo;
+import org.hyperledger.fabric.sdk.ChaincodeResponse;
 import org.hyperledger.fabric.sdk.Channel;
 import org.hyperledger.fabric.sdk.Peer;
+import org.hyperledger.fabric.sdk.ProposalResponse;
+import org.hyperledger.fabric.sdk.TransactionProposalRequest;
 import org.hyperledger.fabric.sdk.exception.InvalidArgumentException;
 import org.hyperledger.fabric.sdk.exception.ProposalException;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -47,9 +53,120 @@ import org.springframework.util.CollectionUtils;
 @Service
 public class TransactionFulfillmentImpl implements TransactionFulfillment {
 
+  private static final long DEFAULT_ORDERER_TIMEOUT = 60;
+  private static final TimeUnit DEFAULT_ORDERER_TIMEOUT_UNIT = TimeUnit.SECONDS;
+
+  private static final long DEFAULT_COMMIT_TIMEOUT = 5;
+  private static final TimeUnit DEFAULT_COMMIT_TIMEOUT_UNIT = TimeUnit.MINUTES;
+
   @Autowired private FabricProperties fabricProperties;
 
   @Autowired private Gateway gateway;
+
+  @Autowired private HFClientWrapper hfClientWrapper;
+
+  @Override
+  public ResponseEntity<ClientResponseModel> initSmartContract(
+      String networkName,
+      String contractName,
+      String functionName,
+      Optional<List<String>> peerNames,
+      String... transactionParams) {
+    log.info("initialize the smart contract, this is done once every install");
+    // get the network information to send the request
+    Network network = gateway.getNetwork(networkName);
+
+    // set the init flag
+    Channel channel = network.getChannel();
+
+    // Generate the transaction proposal, set the init flag
+    TransactionProposalRequest transactionProposalRequest =
+        hfClientWrapper.getHfClient().newTransactionProposalRequest();
+    transactionProposalRequest.setInit(true);
+    transactionProposalRequest.setChaincodeName(contractName);
+    transactionProposalRequest.setFcn(functionName);
+    transactionProposalRequest.setTransactionContext(channel.newTransactionContext());
+    transactionProposalRequest.setArgs(transactionParams);
+
+    List<Peer> endorsingPeers = new ArrayList<>();
+    // get the peers if present
+    if (peerNames.isPresent()) {
+      for (Peer channelPeer : network.getChannel().getPeers()) {
+        log.info("Peer Name: " + channelPeer.getName());
+        if (peerNames.get().contains(channelPeer.getName())) {
+          endorsingPeers.add(channelPeer);
+        }
+      }
+    }
+
+    Collection<ProposalResponse> proposalResponses;
+    // send the transaction
+    try {
+      if (!endorsingPeers.isEmpty()) {
+        proposalResponses =
+            channel.sendTransactionProposal(transactionProposalRequest, endorsingPeers);
+      } else {
+        proposalResponses = channel.sendTransactionProposal(transactionProposalRequest);
+      }
+    } catch (Exception ex) {
+      throw new FabricTransactionException(
+          ErrorCode.HYPERLEDGER_FABRIC_TRANSACTION_ERROR, ex.getMessage(), ex);
+    }
+    // check response status
+    List<ProposalResponse> validResponses =
+        proposalResponses.stream()
+            .filter(response -> response.getStatus().equals(ChaincodeResponse.Status.SUCCESS))
+            .collect(Collectors.toList());
+    if (validResponses.isEmpty()) {
+      throw new FabricTransactionException(
+          ErrorCode.HYPERLEDGER_FABRIC_TRANSACTION_ERROR, "no successful endorsements");
+    }
+    // send the endorsements to the orderer nodes
+    byte[] response =
+        commitTransaction(validResponses, network, validResponses.get(0).getTransactionID());
+    log.info("successfully initialized the chaincode");
+    String resultString = new String(response, StandardCharsets.UTF_8);
+    return new ResponseEntity<>(
+        new ClientResponseModel(ErrorConstants.NO_ERROR, resultString), HttpStatus.OK);
+  }
+
+  private byte[] commitTransaction(
+      final Collection<ProposalResponse> validResponses, Network network, String transactionId) {
+    ProposalResponse proposalResponse = validResponses.iterator().next();
+
+    CommitHandler commitHandler =
+        DefaultCommitHandlers.MSPID_SCOPE_ANYFORTX.create(transactionId, network);
+    commitHandler.startListening();
+
+    try {
+      Channel.TransactionOptions transactionOptions =
+          Channel.TransactionOptions.createTransactionOptions()
+              .nOfEvents(
+                  Channel.NOfEvents.createNoEvents()); // Disable default commit wait behaviour
+      network
+          .getChannel()
+          .sendTransaction(validResponses, transactionOptions)
+          .get(DEFAULT_ORDERER_TIMEOUT, DEFAULT_ORDERER_TIMEOUT_UNIT);
+    } catch (TimeoutException e) {
+      commitHandler.cancelListening();
+      throw new FabricTransactionException(
+          ErrorCode.HYPERLEDGER_FABRIC_TRANSACTION_ERROR, "timed out", e);
+    } catch (Exception e) {
+      commitHandler.cancelListening();
+      throw new FabricTransactionException(
+          ErrorCode.HYPERLEDGER_FABRIC_TRANSACTION_ERROR,
+          "Failed to send transaction to the orderer",
+          e);
+    }
+
+    try {
+      commitHandler.waitForEvents(DEFAULT_COMMIT_TIMEOUT, DEFAULT_COMMIT_TIMEOUT_UNIT);
+      return proposalResponse.getChaincodeActionResponsePayload();
+    } catch (Exception e) {
+      throw new FabricTransactionException(
+          ErrorCode.HYPERLEDGER_FABRIC_TRANSACTION_ERROR, "exception while waiting", e);
+    }
+  }
 
   @Override
   public ResponseEntity<ClientResponseModel> writeTransactionToLedger(
@@ -65,7 +182,7 @@ public class TransactionFulfillmentImpl implements TransactionFulfillment {
       Network network = gateway.getNetwork(networkName);
       Contract contract = network.getContract(contractName);
       Transaction fabricTransaction = contract.createTransaction(transactionFunctionName);
-      // override default commithandler to wait for any response from msp
+      // override default commit handler to wait for any response from msp
       fabricTransaction.setCommitHandler(DefaultCommitHandlers.MSPID_SCOPE_ANYFORTX);
       if (peerNames.isPresent()) {
         for (Peer channelPeer : network.getChannel().getPeers()) {
@@ -170,11 +287,9 @@ public class TransactionFulfillmentImpl implements TransactionFulfillment {
       fabricTransaction.setCommitHandler(DefaultCommitHandlers.MSPID_SCOPE_ANYFORTX);
 
       if (peerNames.isPresent()) {
-        Iterator<Peer> itrPeers = network.getChannel().getPeers().iterator();
-        while (itrPeers.hasNext()) {
-          Peer channelPeer = itrPeers.next();
+        for (Peer channelPeer : network.getChannel().getPeers()) {
           log.info("Peer Name: " + channelPeer.getName());
-          if (null != channelPeer && peerNames.get().contains(channelPeer.getName())) {
+          if (peerNames.get().contains(channelPeer.getName())) {
             endorsingPeers.add(channelPeer);
           }
         }

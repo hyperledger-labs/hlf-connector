@@ -90,8 +90,7 @@ public class GatewayConfig {
     HFClient hfClient = HFClient.createNewInstance();
     hfClient.setCryptoSuite(CryptoSuite.Factory.getCryptoSuite());
     X509IdentityProvider.INSTANCE.setUserContext(hfClient, gateway.getIdentity(), "hlf-connector");
-    HFClientWrapperImpl hfCientWrapper = new HFClientWrapperImpl(hfClient);
-    return hfCientWrapper;
+    return new HFClientWrapperImpl(hfClient);
   }
 
   @Bean

@@ -14,6 +14,24 @@ import org.springframework.http.ResponseEntity;
 public interface TransactionFulfillment {
 
   /**
+   * Business logic to initialize the smart contract that is installed in a channel. Initialization
+   * allows one to set the default values or do settings in their state database entry.
+   *
+   * @param networkName String channel name
+   * @param contractName String chaincode name
+   * @param functionName String chaincode function for initializing
+   * @param peerNames List of String type peer names to initialize the contract
+   * @param transactionParams String array for arguments to the chaincode
+   * @return responseEntity ResponseEntity Transaction Response
+   */
+  ResponseEntity<ClientResponseModel> initSmartContract(
+      String networkName,
+      String contractName,
+      String functionName,
+      Optional<List<String>> peerNames,
+      String... transactionParams);
+
+  /**
    * Business logic for writing a transaction to the ledger. Returns TRUE when the action is
    * successful and FALSE otherwise.
    *
