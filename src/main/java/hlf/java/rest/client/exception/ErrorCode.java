@@ -6,10 +6,13 @@ package hlf.java.rest.client.exception;
  */
 public enum ErrorCode {
 
+  SUCCESS(0000,"Submission successful"),
   // @formatter:off
   NOT_FOUND(1000, "Not able to find the requested resource data"),
 
   NO_EVENTS_FOUND(1001, "Not able to find any events for the passed input."),
+  
+  DESERIALIZATION_FAILURE(2000, "Error while deserializing an object"),
 
   NOT_SUPPORTED(1002, "Operation passed not supported."),
 
