@@ -5,11 +5,6 @@ import hlf.java.rest.client.model.ClientResponseModel;
 import hlf.java.rest.client.model.Orderer;
 import hlf.java.rest.client.model.Peer;
 import hlf.java.rest.client.service.ChannelService;
-import java.io.IOException;
-import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Set;
 import org.apache.commons.io.FileUtils;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.MethodOrderer;
@@ -19,20 +14,28 @@ import org.junit.jupiter.api.TestMethodOrder;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 
+import java.io.IOException;
+import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Set;
+
 @SpringBootTest
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 public class ChannelIT {
 
   @Autowired ChannelService channelService;
+  private static final String CHANNEL_NAME = "test2";
+  private static final String ORG_MSP = "Org1MSP";
 
   @Test
   @Order(1)
   public void createChannelTest() {
     ChannelOperationRequest channelOperationRequest = new ChannelOperationRequest();
-    channelOperationRequest.setChannelName("testChannel");
+    channelOperationRequest.setChannelName(CHANNEL_NAME);
     channelOperationRequest.setConsortiumName("SampleConsortium");
     List<String> mspList = new ArrayList<>();
-    mspList.add("Org1MSP");
+    mspList.add(ORG_MSP);
     channelOperationRequest.setOrgMsps(mspList);
     try {
       Orderer orderer = new Orderer();
@@ -69,10 +72,10 @@ public class ChannelIT {
   @Order(2)
   public void joinChannelTest() {
     ChannelOperationRequest channelOperationRequest = new ChannelOperationRequest();
-    channelOperationRequest.setChannelName("testChannel");
+    channelOperationRequest.setChannelName(CHANNEL_NAME);
     channelOperationRequest.setConsortiumName("SampleConsortium");
     List<String> mspList = new ArrayList<>();
-    mspList.add("Org1MSP");
+    mspList.add(ORG_MSP);
     channelOperationRequest.setOrgMsps(mspList);
     try {
       Orderer orderer = new Orderer();
@@ -108,14 +111,14 @@ public class ChannelIT {
   @Test
   @Order(3)
   public void getChannelMembersMSPIDTest() {
-    Set<String> mspidSet = channelService.getChannelMembersMSPID("testChannel");
-    Assertions.assertEquals("Org1MSP", mspidSet.iterator().next());
+    Set<String> mspidSet = channelService.getChannelMembersMSPID(CHANNEL_NAME);
+    Assertions.assertEquals(ORG_MSP, mspidSet.iterator().next());
   }
 
   @Test
   public void getChannelMembersMSPIDTestForNonExistingChannel() {
     Set<String> mspidSet = channelService.getChannelMembersMSPID("dummyChannel");
     // channel will get created based on details provided in connection.yml
-    Assertions.assertEquals("Org1MSP", mspidSet.iterator().next());
+    Assertions.assertEquals(ORG_MSP, mspidSet.iterator().next());
   }
 }
