@@ -34,10 +34,12 @@ import org.hyperledger.fabric.sdk.LifecycleCommitChaincodeDefinitionRequest;
 import org.hyperledger.fabric.sdk.LifecycleQueryChaincodeDefinitionProposalResponse;
 import org.hyperledger.fabric.sdk.LifecycleQueryInstalledChaincodesProposalResponse;
 import org.hyperledger.fabric.sdk.Peer;
+import org.hyperledger.fabric.sdk.ProposalResponse;
 import org.hyperledger.fabric.sdk.QueryLifecycleQueryChaincodeDefinitionRequest;
 import org.hyperledger.fabric.sdk.exception.InvalidArgumentException;
 import org.hyperledger.fabric.sdk.exception.ProposalException;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
 @Slf4j
@@ -94,26 +96,29 @@ public class ChaincodeOperationsServiceImpl implements ChaincodeOperationsServic
           queryChaincodeDefinitionProposalResponses =
               channel.lifecycleQueryChaincodeDefinition(
                   queryLifecycleQueryChaincodeDefinitionRequest, peers);
-      Set<Long> sequenceNumbers = new HashSet<>();
+      long sequence = -1L;
       for (LifecycleQueryChaincodeDefinitionProposalResponse response :
           queryChaincodeDefinitionProposalResponses) {
-        if (response.getVersion().equals(chaincodeVersion)) {
-          sequenceNumbers.add(response.getSequence());
+        if (response.getStatus() == ProposalResponse.Status.SUCCESS
+            && response.getVersion().equals(chaincodeVersion)) {
+          sequence = response.getSequence();
+          break;
+        } else {
+          if (HttpStatus.NOT_FOUND.value() == response.getChaincodeActionResponseStatus()) {
+            // not found set sequence to 1;
+            sequence = 1;
+            break;
+          }
         }
       }
 
-      if (sequenceNumbers.size() == 0) {
+      if (sequence == -1) {
         throw new ServiceException(
             SEQUENCE_NUMBER_VALIDATION_FAILED,
             "Sequence Number not present in peers for channel: " + networkName);
       }
 
-      if (sequenceNumbers.size() > 1) {
-        throw new ServiceException(
-            SEQUENCE_NUMBER_VALIDATION_FAILED,
-            "Different sequence numbers present in peers for channel: " + networkName);
-      }
-      return String.valueOf(sequenceNumbers.stream().findFirst().get());
+      return String.valueOf(sequence);
     } catch (ProposalException | InvalidArgumentException e) {
       throw new ServiceException(
           ErrorCode.HYPERLEDGER_FABRIC_CHAINCODE_OPERATIONS_REQUEST_REJECTION, e.getMessage(), e);
@@ -135,30 +140,26 @@ public class ChaincodeOperationsServiceImpl implements ChaincodeOperationsServic
               .sendLifecycleQueryInstalledChaincodes(
                   hfClientWrapper.getHfClient().newLifecycleQueryInstalledChaincodesRequest(),
                   peers);
-      Set<String> packageIds = new HashSet<>();
+      String packageId = null;
       for (LifecycleQueryInstalledChaincodesProposalResponse peerResults : results) {
         for (LifecycleQueryInstalledChaincodesProposalResponse
                 .LifecycleQueryInstalledChaincodesResult
             lifecycleQueryInstalledChaincodeResult :
                 peerResults.getLifecycleQueryInstalledChaincodesResult()) {
-          packageIds.add(lifecycleQueryInstalledChaincodeResult.getPackageId());
+          if (lifecycleQueryInstalledChaincodeResult.getLabel().equals(chaincodeName)) {
+            packageId = lifecycleQueryInstalledChaincodeResult.getPackageId();
+            break;
+          }
         }
       }
 
-      if (packageIds.size() == 0) {
+      if (isNull(packageId)) {
         throw new ServiceException(
             CHAINCODE_PACKAGE_ID_VALIDATION_FAILED,
             "Chaincode PackageId not present in peers for channel: " + networkName);
       }
 
-      // packageIds will be same in all fabric peers as per design
-      if (packageIds.size() > 1) {
-        throw new ServiceException(
-            CHAINCODE_PACKAGE_ID_VALIDATION_FAILED,
-            "Different packageIds present in peers for channel: " + networkName);
-      }
-
-      return packageIds.stream().findFirst().get();
+      return packageId;
     } catch (InvalidArgumentException | ProposalException e) {
       throw new ServiceException(
           ErrorCode.HYPERLEDGER_FABRIC_CHAINCODE_OPERATIONS_REQUEST_REJECTION, e.getMessage(), e);
@@ -203,7 +204,6 @@ public class ChaincodeOperationsServiceImpl implements ChaincodeOperationsServic
                   lifecycleCheckCommitReadinessRequest, channel.getPeers());
       for (LifecycleCheckCommitReadinessProposalResponse resp :
           lifecycleSimulateCommitChaincodeDefinitionProposalResponse) {
-        final Peer peer = resp.getPeer();
         if (resp.getStatus() == ChaincodeResponse.Status.SUCCESS) {
           organizationSet.addAll(resp.getApprovedOrgs());
         }
