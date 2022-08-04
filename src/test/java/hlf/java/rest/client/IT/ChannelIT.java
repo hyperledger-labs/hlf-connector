@@ -113,11 +113,4 @@ public class ChannelIT {
     Set<String> mspidSet = channelService.getChannelMembersMSPID(CHANNEL_NAME);
     Assertions.assertEquals(ORG_MSP, mspidSet.iterator().next());
   }
-
-  @Test
-  public void getChannelMembersMSPIDTestForNonExistingChannel() {
-    Set<String> mspidSet = channelService.getChannelMembersMSPID("dummyChannel");
-    // channel will get created based on details provided in connection.yml
-    Assertions.assertEquals(ORG_MSP, mspidSet.iterator().next());
-  }
 }

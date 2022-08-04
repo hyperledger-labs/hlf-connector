@@ -34,6 +34,7 @@ public enum ErrorCode {
   CHANNEL_CREATION_CHANNEL_EXISTS(4005, "Channel exists"),
 
   CHANNEL_MISSING_CERTIFICATE(4006, "Certificate is missing"),
+  CHANNEL_NOT_FOUND(4007, "Channel does not exists"),
 
   CHANNEL_PAYLOAD_ERROR(4999, "Unknown error"),
 
@@ -51,8 +52,6 @@ public enum ErrorCode {
   HYPERLEDGER_FABRIC_NOT_SUPPORTED(8000, "In Hyperledger Fabric this feature is not supported"),
 
   AUTH_INVALID_API_KEY(9000, "Invalid api key"),
-
-  AUTH_EMPTY_USER_ID(9001, "Empty Or null User Id"),
 
   NOT_DEFINED(
       9999,
