@@ -99,16 +99,15 @@ public class ChaincodeOperationsServiceImpl implements ChaincodeOperationsServic
       long sequence = -1L;
       for (LifecycleQueryChaincodeDefinitionProposalResponse response :
           queryChaincodeDefinitionProposalResponses) {
-        if (response.getStatus() == ProposalResponse.Status.SUCCESS
+        if (response.getStatus().equals(ProposalResponse.Status.SUCCESS)
             && response.getVersion().equals(chaincodeVersion)) {
           sequence = response.getSequence();
           break;
-        } else {
-          if (HttpStatus.NOT_FOUND.value() == response.getChaincodeActionResponseStatus()) {
-            // not found set sequence to 1;
-            sequence = 1;
-            break;
-          }
+        }
+        if (HttpStatus.NOT_FOUND.value() == response.getChaincodeActionResponseStatus()) {
+          // not found set sequence to 1;
+          sequence = 1;
+          break;
         }
       }
 

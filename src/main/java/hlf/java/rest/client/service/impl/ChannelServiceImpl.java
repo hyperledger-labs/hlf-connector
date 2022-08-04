@@ -143,7 +143,12 @@ public class ChannelServiceImpl implements ChannelService {
     }
     Network network = gateway.getNetwork(channelName);
     Channel channel = network.getChannel();
-    return new HashSet<>(channel.getPeersOrganizationMSPIDs());
+    try {
+      channel.getChannelConfigurationBytes();
+      return new HashSet<>(channel.getPeersOrganizationMSPIDs());
+    } catch (Exception e) {
+      throw new ChannelOperationException(ErrorCode.CHANNEL_NOT_FOUND);
+    }
   }
 
   /**
