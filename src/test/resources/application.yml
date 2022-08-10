@@ -29,7 +29,7 @@ fabric:
       name: clientUser
   orgConnectionConfig:
     path: "src/test/resources/testconfig"
-    filename: connection.yml
+    filename: fabric-connection.yml
   client:
     rest:
       apikey: ePVYHwAaQ0V1XOTX6U

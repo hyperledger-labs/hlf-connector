@@ -76,7 +76,6 @@ target/
 *.iml
 
 #env
-.env
 /config/application.yml
 application.yml
 /config/connection-*

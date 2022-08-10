@@ -1,0 +1,21 @@
+name: Fabric Integration Tests
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Clone the repository
+        uses: "actions/checkout@v2"
+      - name: Setup JDK 8
+        uses: "actions/setup-java@v2"
+        with:
+          java-version: '8'
+          distribution: 'adopt-openj9'
+      - name: Run integration tests
+        run: |
+          chmod +x ./scripts/run-integration-tests.sh
+          ./scripts/run-integration-tests.sh
