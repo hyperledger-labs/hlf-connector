@@ -24,7 +24,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 public class ChannelIT {
 
   @Autowired ChannelService channelService;
-  private static final String CHANNEL_NAME = "test2";
+  private static final String CHANNEL_NAME = "test1";
   private static final String ORG_MSP = "Org1MSP";
 
   @Test
