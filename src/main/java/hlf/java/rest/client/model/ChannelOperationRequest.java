@@ -12,12 +12,12 @@ import org.springframework.util.CollectionUtils;
 public class ChannelOperationRequest {
 
   private static final String TRUST_CERT_BYTES = "pemBytes";
+  private static final String PEER_ORGANIZATION_MSPID_PROPERTY =
+      "org.hyperledger.fabric.sdk.peer.organization_mspid";
 
   private String channelName;
 
   private String consortiumName;
-
-  private List<String> orgMsps;
 
   private List<Orderer> orderers;
 
@@ -40,6 +40,7 @@ public class ChannelOperationRequest {
       String peerName = peerModel.getName();
       String peerGrpcUrl = peerModel.getGrpcUrl();
       Properties properties = new Properties();
+      properties.put(PEER_ORGANIZATION_MSPID_PROPERTY, peerModel.getMspid());
       properties.put(TRUST_CERT_BYTES, peerModel.getCertificate().getBytes());
       org.hyperledger.fabric.sdk.Peer peer = hfClient.newPeer(peerName, peerGrpcUrl, properties);
       peers.add(peer);

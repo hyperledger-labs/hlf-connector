@@ -6,8 +6,7 @@ import lombok.Data;
 public class Orderer {
 
   private String name;
-
+  private String mspid;
   private String grpcUrl;
-
   private String certificate;
 }
