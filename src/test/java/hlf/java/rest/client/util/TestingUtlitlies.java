@@ -1,8 +1,9 @@
 package hlf.java.rest.client.util;
 
-import java.nio.charset.StandardCharsets;
+import com.google.protobuf.InvalidProtocolBufferException;
+import com.google.protobuf.util.JsonFormat;
 import java.util.Base64;
-
+import org.hyperledger.fabric.protos.common.Configuration;
 import org.junit.jupiter.api.Test;
 
 public class TestingUtlitlies {
@@ -15,11 +16,12 @@ public class TestingUtlitlies {
   }
 
   @Test
-  public void decodeABase64EncodedString() {
-    String base64EncodedByteArrayString = "KkhlbGxvIFRoZXJlKg==";
-    String decodedString = new String(Base64.getDecoder().decode(base64EncodedByteArrayString),
-        StandardCharsets.ISO_8859_1);
+  public void decodeABase64EncodedString() throws InvalidProtocolBufferException {
+    String base64EncodedByteArrayString = "ChBTYW1wbGVDb25zb3J0aXVt";
+    byte[] byteArray = Base64.getDecoder().decode(base64EncodedByteArrayString);
+    Configuration.Consortium consortium =
+        org.hyperledger.fabric.protos.common.Configuration.Consortium.parseFrom(byteArray);
+    String decodedString = JsonFormat.printer().print(consortium);
     System.out.println(decodedString);
   }
-
 }
