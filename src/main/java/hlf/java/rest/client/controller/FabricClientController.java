@@ -3,7 +3,6 @@ package hlf.java.rest.client.controller;
 import hlf.java.rest.client.model.ClientResponseModel;
 import hlf.java.rest.client.model.EventAPIResponseModel;
 import hlf.java.rest.client.service.TransactionFulfillment;
-
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -58,8 +57,8 @@ public class FabricClientController {
   }
 
   /**
-   * The REST Endpoint for initializing a chaincode once it is committed
-   * to a specific sequence number.
+   * The REST Endpoint for initializing a chaincode once it is committed to a specific sequence
+   * number.
    *
    * @param channelName String channel name
    * @param chaincodeName String chaincode name

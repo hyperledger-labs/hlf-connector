@@ -3,9 +3,11 @@ package hlf.java.rest.client.IT;
 import hlf.java.rest.client.model.ChannelOperationRequest;
 import hlf.java.rest.client.model.ClientResponseModel;
 import hlf.java.rest.client.model.MSPDTO;
+import hlf.java.rest.client.model.NewOrgParamsDTO;
 import hlf.java.rest.client.model.Orderer;
 import hlf.java.rest.client.model.Peer;
 import hlf.java.rest.client.service.ChannelService;
+import hlf.java.rest.client.service.NetworkStatus;
 import java.io.IOException;
 import java.nio.file.Paths;
 import java.util.ArrayList;
@@ -19,12 +21,14 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.http.ResponseEntity;
 
 @SpringBootTest
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 public class ChannelIT {
 
   @Autowired ChannelService channelService;
+  @Autowired NetworkStatus networkStatus;
   private static final String CHANNEL_NAME = "test1";
   private static final String ORG_1_MSP = "Org1MSP";
   private static final String CHANNEL_NAME_TWO_ORGS = "test2";
@@ -63,7 +67,7 @@ public class ChannelIT {
               Paths.get(
                       "src/test/java/fabricSetup/e2e-2Orgs/v2.1/crypto-config/peerOrganizations/org1.example.com/peers/peer0.org1.example.com/msp/cacerts/ca.org1.example.com-cert.pem")
                   .toFile());
-      peer.setCertificate(admincert);
+      peer.setCertificate(cacert);
 
       MSPDTO mspdto = new MSPDTO();
       List<String> rootCerts = new ArrayList<>();
@@ -84,7 +88,7 @@ public class ChannelIT {
       throw new RuntimeException(e);
     }
     ClientResponseModel clientResponseModel = channelService.createChannel(channelOperationRequest);
-    Assertions.assertEquals(clientResponseModel.getCode(), new Integer(200));
+    Assertions.assertEquals(new Integer(200), clientResponseModel.getCode());
   }
 
   @Test
@@ -120,7 +124,7 @@ public class ChannelIT {
               Paths.get(
                       "src/test/java/fabricSetup/e2e-2Orgs/v2.1/crypto-config/peerOrganizations/org1.example.com/peers/peer0.org1.example.com/msp/cacerts/ca.org1.example.com-cert.pem")
                   .toFile());
-      peer.setCertificate(admincert);
+      peer.setCertificate(cacert);
 
       MSPDTO mspdto = new MSPDTO();
       List<String> rootCerts = new ArrayList<>();
@@ -141,7 +145,7 @@ public class ChannelIT {
       throw new RuntimeException(e);
     }
     ClientResponseModel clientResponseModel = channelService.joinChannel(channelOperationRequest);
-    Assertions.assertEquals(clientResponseModel.getCode(), new Integer(200));
+    Assertions.assertEquals(new Integer(200), clientResponseModel.getCode());
   }
 
   @Test
@@ -184,7 +188,7 @@ public class ChannelIT {
               Paths.get(
                       "src/test/java/fabricSetup/e2e-2Orgs/v2.1/crypto-config/peerOrganizations/org1.example.com/peers/peer0.org1.example.com/msp/cacerts/ca.org1.example.com-cert.pem")
                   .toFile());
-      peer0Org1.setCertificate(admincert);
+      peer0Org1.setCertificate(cacert);
 
       MSPDTO mspdto = new MSPDTO();
       List<String> rootCerts = new ArrayList<>();
@@ -215,7 +219,7 @@ public class ChannelIT {
               Paths.get(
                       "src/test/java/fabricSetup/e2e-2Orgs/v2.1/crypto-config/peerOrganizations/org2.example.com/peers/peer1.org2.example.com/msp/cacerts/ca.org2.example.com-cert.pem")
                   .toFile());
-      peer1Org2.setCertificate(admincert2);
+      peer1Org2.setCertificate(cacert2);
 
       MSPDTO mspdto2 = new MSPDTO();
       List<String> rootCerts2 = new ArrayList<>();
@@ -236,7 +240,7 @@ public class ChannelIT {
       throw new RuntimeException(e);
     }
     ClientResponseModel clientResponseModel = channelService.createChannel(channelOperationRequest);
-    Assertions.assertEquals(clientResponseModel.getCode(), new Integer(200));
+    Assertions.assertEquals(new Integer(200), clientResponseModel.getCode());
   }
 
   @Test
@@ -272,7 +276,7 @@ public class ChannelIT {
               Paths.get(
                       "src/test/java/fabricSetup/e2e-2Orgs/v2.1/crypto-config/peerOrganizations/org1.example.com/peers/peer0.org1.example.com/msp/cacerts/ca.org1.example.com-cert.pem")
                   .toFile());
-      peer0Org1.setCertificate(admincert);
+      peer0Org1.setCertificate(cacert);
 
       MSPDTO mspdto = new MSPDTO();
       List<String> rootCerts = new ArrayList<>();
@@ -294,6 +298,43 @@ public class ChannelIT {
       throw new RuntimeException(e);
     }
     ClientResponseModel clientResponseModel = channelService.joinChannel(channelOperationRequest);
-    Assertions.assertEquals(clientResponseModel.getCode(), new Integer(200));
+    Assertions.assertEquals(new Integer(200), clientResponseModel.getCode());
+  }
+
+  @Test
+  @Order(6)
+  public void addOrgToChannelTest() {
+    NewOrgParamsDTO newOrgParamsDTO = new NewOrgParamsDTO();
+    newOrgParamsDTO.setOrganizationName(ORG_2_MSP);
+    try {
+      String signcert =
+          FileUtils.readFileToString(
+              Paths.get(
+                      "src/test/java/fabricSetup/e2e-2Orgs/v2.1/crypto-config/peerOrganizations/org2.example.com/peers/peer1.org2.example.com/msp/signcerts/peer1.org2.example.com-cert.pem")
+                  .toFile());
+      String cacert =
+          FileUtils.readFileToString(
+              Paths.get(
+                      "src/test/java/fabricSetup/e2e-2Orgs/v2.1/crypto-config/peerOrganizations/org2.example.com/peers/peer1.org2.example.com/msp/cacerts/ca.org2.example.com-cert.pem")
+                  .toFile());
+
+      MSPDTO mspdto = new MSPDTO();
+      List<String> rootCerts = new ArrayList<>();
+      rootCerts.add(cacert);
+      mspdto.setRootCerts(rootCerts);
+      List<String> tlsRootCerts = new ArrayList<>();
+      tlsRootCerts.add(cacert);
+      mspdto.setTlsRootCerts(tlsRootCerts);
+      mspdto.setAdminOUCert(cacert);
+      mspdto.setClientOUCert(cacert);
+      mspdto.setPeerOUCert(cacert);
+
+      newOrgParamsDTO.setMspDTO(mspdto);
+    } catch (IOException e) {
+      throw new RuntimeException(e);
+    }
+    ResponseEntity<ClientResponseModel> responseModel =
+        networkStatus.addOrgToChannel(CHANNEL_NAME, newOrgParamsDTO);
+    Assertions.assertEquals(new Integer(200), responseModel.getStatusCodeValue());
   }
 }

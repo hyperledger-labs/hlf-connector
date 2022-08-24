@@ -145,7 +145,8 @@ public class ChannelServiceImpl implements ChannelService {
           }
         } else {
           throw new ServiceException(
-                  ErrorCode.NOT_SUPPORTED, "The peer join operation is unauthorized, peer belongs to unexcepted MSP");
+              ErrorCode.NOT_SUPPORTED,
+              "The peer join operation is unauthorized, peer belongs to unexcepted MSP");
         }
       }
 
