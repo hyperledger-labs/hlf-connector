@@ -1,7 +1,9 @@
 package hlf.java.rest.client.service.impl;
 
 import com.google.protobuf.ByteString;
+import com.google.protobuf.MessageOrBuilder;
 import com.google.protobuf.Timestamp;
+import com.google.protobuf.util.JsonFormat;
 import hlf.java.rest.client.exception.ChannelOperationException;
 import hlf.java.rest.client.exception.ErrorCode;
 import hlf.java.rest.client.exception.ServiceException;
@@ -145,7 +147,8 @@ public class ChannelServiceImpl implements ChannelService {
           }
         } else {
           throw new ServiceException(
-                  ErrorCode.NOT_SUPPORTED, "The peer join operation is unauthorized, peer belongs to unexcepted MSP");
+              ErrorCode.NOT_SUPPORTED,
+              "The peer join operation is unauthorized, peer belongs to unexcepted MSP");
         }
       }
 
