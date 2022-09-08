@@ -140,12 +140,14 @@ public class ChaincodeOperationsServiceImpl implements ChaincodeOperationsServic
                   hfClientWrapper.getHfClient().newLifecycleQueryInstalledChaincodesRequest(),
                   peers);
       String packageId = null;
+
+      String desiredLabel = chaincodeName + "_" + chaincodeVersion;
       for (LifecycleQueryInstalledChaincodesProposalResponse peerResults : results) {
         for (LifecycleQueryInstalledChaincodesProposalResponse
                 .LifecycleQueryInstalledChaincodesResult
             lifecycleQueryInstalledChaincodeResult :
                 peerResults.getLifecycleQueryInstalledChaincodesResult()) {
-          if (lifecycleQueryInstalledChaincodeResult.getLabel().equals(chaincodeName)) {
+          if (lifecycleQueryInstalledChaincodeResult.getLabel().equals(desiredLabel)) {
             packageId = lifecycleQueryInstalledChaincodeResult.getPackageId();
             break;
           }

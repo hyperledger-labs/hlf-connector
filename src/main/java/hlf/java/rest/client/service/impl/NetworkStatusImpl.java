@@ -19,7 +19,6 @@ import java.util.Base64;
 import lombok.extern.slf4j.Slf4j;
 import org.hyperledger.fabric.gateway.Gateway;
 import org.hyperledger.fabric.gateway.Network;
-import org.hyperledger.fabric.gateway.impl.GatewayImpl;
 import org.hyperledger.fabric.protos.common.Configtx.Config;
 import org.hyperledger.fabric.protos.common.Configtx.ConfigGroup;
 import org.hyperledger.fabric.protos.common.Configtx.ConfigUpdate;
@@ -209,11 +208,7 @@ public class NetworkStatusImpl implements NetworkStatus {
       return new ResponseEntity<>(
           new ClientResponseModel(
               ErrorCode.NOT_FOUND.getValue(),
-              "Network and User cannot be NULL: "
-                  + "Network = "
-                  + network
-                  + "and User = "
-                  + user),
+              "Network and User cannot be NULL: " + "Network = " + network + "and User = " + user),
           HttpStatus.OK);
     }
   }
@@ -287,11 +282,7 @@ public class NetworkStatusImpl implements NetworkStatus {
       return new ResponseEntity<>(
           new ClientResponseModel(
               ErrorCode.NOT_FOUND.getValue(),
-              "Network and User cannot be NULL: "
-                  + "Network = "
-                  + network
-                  + "and User = "
-                  + user),
+              "Network and User cannot be NULL: " + "Network = " + network + "and User = " + user),
           HttpStatus.OK);
     }
   }
