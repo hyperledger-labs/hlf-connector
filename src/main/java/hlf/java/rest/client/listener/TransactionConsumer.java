@@ -62,6 +62,11 @@ public class TransactionConsumer {
       }
 
       for (Header msgHeader : kafkaHeaders) {
+        log.info(
+            "Header-Key : "
+                + msgHeader.key()
+                + " Header-Value: "
+                + new String(msgHeader.value(), StandardCharsets.UTF_8));
         switch (msgHeader.key()) {
           case FabricClientConstants.CHANNEL_NAME:
             networkName = new String(msgHeader.value(), StandardCharsets.UTF_8);
@@ -82,11 +87,7 @@ public class TransactionConsumer {
             collections = new String(msgHeader.value(), StandardCharsets.UTF_8);
             break;
           default:
-            log.info(
-                "Header-Key : "
-                    + msgHeader.key()
-                    + " Header-Value: "
-                    + new String(msgHeader.value(), StandardCharsets.UTF_8));
+            break;
         }
       }
 
