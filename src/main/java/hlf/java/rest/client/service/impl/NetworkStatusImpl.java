@@ -39,7 +39,6 @@ public class NetworkStatusImpl implements NetworkStatus {
   @Autowired private Gateway gateway;
   @Autowired private User user;
   @Autowired private AddOrgToChannelWriteSetBuilder addOrgToChannelWriteSetBuilder;
-
   @Autowired private ChannelConfigDeserialization channelConfigDeserialization;
 
   @Override

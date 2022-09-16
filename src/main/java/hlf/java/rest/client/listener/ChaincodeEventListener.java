@@ -17,6 +17,7 @@ import org.springframework.context.annotation.Configuration;
 @ConditionalOnProperty(prefix = "fabric.events", name = "enable", havingValue = "true")
 @RefreshScope
 public class ChaincodeEventListener {
+
   @Autowired(required = false)
   private EventPublishService eventPublishService;
 
@@ -36,6 +37,12 @@ public class ChaincodeEventListener {
         log.info("Payload: {}", new String(chaincodeEvent.getPayload()));
         log.info("Event Source: {}", es);
         log.info("Channel Name: {}", channelName);
+
+        if (eventPublishService == null) {
+          log.info("Event Publish is disabled, chaincode event is no sent...");
+          return;
+        }
+
         eventPublishService.publishChaincodeEvents(
             FabricEventParseUtil.createEventStructure(
                 new String(chaincodeEvent.getPayload()),

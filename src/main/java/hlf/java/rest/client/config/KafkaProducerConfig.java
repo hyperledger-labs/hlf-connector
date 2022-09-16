@@ -17,10 +17,7 @@ import org.springframework.kafka.core.DefaultKafkaProducerFactory;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.kafka.core.ProducerFactory;
 
-/*
- * This class is the configuration class for sending to Chaincode event to eventHub/Kafka Topic.
- *
- */
+/** This class is the configuration class for sending to Chaincode event to eventHub/Kafka Topic. */
 @Slf4j
 @Configuration
 @ConditionalOnProperty("kafka.event-listener.brokerHost")
@@ -36,13 +33,10 @@ public class KafkaProducerConfig {
     props.put(
         ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG,
         org.apache.kafka.common.serialization.StringSerializer.class);
-    /*
-     * configProps.put( ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG,
-     * org.springframework.kafka.support.serializer.JsonSerializer.class);
-     */
     props.put(
         ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG,
         org.apache.kafka.common.serialization.StringSerializer.class);
+    props.put(ProducerConfig.ENABLE_IDEMPOTENCE_CONFIG, Boolean.FALSE);
     // Azure event-hub config
     if (StringUtils.isNotEmpty(kafkaProducerProperties.getSaslJaasConfig())) {
       props.put(

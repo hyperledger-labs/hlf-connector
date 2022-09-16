@@ -4,8 +4,8 @@ import io.swagger.v3.oas.models.media.StringSchema;
 import io.swagger.v3.oas.models.parameters.HeaderParameter;
 import lombok.extern.slf4j.Slf4j;
 import org.springdoc.core.SpringDocConfigProperties;
-import org.springdoc.core.SpringDocConfiguration;
 import org.springdoc.core.customizers.OpenApiCustomiser;
+import org.springdoc.core.providers.ObjectMapperProvider;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -42,12 +42,13 @@ public class SwaggerConfig {
   }
 
   @Bean
-  SpringDocConfiguration springDocConfiguration() {
-    return new SpringDocConfiguration();
+  public SpringDocConfigProperties springDocConfigProperties() {
+    return new SpringDocConfigProperties();
   }
 
   @Bean
-  public SpringDocConfigProperties springDocConfigProperties() {
-    return new SpringDocConfigProperties();
+  public ObjectMapperProvider springDocObjectMapperProvider(
+      SpringDocConfigProperties springDocConfigProperties) {
+    return new ObjectMapperProvider(springDocConfigProperties);
   }
 }
