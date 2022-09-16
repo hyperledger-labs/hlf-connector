@@ -53,6 +53,11 @@ public class BlockEventListener implements BlockListener {
           String blockPayload = FabricEventParseUtil.getWriteInfoFromBlock(transactionEvent);
           log.info("Block Data: {}", blockPayload);
 
+          if (eventPublishServiceImpl == null) {
+            log.info("Event Publish is disabled, block event is not sent...");
+            return;
+          }
+
           eventPublishServiceImpl.publishBlockEvents(
               FabricEventParseUtil.createEventStructure(
                   blockPayload,
