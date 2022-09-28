@@ -30,12 +30,14 @@ import org.hyperledger.fabric.sdk.exception.ProposalException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.util.CollectionUtils;
 
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
+import java.util.stream.Collectors;
 
 import static hlf.java.rest.client.exception.ErrorCode.CHAINCODE_PACKAGE_ID_VALIDATION_FAILED;
 import static hlf.java.rest.client.exception.ErrorCode.SEQUENCE_NUMBER_VALIDATION_FAILED;
@@ -221,6 +223,22 @@ public class ChaincodeOperationsServiceImpl implements ChaincodeOperationsServic
   private String approveChaincode(Channel channel, ChaincodeOperations chaincodeOperationsModel) {
 
     Collection<Peer> peers = channel.getPeers();
+
+    if(!CollectionUtils.isEmpty(chaincodeOperationsModel.getPeerNames())) {
+
+      Set<String> peerFilter = chaincodeOperationsModel.getPeerNames();
+
+      peers = peers.stream()
+          .filter(channelPeer -> peerFilter.contains(channelPeer.getName()))
+          .collect(Collectors.toList());
+
+      if(CollectionUtils.isEmpty(peers)) {
+        log.error("No Peers identified with the names {} in channel {}. Skipping approval", peerFilter, channel.getName());
+        throw new ServiceException(
+            ErrorCode.HYPERLEDGER_FABRIC_CHAINCODE_OPERATIONS_REQUEST_REJECTION, "Invalid Peer details");
+      }
+    }
+
     try {
       LifecycleApproveChaincodeDefinitionForMyOrgRequest
           lifecycleApproveChaincodeDefinitionForMyOrgRequest =
