@@ -19,7 +19,7 @@
 	<properties>
 		<java.version>11</java.version>
 		<jacoco.version>0.8.8</jacoco.version>
-		<protobuf.version>3.19.2</protobuf.version>
+		<protobuf.version>3.19.6</protobuf.version>
 		<spring-cloud.version>2021.0.3</spring-cloud.version>
 	</properties>
 
@@ -36,7 +36,6 @@
 			</dependency>
 		</dependencies>
 	</dependencyManagement>
-
 	<dependencies>
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
@@ -50,7 +49,12 @@
 		<dependency>
 			<groupId>org.apache.tomcat.embed</groupId>
 			<artifactId>tomcat-embed-core</artifactId>
-			<version>9.0.58</version>
+			<version>9.0.62</version>
+		</dependency>
+		<dependency>
+			<groupId>com.fasterxml.jackson.core</groupId>
+			<artifactId>jackson-databind</artifactId>
+			<version>2.14.0-rc1</version>
 		</dependency>
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
