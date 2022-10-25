@@ -1,10 +1,7 @@
 package hlf.java.rest.client.integration;
 
 import hlf.java.rest.client.config.FabricProperties;
-import hlf.java.rest.client.config.KafkaProducerConfig;
 import hlf.java.rest.client.config.KafkaProperties;
-import java.io.File;
-import java.io.IOException;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.FileUtils;
 import org.hyperledger.fabric.gateway.Wallet;
@@ -23,6 +20,9 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.client.RestTemplate;
 
+import java.io.File;
+import java.io.IOException;
+
 @Slf4j
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
@@ -30,9 +30,7 @@ public class ConfigHandlerControllerIntegrationTest {
   @LocalServerPort private int randomServerPort;
   @Autowired private FabricProperties fabricProperties;
   @Autowired private KafkaProperties kafkaProperties;
-  @Autowired private KafkaProperties.ConsumerProperties consumerProperties;
   @Autowired private Wallet wallet;
-  @Autowired private KafkaProducerConfig kafkaProducerConfig;
 
   @BeforeAll
   static void setup() throws IOException {
@@ -43,18 +41,17 @@ public class ConfigHandlerControllerIntegrationTest {
   }
 
   @Test
-  void uploadConfigFile() throws Exception {
-    String applicationYMLFile = "src/test/resources/integration/sample-application.yml";
-    RestTemplate restTemplate = new RestTemplate();
-    String baseUrl = "http://localhost:" + this.randomServerPort + "/configuration/update";
-    HttpHeaders headers = new HttpHeaders();
-    headers.setContentType(MediaType.APPLICATION_OCTET_STREAM);
-    headers.set("api-key", "ePVYHwAaQ0V1XOTX6U");
-    HttpEntity<byte[]> requestEntity =
-        new HttpEntity<>(FileUtils.readFileToByteArray(new File(applicationYMLFile)), headers);
-    ResponseEntity<String> response =
-        restTemplate.postForEntity(baseUrl, requestEntity, String.class);
+  void testContextRefresh() throws Exception {
+
+    String incomingApplicationYMLFile = "src/test/resources/integration/sample-application.yml";
+    String existingApplicationYMLFile = "src/test/resources/application.yml";
+
+    FileUtils.copyFile(
+        new File(incomingApplicationYMLFile),
+        new File(existingApplicationYMLFile));
+
     triggerActuatorRefresh();
+
     Assertions.assertEquals(
         TestConfiguration.FABRIC_PROPERTIES_CLIENT, fabricProperties.getClient().toString());
     Assertions.assertEquals(
@@ -63,7 +60,7 @@ public class ConfigHandlerControllerIntegrationTest {
         TestConfiguration.KAFKA_PROPERTIES_PRODUCER, kafkaProperties.getEventListener().toString());
     Assertions.assertEquals(
         TestConfiguration.KAFKA_CONSUMER_PROPERTIES,
-        consumerProperties.getIntegrationPoints().toString());
+        kafkaProperties.getIntegrationPoints().toString());
   }
 
   void triggerActuatorRefresh() {
@@ -89,8 +86,8 @@ public class ConfigHandlerControllerIntegrationTest {
     static String FABRIC_PROPERTIES_EVENTS =
         "FabricProperties.Events(enable=true, chaincode=[chaincode12, chaincode2], block=[block111, block2])";
     static String KAFKA_PROPERTIES_PRODUCER =
-        "KafkaProperties.Producer(brokerHost=localhost:90931, topic=hlf-offchain-topic1, saslJaasConfig=null)";
+        "Producer{brokerHost='localhost:8087', topic='hlf-offchain-topic1', saslJaasConfig='null'}";
     static String KAFKA_CONSUMER_PROPERTIES =
-        "[KafkaProperties.Consumer(brokerHost=localhost:90931, groupId=fabric-consumer1, topic=hlf-integration-topic11, saslJaasConfig=null), KafkaProperties.Consumer(brokerHost=localhost:90941, groupId=fabric-consumer1, topic=hlf-integration-topic21, saslJaasConfig=null)]";
+        "[Consumer{brokerHost='localhost:8087', groupId='fabric-consumer1', topic='hlf-integration-topic11', saslJaasConfig='null'}, Consumer{brokerHost='localhost:8087', groupId='fabric-consumer1', topic='hlf-integration-topic21', saslJaasConfig='null'}]";
   }
 }
