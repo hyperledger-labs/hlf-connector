@@ -41,15 +41,15 @@ fabric:
 kafka:
   integration-points:
     -
-      brokerHost: localhost:90931
+      brokerHost: localhost:8087
       groupId: fabric-consumer1
       topic: hlf-integration-topic11
     -
-      brokerHost: localhost:90941
+      brokerHost: localhost:8087
       groupId: fabric-consumer1
       topic: hlf-integration-topic21
   event-listener:
-    brokerHost: localhost:90931
+    brokerHost: localhost:8087
     topic: hlf-offchain-topic1
 
 
