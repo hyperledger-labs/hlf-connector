@@ -1,17 +1,19 @@
 package hlf.java.rest.client.config;
 
 import hlf.java.rest.client.util.FabricClientConstants;
-import java.util.HashMap;
-import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.kafka.clients.CommonClientConfigs;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.common.config.SslConfigs;
 import org.apache.kafka.common.serialization.StringDeserializer;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.cloud.context.config.annotation.RefreshScope;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.kafka.core.DefaultKafkaConsumerFactory;
+
+import java.util.HashMap;
+import java.util.Map;
 
 /*
  * This class is the configuration class for setting the properties for the kafka consumers.
@@ -19,6 +21,7 @@ import org.springframework.kafka.core.DefaultKafkaConsumerFactory;
  */
 @Slf4j
 @Configuration
+@ConditionalOnProperty("kafka.integration-points[0].brokerHost")
 @RefreshScope
 public class KafkaConsumerConfig {
 
@@ -51,7 +54,10 @@ public class KafkaConsumerConfig {
     }
 
     // Adding SSL configuration if Kafka Cluster is SSL secured
-    if (kafkaConsumerProperties.isSslEnabled()) {
+    if (kafkaConsumerProperties.isSslAuthRequired()) {
+
+      SSLAuthFilesCreationHelper.createSSLAuthFiles(kafkaConsumerProperties);
+
       props.put(
           CommonClientConfigs.SECURITY_PROTOCOL_CONFIG,
           kafkaConsumerProperties.getSecurityProtocol());

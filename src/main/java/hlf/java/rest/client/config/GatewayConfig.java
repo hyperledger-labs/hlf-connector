@@ -2,10 +2,6 @@ package hlf.java.rest.client.config;
 
 import hlf.java.rest.client.service.HFClientWrapper;
 import hlf.java.rest.client.service.impl.HFClientWrapperImpl;
-import java.io.IOException;
-import java.lang.reflect.InvocationTargetException;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import lombok.extern.slf4j.Slf4j;
 import org.hyperledger.fabric.gateway.Gateway;
 import org.hyperledger.fabric.gateway.Wallet;
@@ -21,6 +17,11 @@ import org.springframework.cloud.context.config.annotation.RefreshScope;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
+import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+
 /** Configure Gateway connection for the Fabric network. */
 @Slf4j
 @Configuration
@@ -34,8 +35,8 @@ public class GatewayConfig {
    * @return gateway Gateway object to connect to Fabric network
    * @throws IOException
    */
-  @RefreshScope
   @Bean
+  @RefreshScope
   public Gateway gateway(Wallet wallet) throws IOException {
     // Load the Network Connection Configuration path
     Path networkConfigPath =
@@ -58,8 +59,8 @@ public class GatewayConfig {
    * @return wallet Wallet pull credentials from wallet
    * @throws IOException
    */
-  @RefreshScope
   @Bean
+  @RefreshScope
   public Wallet wallet() throws IOException {
     log.info("Obtain the Wallet containing Admin and Client user information");
     // Load a file system based wallet for managing identities.
