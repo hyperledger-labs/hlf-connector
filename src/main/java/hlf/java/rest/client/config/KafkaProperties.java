@@ -1,5 +1,6 @@
 package hlf.java.rest.client.config;
 
+import java.util.List;
 import lombok.Data;
 import lombok.Getter;
 import lombok.Setter;
@@ -7,8 +8,6 @@ import org.apache.commons.lang3.StringUtils;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.cloud.context.config.annotation.RefreshScope;
 import org.springframework.context.annotation.Configuration;
-
-import java.util.List;
 
 /**
  * The type Kafka properties is added for fetching Kafka properties as configuration and can be used
@@ -30,9 +29,19 @@ public class KafkaProperties {
     private String topic;
     private String saslJaasConfig;
 
-    @Override public String toString() {
-      return "Producer{" + "brokerHost='" + brokerHost + '\'' + ", topic='" + topic + '\'' + ", saslJaasConfig='"
-          + saslJaasConfig + '\'' + '}';
+    @Override
+    public String toString() {
+      return "Producer{"
+          + "brokerHost='"
+          + brokerHost
+          + '\''
+          + ", topic='"
+          + topic
+          + '\''
+          + ", saslJaasConfig='"
+          + saslJaasConfig
+          + '\''
+          + '}';
     }
   }
 
@@ -52,7 +61,8 @@ public class KafkaProperties {
     protected String sslTruststoreBase64;
 
     protected boolean isSslAuthRequired() {
-      boolean isProtocolSSL = StringUtils.isNotBlank(securityProtocol) && "ssl".equalsIgnoreCase(securityProtocol);
+      boolean isProtocolSSL =
+          StringUtils.isNotBlank(securityProtocol) && "ssl".equalsIgnoreCase(securityProtocol);
       return isProtocolSSL && sslEnabled;
     }
   }
@@ -65,9 +75,22 @@ public class KafkaProperties {
     private String topic;
     private String saslJaasConfig;
 
-    @Override public String toString() {
-      return "Consumer{" + "brokerHost='" + brokerHost + '\'' + ", groupId='" + groupId + '\'' + ", topic='" + topic
-          + '\'' + ", saslJaasConfig='" + saslJaasConfig + '\'' + '}';
+    @Override
+    public String toString() {
+      return "Consumer{"
+          + "brokerHost='"
+          + brokerHost
+          + '\''
+          + ", groupId='"
+          + groupId
+          + '\''
+          + ", topic='"
+          + topic
+          + '\''
+          + ", saslJaasConfig='"
+          + saslJaasConfig
+          + '\''
+          + '}';
     }
   }
 }

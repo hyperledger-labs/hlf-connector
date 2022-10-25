@@ -2,6 +2,8 @@ package hlf.java.rest.client.integration;
 
 import hlf.java.rest.client.config.FabricProperties;
 import hlf.java.rest.client.config.KafkaProperties;
+import java.io.File;
+import java.io.IOException;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.FileUtils;
 import org.hyperledger.fabric.gateway.Wallet;
@@ -19,9 +21,6 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.client.RestTemplate;
-
-import java.io.File;
-import java.io.IOException;
 
 @Slf4j
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
@@ -46,9 +45,7 @@ public class ConfigHandlerControllerIntegrationTest {
     String incomingApplicationYMLFile = "src/test/resources/integration/sample-application.yml";
     String existingApplicationYMLFile = "src/test/resources/application.yml";
 
-    FileUtils.copyFile(
-        new File(incomingApplicationYMLFile),
-        new File(existingApplicationYMLFile));
+    FileUtils.copyFile(new File(incomingApplicationYMLFile), new File(existingApplicationYMLFile));
 
     triggerActuatorRefresh();
 

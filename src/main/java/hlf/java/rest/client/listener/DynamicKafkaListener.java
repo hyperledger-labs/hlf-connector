@@ -2,6 +2,8 @@ package hlf.java.rest.client.listener;
 
 import hlf.java.rest.client.config.KafkaConsumerConfig;
 import hlf.java.rest.client.config.KafkaProperties;
+import java.util.ArrayList;
+import java.util.List;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -16,9 +18,6 @@ import org.springframework.kafka.listener.ConcurrentMessageListenerContainer;
 import org.springframework.kafka.listener.ContainerProperties;
 import org.springframework.kafka.support.Acknowledgment;
 import org.springframework.util.CollectionUtils;
-
-import java.util.ArrayList;
-import java.util.List;
 
 /*
  * This class is the configuration class for dynamically creating consumers to receiving the blockchain
@@ -47,7 +46,7 @@ public class DynamicKafkaListener {
   public void onRefresh(RefreshScopeRefreshedEvent event) {
     log.info("Refreshing Kafka Consumers..");
 
-    if(!CollectionUtils.isEmpty(existingContainers)) {
+    if (!CollectionUtils.isEmpty(existingContainers)) {
       log.info("Destroying stale containers..");
       existingContainers.forEach(ConcurrentMessageListenerContainer::destroy);
 
