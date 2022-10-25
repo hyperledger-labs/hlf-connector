@@ -1,11 +1,14 @@
 package hlf.java.rest.client.config;
 
-import java.util.List;
 import lombok.Data;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import lombok.Getter;
+import lombok.Setter;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.cloud.context.config.annotation.RefreshScope;
 import org.springframework.context.annotation.Configuration;
+
+import java.util.List;
 
 /**
  * The type Kafka properties is added for fetching Kafka properties as configuration and can be used
@@ -17,28 +20,25 @@ import org.springframework.context.annotation.Configuration;
 @RefreshScope
 public class KafkaProperties {
 
-  private ConsumerProperties integration;
+  private List<Consumer> integrationPoints;
   private Producer eventListener;
 
-  @Data
-  @Configuration
-  @ConfigurationProperties(prefix = "kafka")
-  public static class ConsumerProperties {
-    private List<Consumer> integrationPoints;
-  }
-
-  @Data
-  @ConditionalOnProperty("kafka.event-listener.brokerHost")
-  @Configuration
-  @ConfigurationProperties(prefix = "kafka.event-listener")
+  @Getter
+  @Setter
   public static class Producer extends SSLProperties {
     private String brokerHost;
     private String topic;
     private String saslJaasConfig;
+
+    @Override public String toString() {
+      return "Producer{" + "brokerHost='" + brokerHost + '\'' + ", topic='" + topic + '\'' + ", saslJaasConfig='"
+          + saslJaasConfig + '\'' + '}';
+    }
   }
 
   /** The type Ssl properties is added for configuring SSL configuration for Kafka Cluster. */
-  @Data
+  @Getter
+  @Setter
   public static class SSLProperties {
 
     protected boolean sslEnabled;
@@ -48,14 +48,26 @@ public class KafkaProperties {
     protected String sslTruststoreLocation;
     protected String sslTruststorePassword;
     protected String sslKeyPassword;
+    protected String sslKeystoreBase64;
+    protected String sslTruststoreBase64;
+
+    protected boolean isSslAuthRequired() {
+      boolean isProtocolSSL = StringUtils.isNotBlank(securityProtocol) && "ssl".equalsIgnoreCase(securityProtocol);
+      return isProtocolSSL && sslEnabled;
+    }
   }
 
-  @Data
-  @Configuration
+  @Getter
+  @Setter
   public static class Consumer extends SSLProperties {
     private String brokerHost;
     private String groupId;
     private String topic;
     private String saslJaasConfig;
+
+    @Override public String toString() {
+      return "Consumer{" + "brokerHost='" + brokerHost + '\'' + ", groupId='" + groupId + '\'' + ", topic='" + topic
+          + '\'' + ", saslJaasConfig='" + saslJaasConfig + '\'' + '}';
+    }
   }
 }
