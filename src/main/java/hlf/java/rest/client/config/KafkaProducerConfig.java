@@ -1,31 +1,32 @@
 package hlf.java.rest.client.config;
 
 import hlf.java.rest.client.util.FabricClientConstants;
-import java.util.HashMap;
-import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.kafka.clients.CommonClientConfigs;
 import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.common.config.SslConfigs;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.cloud.context.config.annotation.RefreshScope;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.context.annotation.DependsOn;
 import org.springframework.kafka.core.DefaultKafkaProducerFactory;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.kafka.core.ProducerFactory;
+
+import java.util.HashMap;
+import java.util.Map;
 
 /** This class is the configuration class for sending to Chaincode event to eventHub/Kafka Topic. */
 @Slf4j
 @Configuration
 @ConditionalOnProperty("kafka.event-listener.brokerHost")
-@DependsOn({"kafkaProperties"})
+@RefreshScope
 public class KafkaProducerConfig {
 
-  @RefreshScope
-  @Bean
+  @Autowired private KafkaProperties kafkaProperties;
+
   public ProducerFactory<String, String> eventProducerFactory(
       KafkaProperties.Producer kafkaProducerProperties) {
     Map<String, Object> props = new HashMap<>();
@@ -51,7 +52,10 @@ public class KafkaProducerConfig {
     }
 
     // Adding SSL configuration if Kafka Cluster is SSL secured
-    if (kafkaProducerProperties.isSslEnabled()) {
+    if (kafkaProducerProperties.isSslAuthRequired()) {
+
+      SSLAuthFilesCreationHelper.createSSLAuthFiles(kafkaProducerProperties);
+
       props.put(
           CommonClientConfigs.SECURITY_PROTOCOL_CONFIG,
           kafkaProducerProperties.getSecurityProtocol());
@@ -70,14 +74,13 @@ public class KafkaProducerConfig {
       props.put(SslConfigs.SSL_KEY_PASSWORD_CONFIG, kafkaProducerProperties.getSslKeyPassword());
     }
 
-    log.debug("Created kafka producer factory");
+    log.info("Created kafka producer factory");
     return new DefaultKafkaProducerFactory<>(props);
   }
 
-  @RefreshScope
   @Bean
-  public KafkaTemplate<String, String> kafkaTemplate(
-      KafkaProperties.Producer kafkaProducerProperties) {
-    return new KafkaTemplate<>(eventProducerFactory(kafkaProducerProperties));
+  @RefreshScope
+  public KafkaTemplate<String, String> kafkaTemplate() {
+    return new KafkaTemplate<>(eventProducerFactory(kafkaProperties.getEventListener()));
   }
 }
