@@ -1,13 +1,12 @@
 package hlf.java.rest.client.config;
 
-import lombok.experimental.UtilityClass;
-import lombok.extern.slf4j.Slf4j;
-
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Base64;
+import lombok.experimental.UtilityClass;
+import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 @UtilityClass
@@ -17,15 +16,13 @@ public class SSLAuthFilesCreationHelper {
 
     log.info("Creating Kafka ssl keystore file");
     createSSLFileFromBase64(
-        kafkaSSLProperties.getSslKeystoreBase64(),
-        kafkaSSLProperties.getSslKeystoreLocation());
+        kafkaSSLProperties.getSslKeystoreBase64(), kafkaSSLProperties.getSslKeystoreLocation());
 
     log.info("Keystore file created at {}", kafkaSSLProperties.getSslKeystoreLocation());
 
     log.info("Creating Kafka ssl truststore file");
     createSSLFileFromBase64(
-        kafkaSSLProperties.getSslTruststoreBase64(),
-        kafkaSSLProperties.getSslTruststoreLocation());
+        kafkaSSLProperties.getSslTruststoreBase64(), kafkaSSLProperties.getSslTruststoreLocation());
 
     log.info("TrustStore file created at {}", kafkaSSLProperties.getSslTruststoreLocation());
   }
