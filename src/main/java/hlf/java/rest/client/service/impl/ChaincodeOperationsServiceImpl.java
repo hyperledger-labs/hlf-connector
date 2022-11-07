@@ -12,12 +12,15 @@ import hlf.java.rest.client.model.ChaincodeOperations;
 import hlf.java.rest.client.model.ChaincodeOperationsType;
 import hlf.java.rest.client.service.ChaincodeOperationsService;
 import hlf.java.rest.client.service.HFClientWrapper;
+import java.nio.charset.StandardCharsets;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
+import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 import org.hyperledger.fabric.gateway.Gateway;
 import org.hyperledger.fabric.gateway.Network;
 import org.hyperledger.fabric.sdk.BlockEvent;
@@ -42,7 +45,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
-import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -224,18 +226,23 @@ public class ChaincodeOperationsServiceImpl implements ChaincodeOperationsServic
 
     Collection<Peer> peers = channel.getPeers();
 
-    if(!CollectionUtils.isEmpty(chaincodeOperationsModel.getPeerNames())) {
+    if (!CollectionUtils.isEmpty(chaincodeOperationsModel.getPeerNames())) {
 
       Set<String> peerFilter = chaincodeOperationsModel.getPeerNames();
 
-      peers = peers.stream()
-          .filter(channelPeer -> peerFilter.contains(channelPeer.getName()))
-          .collect(Collectors.toList());
+      peers =
+          peers.stream()
+              .filter(channelPeer -> peerFilter.contains(channelPeer.getName()))
+              .collect(Collectors.toList());
 
-      if(CollectionUtils.isEmpty(peers)) {
-        log.error("No Peers identified with the names {} in channel {}. Skipping approval", peerFilter, channel.getName());
+      if (CollectionUtils.isEmpty(peers)) {
+        log.error(
+            "No Peers identified with the names {} in channel {}. Skipping approval",
+            peerFilter,
+            channel.getName());
         throw new ServiceException(
-            ErrorCode.HYPERLEDGER_FABRIC_CHAINCODE_OPERATIONS_REQUEST_REJECTION, "Invalid Peer details");
+            ErrorCode.HYPERLEDGER_FABRIC_CHAINCODE_OPERATIONS_REQUEST_REJECTION,
+            "Invalid Peer details");
       }
     }
 
@@ -251,6 +258,13 @@ public class ChaincodeOperationsServiceImpl implements ChaincodeOperationsServic
           chaincodeOperationsModel.getChaincodeVersion());
       lifecycleApproveChaincodeDefinitionForMyOrgRequest.setInitRequired(
           chaincodeOperationsModel.getInitRequired());
+
+      if (StringUtils.isNotBlank(chaincodeOperationsModel.getStringifiedPolicy())) {
+        String stringifiedPolicy = chaincodeOperationsModel.getStringifiedPolicy();
+        lifecycleApproveChaincodeDefinitionForMyOrgRequest.setChaincodeEndorsementPolicy(
+            LifecycleChaincodeEndorsementPolicy.fromBytes(
+                stringifiedPolicy.getBytes(StandardCharsets.UTF_8)));
+      }
 
       // TODO: Add chaincodeCollectionConfiguration and chaincodeEndorsementPolicy
 
@@ -299,6 +313,13 @@ public class ChaincodeOperationsServiceImpl implements ChaincodeOperationsServic
 
       lifecycleCommitChaincodeDefinitionRequest.setInitRequired(
           chaincodeOperationsModel.getInitRequired());
+
+      if (StringUtils.isNotBlank(chaincodeOperationsModel.getStringifiedPolicy())) {
+        String stringifiedPolicy = chaincodeOperationsModel.getStringifiedPolicy();
+        lifecycleCommitChaincodeDefinitionRequest.setChaincodeEndorsementPolicy(
+            LifecycleChaincodeEndorsementPolicy.fromBytes(
+                stringifiedPolicy.getBytes(StandardCharsets.UTF_8)));
+      }
 
       Collection<LifecycleCommitChaincodeDefinitionProposalResponse>
           lifecycleCommitChaincodeDefinitionProposalResponses =
