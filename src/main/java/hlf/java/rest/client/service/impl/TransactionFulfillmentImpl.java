@@ -86,13 +86,18 @@ public class TransactionFulfillmentImpl implements TransactionFulfillment {
     transactionProposalRequest.setChaincodeName(contractName);
     transactionProposalRequest.setFcn(functionName);
     transactionProposalRequest.setTransactionContext(channel.newTransactionContext());
-    transactionProposalRequest.setArgs(transactionParams);
+
+    if (transactionParams == null || transactionParams.length == 0) {
+      transactionProposalRequest.setArgs(new String[] {});
+    } else {
+      transactionProposalRequest.setArgs(transactionParams);
+    }
 
     List<Peer> endorsingPeers = new ArrayList<>();
     // get the peers if present
     if (peerNames.isPresent()) {
       for (Peer channelPeer : network.getChannel().getPeers()) {
-        log.info("Peer Name: " + channelPeer.getName());
+        log.info("Peer Name: {}", channelPeer.getName());
         if (peerNames.get().contains(channelPeer.getName())) {
           endorsingPeers.add(channelPeer);
         }
