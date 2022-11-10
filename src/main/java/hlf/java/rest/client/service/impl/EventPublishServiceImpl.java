@@ -113,6 +113,8 @@ public class EventPublishServiceImpl implements EventPublishService {
                   FabricClientConstants.FABRIC_EVENT_TYPE,
                   FabricClientConstants.FABRIC_EVENT_TYPE_CHAINCODE.getBytes()));
 
+      log.info("Publishing Chaincode event to outbound topic {}", topicName);
+
       ListenableFuture<SendResult<String, String>> future = kafkaTemplate.send(producerRecord);
 
       future.addCallback(
@@ -189,6 +191,8 @@ public class EventPublishServiceImpl implements EventPublishService {
               new RecordHeader(
                   FabricClientConstants.IS_PRIVATE_DATA_PRESENT,
                   isPrivateDataPresent.toString().getBytes()));
+
+      log.info("Publishing Block event to outbound topic {}", topicName);
 
       ListenableFuture<SendResult<String, String>> future = kafkaTemplate.send(producerRecord);
 

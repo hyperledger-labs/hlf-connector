@@ -2,9 +2,6 @@ package hlf.java.rest.client.listener;
 
 import hlf.java.rest.client.config.FabricProperties;
 import hlf.java.rest.client.service.HFClientWrapper;
-import java.util.List;
-import java.util.regex.Pattern;
-import javax.annotation.PostConstruct;
 import lombok.extern.slf4j.Slf4j;
 import org.hyperledger.fabric.gateway.Gateway;
 import org.hyperledger.fabric.gateway.Network;
@@ -15,6 +12,10 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.cloud.context.config.annotation.RefreshScope;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.util.CollectionUtils;
+
+import javax.annotation.PostConstruct;
+import java.util.List;
+import java.util.regex.Pattern;
 
 @Slf4j
 @Configuration
@@ -40,7 +41,7 @@ public class FabricEventListener {
       if (!CollectionUtils.isEmpty(blockChannelNames)) {
 
         for (String channelName : blockChannelNames) {
-          log.info("channe; names{}", channelName);
+          log.info("channel names {}", channelName);
           Network network = gateway.getNetwork(channelName);
 
           if (null != network) {

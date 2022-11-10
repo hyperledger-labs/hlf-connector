@@ -39,7 +39,7 @@ public class ChaincodeEventListener {
         log.info("Channel Name: {}", channelName);
 
         if (eventPublishService == null) {
-          log.info("Event Publish is disabled, chaincode event is no sent...");
+          log.info("Event Publish is disabled, skipping this Chaincode event");
           return;
         }
 
