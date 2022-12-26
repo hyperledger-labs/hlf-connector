@@ -1,6 +1,8 @@
 package hlf.java.rest.client.listener;
 
+import hlf.java.rest.client.exception.ErrorCode;
 import hlf.java.rest.client.exception.FabricTransactionException;
+import hlf.java.rest.client.exception.ServiceException;
 import hlf.java.rest.client.service.EventPublishService;
 import hlf.java.rest.client.service.TransactionFulfillment;
 import hlf.java.rest.client.util.FabricClientConstants;
@@ -13,7 +15,6 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.common.header.Header;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.kafka.support.Acknowledgment;
 import org.springframework.stereotype.Controller;
 
 /*
@@ -33,9 +34,8 @@ public class TransactionConsumer {
    * is complete
    *
    * @param message ConsumerRecord payload from upstream system
-   * @param acknowledgment Acknowledgment manual commit offset
    */
-  public void listen(ConsumerRecord<String, String> message, Acknowledgment acknowledgment) {
+  public void listen(ConsumerRecord<String, String> message) {
     log.info(
         "Incoming Message details : Topic : "
             + message.topic()
@@ -139,16 +139,14 @@ public class TransactionConsumer {
       } else {
         log.info("Incorrect Transaction Payload");
       }
-      acknowledgment.acknowledge();
 
     } catch (FabricTransactionException fte) {
-      acknowledgment.acknowledge();
       eventPublishServiceImpl.publishTransactionFailureEvent(
           fte.getMessage(), networkName, contractName, transactionFunctionName, transactionParams);
       log.error("Error in Submitting Transaction - Exception - " + fte.getMessage());
     } catch (Exception ex) {
       log.error("Error in Kafka Listener - Message Format exception - " + ex.getMessage());
-      ex.printStackTrace();
+      throw new ServiceException(ErrorCode.HYPERLEDGER_FABRIC_TRANSACTION_ERROR, ex.getMessage());
     }
   }
 }
