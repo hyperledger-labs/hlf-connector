@@ -10,6 +10,10 @@ springdoc:
     enabled: false
 spring:
   profiles: local
+metrics:
+  custom:
+    kafka:
+      enable: false
 fabric:
   localhostReportAddress: true
   wallet:
