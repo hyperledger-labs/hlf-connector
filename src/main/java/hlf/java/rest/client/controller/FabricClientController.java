@@ -73,7 +73,7 @@ public class FabricClientController {
       @RequestHeader("chaincode") @Validated String chaincodeName,
       @RequestHeader("function") @Validated String functionName,
       @RequestHeader(value = "peers", required = false) String peerNames,
-      @RequestBody @Validated String payload) {
+      @RequestBody(required = false) @Validated String payload) {
     log.info(
         "Smart Contract init request Network Name: {}, Contract Name: {}, Function Name: {}, Endorsing Peers: {}, Transaction Parameters: {}",
         functionName,
