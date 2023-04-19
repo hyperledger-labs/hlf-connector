@@ -1,9 +1,11 @@
 package hlf.java.rest.client.listener;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import hlf.java.rest.client.exception.ErrorCode;
 import hlf.java.rest.client.exception.FabricTransactionException;
 import hlf.java.rest.client.exception.ServiceException;
 import hlf.java.rest.client.metrics.EmitKafkaCustomMetrics;
+import hlf.java.rest.client.model.MultiDataTransactionPayload;
 import hlf.java.rest.client.service.EventPublishService;
 import hlf.java.rest.client.service.TransactionFulfillment;
 import hlf.java.rest.client.util.FabricClientConstants;
@@ -25,7 +27,11 @@ import org.springframework.stereotype.Controller;
 @Controller
 public class TransactionConsumer {
 
+  private static final String PAYLOAD_KIND = "payload_kind";
+  private static final String PL_KIND_MULTI_DATA = "multi_data";
+
   @Autowired TransactionFulfillment transactionFulfillment;
+  @Autowired ObjectMapper objectMapper;
 
   @Autowired(required = false)
   EventPublishService eventPublishServiceImpl;
@@ -57,6 +63,7 @@ public class TransactionConsumer {
     String peerNames = "";
     String transientKey = "";
     String collections = "";
+    String payloadKind = "";
 
     try {
       if (!message.value().isEmpty()) {
@@ -88,14 +95,32 @@ public class TransactionConsumer {
           case FabricClientConstants.FABRIC_COLLECTION_NAME:
             collections = new String(msgHeader.value(), StandardCharsets.UTF_8);
             break;
+          case PAYLOAD_KIND:
+            payloadKind = new String(msgHeader.value(), StandardCharsets.UTF_8);
+            break;
           default:
             break;
         }
       }
 
-      if (!networkName.isEmpty()
-          && !contractName.isEmpty()
-          && !transactionFunctionName.isEmpty()
+      if (isIdentifiableFunction(networkName, contractName, transactionFunctionName)
+          && payloadKind.equals(PL_KIND_MULTI_DATA)) {
+
+        MultiDataTransactionPayload multiDataTransactionPayload;
+
+        try {
+          multiDataTransactionPayload =
+              objectMapper.readValue(transactionParams, MultiDataTransactionPayload.class);
+        } catch (Exception e) {
+          throw new ServiceException(
+              ErrorCode.CHANNEL_PAYLOAD_ERROR, "Invalid transaction payload provided");
+        }
+
+        transactionFulfillment.writeMultiDataTransactionToLedger(
+            networkName, contractName, transactionFunctionName, multiDataTransactionPayload);
+      }
+
+      if (isIdentifiableFunction(networkName, contractName, transactionFunctionName)
           && !transactionParams.isEmpty()) {
 
         if (null != peerNames && !peerNames.isEmpty()) {
@@ -150,5 +175,10 @@ public class TransactionConsumer {
       log.error("Error in Kafka Listener - Message Format exception - " + ex.getMessage());
       throw new ServiceException(ErrorCode.HYPERLEDGER_FABRIC_TRANSACTION_ERROR, ex.getMessage());
     }
+  }
+
+  private boolean isIdentifiableFunction(
+      String networkName, String contractName, String transactionFunctionName) {
+    return !networkName.isEmpty() && !contractName.isEmpty() && !transactionFunctionName.isEmpty();
   }
 }
