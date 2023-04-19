@@ -2,9 +2,13 @@ package hlf.java.rest.client.service;
 
 import hlf.java.rest.client.model.ClientResponseModel;
 import hlf.java.rest.client.model.EventAPIResponseModel;
+import hlf.java.rest.client.model.MultiDataTransactionPayload;
+import org.hyperledger.fabric.gateway.ContractException;
+import org.hyperledger.fabric.gateway.GatewayRuntimeException;
+import org.springframework.http.ResponseEntity;
+
 import java.util.List;
 import java.util.Optional;
-import org.springframework.http.ResponseEntity;
 
 /**
  * Handles the business logic for processing transaction related actions affecting the ledger
@@ -135,4 +139,27 @@ public interface TransactionFulfillment {
       String transactionId,
       String chaincode,
       String eventType);
+
+  /**
+   * Handles the ledger write operation for scenarios where incoming request contains multiple PDC
+   * or Public data details.
+   *
+   * <p>Returns Network response for Successful write operation, wrapped within ResponseEntity
+   * Model.
+   *
+   * <p>For failures, response would be wrapped within an Exception, that can potentially be of kind
+   * {@link GatewayRuntimeException} or {@link ContractException} or {@link InterruptedException}
+   * depending on the nature of failure.
+   *
+   * @param channelName String channel name
+   * @param chaincodeName String chaincode name
+   * @param transactionFunctionName String function name in chaincode
+   * @param multiDataTransactionPayload String The arguments as Json Payload
+   * @return responseEntity ResponseEntity Transaction Response
+   */
+  ResponseEntity<ClientResponseModel> writeMultiDataTransactionToLedger(
+      String channelName,
+      String chaincodeName,
+      String transactionFunctionName,
+      MultiDataTransactionPayload multiDataTransactionPayload);
 }
