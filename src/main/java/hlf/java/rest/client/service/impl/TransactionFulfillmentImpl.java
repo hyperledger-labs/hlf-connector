@@ -6,27 +6,18 @@ import hlf.java.rest.client.exception.ErrorConstants;
 import hlf.java.rest.client.exception.FabricTransactionException;
 import hlf.java.rest.client.exception.NotFoundException;
 import hlf.java.rest.client.exception.ServiceException;
+import hlf.java.rest.client.model.AbstractModelValidator;
 import hlf.java.rest.client.model.BlockEventWriteSet;
 import hlf.java.rest.client.model.ClientResponseModel;
 import hlf.java.rest.client.model.EventAPIResponseModel;
 import hlf.java.rest.client.model.EventType;
+import hlf.java.rest.client.model.MultiDataTransactionPayload;
+import hlf.java.rest.client.model.MultiPrivateDataTransactionPayloadValidator;
 import hlf.java.rest.client.service.HFClientWrapper;
 import hlf.java.rest.client.service.TransactionFulfillment;
 import hlf.java.rest.client.util.FabricEventParseUtil;
-import java.io.IOException;
-import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
-import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 import org.hyperledger.fabric.gateway.Contract;
 import org.hyperledger.fabric.gateway.ContractException;
 import org.hyperledger.fabric.gateway.DefaultCommitHandlers;
@@ -48,6 +39,20 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
+
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -465,5 +470,97 @@ public class TransactionFulfillmentImpl implements TransactionFulfillment {
       log.error("Action Failed: A problem occurred while fetching transaction by block number", e);
       throw new ServiceException(ErrorCode.HYPERLEDGER_FABRIC_CHANNEL_TXN_ERROR, e.getMessage(), e);
     }
+  }
+
+  @Override
+  public ResponseEntity<ClientResponseModel> writeMultiDataTransactionToLedger(
+      String channelName,
+      String chaincodeName,
+      String transactionFunctionName,
+      MultiDataTransactionPayload multiDataTransactionPayload) {
+
+    // Validate the incoming payload
+    AbstractModelValidator<MultiDataTransactionPayload> validator =
+        new MultiPrivateDataTransactionPayloadValidator();
+    validator.validate(multiDataTransactionPayload);
+
+    Collection<Peer> endorsingPeers = new ArrayList<>();
+    String resultString;
+
+    try {
+
+      Network network = gateway.getNetwork(channelName);
+      Contract contract = network.getContract(chaincodeName);
+      Transaction fabricTransaction = contract.createTransaction(transactionFunctionName);
+      // override default commithandler to wait for any response from msp
+      fabricTransaction.setCommitHandler(DefaultCommitHandlers.MSPID_SCOPE_ANYFORTX);
+
+      endorsingPeers =
+          network.getChannel().getPeers().stream()
+              .filter(peer -> multiDataTransactionPayload.getPeerNames().contains(peer.getName()))
+              .collect(Collectors.toList());
+      if (!endorsingPeers.isEmpty()) {
+        fabricTransaction.setEndorsingPeers(endorsingPeers);
+      } else {
+        log.warn("Peer names don't match channel peers");
+      }
+
+      Map<String, byte[]> transientParam = new HashMap<>();
+      List<String> publicParamsList = new ArrayList<>();
+
+      /**
+       * Scan through Private Data details the incoming transaction Request. If the Private data
+       * details consist of a Collection name, then add the key-value pair to the transient map and
+       * also ensure that the Collection name and key name is also part of the public params list.
+       * If Collection name is not present, simply populate the key-value pair to the transient map.
+       */
+      multiDataTransactionPayload
+          .getPrivatePayload()
+          .forEach(
+              privateTransactionPayload -> {
+                if (StringUtils.isNotBlank(privateTransactionPayload.getCollectionName())) {
+                  publicParamsList.add(privateTransactionPayload.getCollectionName());
+                  publicParamsList.add(privateTransactionPayload.getKey());
+                }
+
+                transientParam.put(
+                    privateTransactionPayload.getKey(),
+                    privateTransactionPayload.getData().getBytes(StandardCharsets.UTF_8));
+              });
+
+      fabricTransaction.setTransient(transientParam);
+
+      // Check if Public params are also passed in the request. If provided, append them to the
+      // public params list
+      if (!CollectionUtils.isEmpty(multiDataTransactionPayload.getPublicPayload())) {
+        publicParamsList.addAll(multiDataTransactionPayload.getPublicPayload());
+      }
+
+      // Map to String Array for dispatching via SDK method
+      String[] publicDataArgs =
+          CollectionUtils.isEmpty(multiDataTransactionPayload.getPublicPayload())
+              ? new String[] {}
+              : publicParamsList.toArray(new String[publicParamsList.size()]);
+
+      byte[] result = fabricTransaction.submit(publicDataArgs);
+
+      resultString = new String(result, StandardCharsets.UTF_8);
+      log.info("Transaction Successfully Submitted - Response: " + resultString);
+    } catch (GatewayRuntimeException gre) {
+      log.error("Action Failed: A problem occurred with Gateway transaction to the peer");
+      throw new FabricTransactionException(
+          ErrorCode.HYPERLEDGER_FABRIC_TRANSACTION_ERROR, gre.getMessage(), gre);
+    } catch (ContractException | TimeoutException e) {
+      log.error("Action Failed: A problem occurred while submitting the transaction to the peer");
+      throw new FabricTransactionException(
+          ErrorCode.HYPERLEDGER_FABRIC_TRANSACTION_ERROR, e.getMessage(), e);
+    } catch (InterruptedException e) {
+      log.error("Action Failed: A problem occurred while submitting the transaction to the peer");
+      Thread.currentThread().interrupt();
+      throw new FabricTransactionException(
+          ErrorCode.HYPERLEDGER_FABRIC_TRANSACTION_ERROR, e.getMessage(), e);
+    }
+    return new ResponseEntity<>(
+        new ClientResponseModel(ErrorConstants.NO_ERROR, resultString), HttpStatus.OK);
   }
 }

@@ -2,6 +2,7 @@ package hlf.java.rest.client.controller;
 
 import hlf.java.rest.client.model.ClientResponseModel;
 import hlf.java.rest.client.model.EventAPIResponseModel;
+import hlf.java.rest.client.model.MultiDataTransactionPayload;
 import hlf.java.rest.client.service.TransactionFulfillment;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -223,5 +224,33 @@ public class FabricClientController {
         blockNumber);
     return transactionFulfillment.readTransactionEventByBlockNumber(
         blockNumber, networkName, transactionId, chaincode, eventType);
+  }
+
+  /**
+   * The REST Endpoint for supporting write transactions to ledger by accepting a Payload that can
+   * consists of multiple Private Data Collection details as well as multiple Public data.
+   *
+   * @param channelName String channel name
+   * @param chaincodeName String chaincode name
+   * @param functionName String function name in chaincode
+   * @param payload a Request body of kind {@link MultiDataTransactionPayload}
+   * @return responseEntity ResponseEntity Transaction Response
+   */
+  @PostMapping(value = "/invoke_transaction/multi_data")
+  public ResponseEntity<ClientResponseModel> invokeTransaction(
+      @RequestHeader("channel") @Validated String channelName,
+      @RequestHeader("chaincode") @Validated String chaincodeName,
+      @RequestHeader("function") @Validated String functionName,
+      @RequestBody MultiDataTransactionPayload payload) {
+
+    log.info(
+        "Initiated Transaction Write for Network Name: {}, Chaincode Name: {}, Function: {} with Request-Payload: {}",
+        channelName,
+        chaincodeName,
+        functionName,
+        payload);
+
+    return transactionFulfillment.writeMultiDataTransactionToLedger(
+        channelName, chaincodeName, functionName, payload);
   }
 }
