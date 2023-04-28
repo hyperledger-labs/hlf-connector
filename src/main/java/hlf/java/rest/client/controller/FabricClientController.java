@@ -4,10 +4,6 @@ import hlf.java.rest.client.model.ClientResponseModel;
 import hlf.java.rest.client.model.EventAPIResponseModel;
 import hlf.java.rest.client.model.MultiDataTransactionPayload;
 import hlf.java.rest.client.service.TransactionFulfillment;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -20,6 +16,11 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Optional;
 
 /**
  * Exposes REST endpoints to take actions from the client on the fabric ledger
@@ -238,9 +239,9 @@ public class FabricClientController {
    */
   @PostMapping(value = "/invoke_transaction/multi_data")
   public ResponseEntity<ClientResponseModel> invokeTransaction(
-      @RequestHeader("channel") @Validated String channelName,
-      @RequestHeader("chaincode") @Validated String chaincodeName,
-      @RequestHeader("function") @Validated String functionName,
+      @RequestParam("channel") @Validated String channelName,
+      @RequestParam("chaincode") @Validated String chaincodeName,
+      @RequestParam("function") @Validated String functionName,
       @RequestBody MultiDataTransactionPayload payload) {
 
     log.info(
