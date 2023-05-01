@@ -3,6 +3,10 @@ package hlf.java.rest.client.listener;
 import hlf.java.rest.client.config.KafkaConsumerConfig;
 import hlf.java.rest.client.config.KafkaProperties;
 import hlf.java.rest.client.exception.ServiceException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
@@ -21,11 +25,6 @@ import org.springframework.kafka.listener.ConcurrentMessageListenerContainer;
 import org.springframework.kafka.listener.ContainerProperties;
 import org.springframework.kafka.support.Acknowledgment;
 import org.springframework.util.CollectionUtils;
-
-import java.util.ArrayList;
-import java.util.List;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutionException;
 
 /*
  * This class is the configuration class for dynamically creating consumers to receiving the blockchain

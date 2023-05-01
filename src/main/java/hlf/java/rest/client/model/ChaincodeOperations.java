@@ -1,9 +1,8 @@
 package hlf.java.rest.client.model;
 
+import java.util.Set;
 import lombok.Builder;
 import lombok.Data;
-
-import java.util.Set;
 
 @Data
 @Builder
@@ -14,4 +13,6 @@ public class ChaincodeOperations {
   private Boolean initRequired;
   private String chaincodePackageID;
   private Set<String> peerNames;
+  // lombok generates a method by the name `IsWithCollectionConfig()`
+  private boolean isWithCollectionConfig;
 }

@@ -217,7 +217,7 @@ public class SmartContractIT {
             .build();
     String result =
         chaincodeOperationsService.performChaincodeOperation(
-            CHANNEL_NAME, chaincodeOperations, ChaincodeOperationsType.approve);
+            CHANNEL_NAME, chaincodeOperations, ChaincodeOperationsType.approve, Optional.empty());
     assertNotNull(result);
   }
 
@@ -244,7 +244,7 @@ public class SmartContractIT {
             .build();
     String result =
         chaincodeOperationsService.performChaincodeOperation(
-            CHANNEL_NAME, chaincodeOperations, ChaincodeOperationsType.commit);
+            CHANNEL_NAME, chaincodeOperations, ChaincodeOperationsType.commit, Optional.empty());
     assertNotNull(result);
   }
 
