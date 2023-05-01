@@ -6,6 +6,7 @@ import java.util.Optional;
 import java.util.Set;
 import org.hyperledger.fabric.sdk.ChaincodeCollectionConfiguration;
 import org.hyperledger.fabric.sdk.LifecycleChaincodeEndorsementPolicy;
+import org.springframework.web.multipart.MultipartFile;
 
 public interface ChaincodeOperationsService {
 
@@ -20,7 +21,8 @@ public interface ChaincodeOperationsService {
   String performChaincodeOperation(
       String networkName,
       ChaincodeOperations chaincodeOperationsModel,
-      ChaincodeOperationsType operationsType);
+      ChaincodeOperationsType operationsType,
+      Optional<MultipartFile> collectionConfigFile);
 
   /**
    * Gets current sequence for the channel and chaincode.

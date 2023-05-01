@@ -12,11 +12,14 @@ import hlf.java.rest.client.model.ChaincodeOperations;
 import hlf.java.rest.client.model.ChaincodeOperationsType;
 import hlf.java.rest.client.service.ChaincodeOperationsService;
 import hlf.java.rest.client.service.HFClientWrapper;
+import java.io.IOException;
+import java.io.InputStream;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
+import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.hyperledger.fabric.gateway.Gateway;
 import org.hyperledger.fabric.gateway.Network;
@@ -36,13 +39,14 @@ import org.hyperledger.fabric.sdk.LifecycleQueryInstalledChaincodesProposalRespo
 import org.hyperledger.fabric.sdk.Peer;
 import org.hyperledger.fabric.sdk.ProposalResponse;
 import org.hyperledger.fabric.sdk.QueryLifecycleQueryChaincodeDefinitionRequest;
+import org.hyperledger.fabric.sdk.exception.ChaincodeCollectionConfigurationException;
 import org.hyperledger.fabric.sdk.exception.InvalidArgumentException;
 import org.hyperledger.fabric.sdk.exception.ProposalException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
-import java.util.stream.Collectors;
+import org.springframework.web.multipart.MultipartFile;
 
 @Slf4j
 @Service
@@ -55,21 +59,38 @@ public class ChaincodeOperationsServiceImpl implements ChaincodeOperationsServic
   public String performChaincodeOperation(
       String networkName,
       ChaincodeOperations chaincodeOperationsModel,
-      ChaincodeOperationsType operationsType) {
+      ChaincodeOperationsType operationsType,
+      Optional<MultipartFile> collectionConfigFile) {
 
-    validateChaincodeOperationsInput(chaincodeOperationsModel, operationsType);
+    validateChaincodeOperationsInput(
+        chaincodeOperationsModel, operationsType, collectionConfigFile);
 
     Network network = gateway.getNetwork(networkName);
     Channel channel = network.getChannel();
+    Optional<ChaincodeCollectionConfiguration> chaincodeCollectionConfiguration = Optional.empty();
+    if (chaincodeOperationsModel.isWithCollectionConfig()) {
+      // get the stream
+      try (InputStream inputStream = collectionConfigFile.get().getInputStream()) {
+        chaincodeCollectionConfiguration =
+            Optional.of(ChaincodeCollectionConfiguration.fromJsonStream(inputStream));
+      } catch (IOException
+          | InvalidArgumentException
+          | ChaincodeCollectionConfigurationException e) {
+        throw new ServiceException(
+            ErrorCode.DESERIALIZATION_FAILURE, "invalid collection configuration file");
+      }
+    }
 
     switch (operationsType) {
       case approve:
         {
-          return approveChaincode(channel, chaincodeOperationsModel);
+          return approveChaincode(
+              channel, chaincodeOperationsModel, chaincodeCollectionConfiguration);
         }
       case commit:
         {
-          return commitChaincode(channel, chaincodeOperationsModel);
+          return commitChaincode(
+              channel, chaincodeOperationsModel, chaincodeCollectionConfiguration);
         }
       default:
         {
@@ -220,22 +241,30 @@ public class ChaincodeOperationsServiceImpl implements ChaincodeOperationsServic
     return organizationSet;
   }
 
-  private String approveChaincode(Channel channel, ChaincodeOperations chaincodeOperationsModel) {
+  private String approveChaincode(
+      Channel channel,
+      ChaincodeOperations chaincodeOperationsModel,
+      Optional<ChaincodeCollectionConfiguration> chaincodeCollectionConfigurationOptional) {
 
     Collection<Peer> peers = channel.getPeers();
 
-    if(!CollectionUtils.isEmpty(chaincodeOperationsModel.getPeerNames())) {
+    if (!CollectionUtils.isEmpty(chaincodeOperationsModel.getPeerNames())) {
 
       Set<String> peerFilter = chaincodeOperationsModel.getPeerNames();
 
-      peers = peers.stream()
-          .filter(channelPeer -> peerFilter.contains(channelPeer.getName()))
-          .collect(Collectors.toList());
+      peers =
+          peers.stream()
+              .filter(channelPeer -> peerFilter.contains(channelPeer.getName()))
+              .collect(Collectors.toList());
 
-      if(CollectionUtils.isEmpty(peers)) {
-        log.error("No Peers identified with the names {} in channel {}. Skipping approval", peerFilter, channel.getName());
+      if (CollectionUtils.isEmpty(peers)) {
+        log.error(
+            "No Peers identified with the names {} in channel {}. Skipping approval",
+            peerFilter,
+            channel.getName());
         throw new ServiceException(
-            ErrorCode.HYPERLEDGER_FABRIC_CHAINCODE_OPERATIONS_REQUEST_REJECTION, "Invalid Peer details");
+            ErrorCode.HYPERLEDGER_FABRIC_CHAINCODE_OPERATIONS_REQUEST_REJECTION,
+            "Invalid Peer details");
       }
     }
 
@@ -251,8 +280,12 @@ public class ChaincodeOperationsServiceImpl implements ChaincodeOperationsServic
           chaincodeOperationsModel.getChaincodeVersion());
       lifecycleApproveChaincodeDefinitionForMyOrgRequest.setInitRequired(
           chaincodeOperationsModel.getInitRequired());
+      if (chaincodeCollectionConfigurationOptional.isPresent()) {
+        lifecycleApproveChaincodeDefinitionForMyOrgRequest.setChaincodeCollectionConfiguration(
+            chaincodeCollectionConfigurationOptional.get());
+      }
 
-      // TODO: Add chaincodeCollectionConfiguration and chaincodeEndorsementPolicy
+      // TODO: Add chaincodeEndorsementPolicy
 
       lifecycleApproveChaincodeDefinitionForMyOrgRequest.setPackageId(
           chaincodeOperationsModel.getChaincodePackageID());
@@ -282,7 +315,10 @@ public class ChaincodeOperationsServiceImpl implements ChaincodeOperationsServic
     }
   }
 
-  private String commitChaincode(Channel channel, ChaincodeOperations chaincodeOperationsModel) {
+  private String commitChaincode(
+      Channel channel,
+      ChaincodeOperations chaincodeOperationsModel,
+      Optional<ChaincodeCollectionConfiguration> chaincodeCollectionConfigurationOptional) {
 
     Collection<Peer> peers = channel.getPeers();
     try {
@@ -295,7 +331,12 @@ public class ChaincodeOperationsServiceImpl implements ChaincodeOperationsServic
       lifecycleCommitChaincodeDefinitionRequest.setChaincodeVersion(
           chaincodeOperationsModel.getChaincodeVersion());
 
-      // TODO: Add chaincodeCollectionConfiguration and chaincodeEndorsementPolicy
+      // TODO: Add chaincodeEndorsementPolicy
+
+      if (chaincodeCollectionConfigurationOptional.isPresent()) {
+        lifecycleCommitChaincodeDefinitionRequest.setChaincodeCollectionConfiguration(
+            chaincodeCollectionConfigurationOptional.get());
+      }
 
       lifecycleCommitChaincodeDefinitionRequest.setInitRequired(
           chaincodeOperationsModel.getInitRequired());
@@ -327,13 +368,16 @@ public class ChaincodeOperationsServiceImpl implements ChaincodeOperationsServic
   }
 
   private void validateChaincodeOperationsInput(
-      ChaincodeOperations chaincodeOperations, ChaincodeOperationsType operationsType) {
+      ChaincodeOperations chaincodeOperations,
+      ChaincodeOperationsType operationsType,
+      Optional<MultipartFile> collectionConfigFileOptional) {
     if (isEmpty(chaincodeOperations.getChaincodeName())
         || isEmpty(chaincodeOperations.getChaincodeVersion())
         || isNull(chaincodeOperations.getSequence())
         || isNull(chaincodeOperations.getInitRequired())
-        || (operationsType.equals(approve)
-            && isEmpty(chaincodeOperations.getChaincodePackageID()))) {
+        || (operationsType.equals(approve) && isEmpty(chaincodeOperations.getChaincodePackageID()))
+        || (chaincodeOperations.isWithCollectionConfig()
+            && !collectionConfigFileOptional.isPresent())) {
       throw new ServiceException(
           ErrorCode.VALIDATION_FAILED,
           "Chaincode operations data passed is incorrect or not supported.");

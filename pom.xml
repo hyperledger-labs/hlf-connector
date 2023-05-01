@@ -201,8 +201,7 @@
 			<artifactId>micrometer-registry-prometheus</artifactId>
 			<scope>runtime</scope>
 		</dependency>
-
-	</dependencies>
+    </dependencies>
 
 	<!-- this section is for auto version increments -->
 	<profiles>
