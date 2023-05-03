@@ -18,7 +18,7 @@ public class MultiPrivateDataTransactionPayloadValidator
     if (CollectionUtils.isEmpty(multiDataTransactionPayload.getPrivatePayload())
         && CollectionUtils.isEmpty(multiDataTransactionPayload.getPublicPayload())) {
       throw new IllegalStateException(
-          "Payload should consist of at-least one private private Data Payload or Public Payload");
+          "Payload should consist of at-least one Private Data Payload or Public Payload");
     }
 
     boolean hasValidPrivateData =
