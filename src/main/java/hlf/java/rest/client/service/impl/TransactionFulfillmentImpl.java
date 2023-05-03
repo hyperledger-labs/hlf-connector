@@ -43,6 +43,7 @@ import org.springframework.util.CollectionUtils;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -63,6 +64,14 @@ public class TransactionFulfillmentImpl implements TransactionFulfillment {
 
   private static final long DEFAULT_COMMIT_TIMEOUT = 5;
   private static final TimeUnit DEFAULT_COMMIT_TIMEOUT_UNIT = TimeUnit.MINUTES;
+
+  // Error messages from Fabric while connecting to chaincode from peer
+  private static final List<String> fabricTxErrorList =
+      Arrays.asList(
+          "Failed to send transaction to the orderer",
+          "error creating grpc connection",
+          "error cannot create connection",
+          "could not launch chaincode");
 
   @Autowired private FabricProperties fabricProperties;
 
@@ -226,16 +235,8 @@ public class TransactionFulfillmentImpl implements TransactionFulfillment {
       // cause
       // information to know if it was an IOException so that a retry can be
       // attempted.
-
-      // Error messages from Fabric while connecting to chaincode from peer
-      List<String> fabricErrorList = new ArrayList<>();
-      fabricErrorList.add("Failed to send transaction to the orderer");
-      fabricErrorList.add("error creating grpc connection");
-      fabricErrorList.add("error cannot create connection");
-      fabricErrorList.add("could not launch chaincode");
-
       if (e.getCause() instanceof IOException
-          || fabricErrorList.stream().anyMatch(e.getMessage()::contains)) {
+          || fabricTxErrorList.stream().anyMatch(e.getMessage()::contains)) {
         log.error("Action Failed: A problem occurred with the network connection");
         throw new ServiceException(
             ErrorCode.HYPERLEDGER_FABRIC_CONNECTION_ERROR, e.getMessage(), e);
@@ -497,7 +498,7 @@ public class TransactionFulfillmentImpl implements TransactionFulfillment {
 
       endorsingPeers =
           network.getChannel().getPeers().stream()
-              .filter(peer -> multiDataTransactionPayload.getPeerNames().contains(peer.getName()))
+              .filter(peer -> Objects.nonNull(multiDataTransactionPayload.getPeerNames()) && multiDataTransactionPayload.getPeerNames().contains(peer.getName()))
               .collect(Collectors.toList());
       if (!endorsingPeers.isEmpty()) {
         fabricTransaction.setEndorsingPeers(endorsingPeers);
@@ -550,8 +551,17 @@ public class TransactionFulfillmentImpl implements TransactionFulfillment {
       log.error("Action Failed: A problem occurred with Gateway transaction to the peer");
       throw new FabricTransactionException(
           ErrorCode.HYPERLEDGER_FABRIC_TRANSACTION_ERROR, gre.getMessage(), gre);
-    } catch (ContractException | TimeoutException e) {
-      log.error("Action Failed: A problem occurred while submitting the transaction to the peer");
+    } catch (TimeoutException e) {
+      log.error("Action Failed: Timeout occurred while waiting to submit");
+      throw new ServiceException(ErrorCode.HYPERLEDGER_FABRIC_CONNECTION_ERROR, e.getMessage(), e);
+    } catch (ContractException e) {
+      if (e.getCause() instanceof IOException
+          || fabricTxErrorList.stream().anyMatch(e.getMessage()::contains)) {
+        log.error("Action Failed: A problem occurred with the network connection");
+        throw new ServiceException(
+            ErrorCode.HYPERLEDGER_FABRIC_CONNECTION_ERROR, e.getMessage(), e);
+      }
+      log.error("Action Failed: A problem occured while submitting the transaction to the peer");
       throw new FabricTransactionException(
           ErrorCode.HYPERLEDGER_FABRIC_TRANSACTION_ERROR, e.getMessage(), e);
     } catch (InterruptedException e) {
