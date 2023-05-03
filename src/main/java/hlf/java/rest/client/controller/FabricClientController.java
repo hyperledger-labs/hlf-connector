@@ -237,7 +237,7 @@ public class FabricClientController {
    * @param payload a Request body of kind {@link MultiDataTransactionPayload}
    * @return responseEntity ResponseEntity Transaction Response
    */
-  @PostMapping(value = "/invoke_transaction/multi_data")
+  @PostMapping(value = "/invoke_transaction/v2")
   public ResponseEntity<ClientResponseModel> invokeTransaction(
       @RequestParam("channel") @Validated String channelName,
       @RequestParam("chaincode") @Validated String chaincodeName,
