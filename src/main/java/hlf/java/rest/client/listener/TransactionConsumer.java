@@ -9,16 +9,17 @@ import hlf.java.rest.client.model.MultiDataTransactionPayload;
 import hlf.java.rest.client.service.EventPublishService;
 import hlf.java.rest.client.service.TransactionFulfillment;
 import hlf.java.rest.client.util.FabricClientConstants;
-import java.nio.charset.StandardCharsets;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.common.header.Header;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
+
+import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Optional;
 
 /*
  * This class has the consumer logic for processing and adding transaction to fabric
@@ -113,11 +114,13 @@ public class TransactionConsumer {
               objectMapper.readValue(transactionParams, MultiDataTransactionPayload.class);
         } catch (Exception e) {
           throw new ServiceException(
-              ErrorCode.CHANNEL_PAYLOAD_ERROR, "Invalid transaction payload provided");
+              ErrorCode.VALIDATION_FAILED, "Invalid transaction payload provided");
         }
 
         transactionFulfillment.writeMultiDataTransactionToLedger(
             networkName, contractName, transactionFunctionName, multiDataTransactionPayload);
+
+        return;
       }
 
       if (isIdentifiableFunction(networkName, contractName, transactionFunctionName)
