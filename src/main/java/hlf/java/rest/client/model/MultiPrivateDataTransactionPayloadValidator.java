@@ -21,18 +21,21 @@ public class MultiPrivateDataTransactionPayloadValidator
           "Payload should consist of at-least one Private Data Payload or Public Payload");
     }
 
-    boolean hasValidPrivateData =
-        multiDataTransactionPayload.getPrivatePayload().stream()
-            .allMatch(
-                privateTransactionPayload ->
-                    StringUtils.isNotBlank(privateTransactionPayload.getKey())
-                        && StringUtils.isNotBlank(privateTransactionPayload.getData()));
-
     // If the model has Private data listed, ensure that it has mandatory fields populated
-    if (!CollectionUtils.isEmpty(multiDataTransactionPayload.getPrivatePayload())
-        && !hasValidPrivateData) {
-      throw new IllegalStateException(
-          "One or more Private Data representation is invalid, Private details should contain both Key name & Data");
+    // Have the nested if condition to avoid null pointer exceptions in case if the private
+    // payload is absent and was never sent.
+    if (!CollectionUtils.isEmpty(multiDataTransactionPayload.getPrivatePayload())) {
+      boolean hasValidPrivateData =
+          multiDataTransactionPayload.getPrivatePayload().stream()
+              .allMatch(
+                  privateTransactionPayload ->
+                      StringUtils.isNotBlank(privateTransactionPayload.getKey())
+                          && StringUtils.isNotBlank(privateTransactionPayload.getData()));
+
+      if (!hasValidPrivateData) {
+        throw new IllegalStateException(
+            "One or more Private Data representation is invalid, Private details should contain both Key name & Data");
+      }
     }
   }
 }

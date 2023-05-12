@@ -3,12 +3,11 @@ package hlf.java.rest.client.service;
 import hlf.java.rest.client.model.ClientResponseModel;
 import hlf.java.rest.client.model.EventAPIResponseModel;
 import hlf.java.rest.client.model.MultiDataTransactionPayload;
+import java.util.List;
+import java.util.Optional;
 import org.hyperledger.fabric.gateway.ContractException;
 import org.hyperledger.fabric.gateway.GatewayRuntimeException;
 import org.springframework.http.ResponseEntity;
-
-import java.util.List;
-import java.util.Optional;
 
 /**
  * Handles the business logic for processing transaction related actions affecting the ledger
