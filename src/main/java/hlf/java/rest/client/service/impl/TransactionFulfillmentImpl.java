@@ -16,6 +16,20 @@ import hlf.java.rest.client.model.MultiPrivateDataTransactionPayloadValidator;
 import hlf.java.rest.client.service.HFClientWrapper;
 import hlf.java.rest.client.service.TransactionFulfillment;
 import hlf.java.rest.client.util.FabricEventParseUtil;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
+import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.hyperledger.fabric.gateway.Contract;
@@ -39,21 +53,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
-
-import java.io.IOException;
-import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
-import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -485,20 +484,27 @@ public class TransactionFulfillmentImpl implements TransactionFulfillment {
         new MultiPrivateDataTransactionPayloadValidator();
     validator.validate(multiDataTransactionPayload);
 
-    Collection<Peer> endorsingPeers = new ArrayList<>();
+    Collection<Peer> endorsingPeers;
     String resultString;
 
     try {
 
+      // get the network object through connection profile
       Network network = gateway.getNetwork(channelName);
+      // fetch associated smart contract information from the blockchain
+      // network
       Contract contract = network.getContract(chaincodeName);
+      // start composing the transaction
       Transaction fabricTransaction = contract.createTransaction(transactionFunctionName);
       // override default commithandler to wait for any response from msp
       fabricTransaction.setCommitHandler(DefaultCommitHandlers.MSPID_SCOPE_ANYFORTX);
 
       endorsingPeers =
           network.getChannel().getPeers().stream()
-              .filter(peer -> Objects.nonNull(multiDataTransactionPayload.getPeerNames()) && multiDataTransactionPayload.getPeerNames().contains(peer.getName()))
+              .filter(
+                  peer ->
+                      Objects.nonNull(multiDataTransactionPayload.getPeerNames())
+                          && multiDataTransactionPayload.getPeerNames().contains(peer.getName()))
               .collect(Collectors.toList());
       if (!endorsingPeers.isEmpty()) {
         fabricTransaction.setEndorsingPeers(endorsingPeers);
@@ -506,30 +512,32 @@ public class TransactionFulfillmentImpl implements TransactionFulfillment {
         log.warn("Peer names don't match channel peers");
       }
 
-      Map<String, byte[]> transientParam = new HashMap<>();
       List<String> publicParamsList = new ArrayList<>();
 
-      /**
+      /*
        * Scan through Private Data details the incoming transaction Request. If the Private data
        * details consist of a Collection name, then add the key-value pair to the transient map and
        * also ensure that the Collection name and key name is also part of the public params list.
        * If Collection name is not present, simply populate the key-value pair to the transient map.
        */
-      multiDataTransactionPayload
-          .getPrivatePayload()
-          .forEach(
-              privateTransactionPayload -> {
-                if (StringUtils.isNotBlank(privateTransactionPayload.getCollectionName())) {
-                  publicParamsList.add(privateTransactionPayload.getCollectionName());
-                  publicParamsList.add(privateTransactionPayload.getKey());
-                }
+      if (!CollectionUtils.isEmpty(multiDataTransactionPayload.getPrivatePayload())) {
+        Map<String, byte[]> transientParam = new HashMap<>();
+        multiDataTransactionPayload
+            .getPrivatePayload()
+            .forEach(
+                privateTransactionPayload -> {
+                  if (StringUtils.isNotBlank(privateTransactionPayload.getCollectionName())) {
+                    publicParamsList.add(privateTransactionPayload.getCollectionName());
+                    publicParamsList.add(privateTransactionPayload.getKey());
+                  }
 
-                transientParam.put(
-                    privateTransactionPayload.getKey(),
-                    privateTransactionPayload.getData().getBytes(StandardCharsets.UTF_8));
-              });
+                  transientParam.put(
+                      privateTransactionPayload.getKey(),
+                      privateTransactionPayload.getData().getBytes(StandardCharsets.UTF_8));
+                });
 
-      fabricTransaction.setTransient(transientParam);
+        fabricTransaction.setTransient(transientParam);
+      }
 
       // Check if Public params are also passed in the request. If provided, append them to the
       // public params list
