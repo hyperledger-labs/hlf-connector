@@ -30,12 +30,15 @@ public class ChaincodeOperationsController {
       @RequestParam("network_name") @Validated String networkName,
       @RequestParam("operations_type") @Validated ChaincodeOperationsType operationsType,
       @RequestPart("chaincodeOperations") ChaincodeOperations chaincodeOperations,
-      // accept optional collections configuration for the approval and commit
+      // accept optional collection configuration for the approval and commit
       @RequestPart(value = "collection_config", required = false)
           MultipartFile collectionConfigFile) {
     return new ResponseEntity<>(
         chaincodeOperationsService.performChaincodeOperation(
-            networkName, chaincodeOperations, operationsType, Optional.of(collectionConfigFile)),
+            networkName,
+            chaincodeOperations,
+            operationsType,
+            Optional.ofNullable(collectionConfigFile)),
         HttpStatus.OK);
   }
 
