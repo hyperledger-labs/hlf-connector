@@ -18,7 +18,6 @@ import org.apache.commons.lang3.StringUtils;
 import org.hyperledger.fabric.protos.ledger.rwset.Rwset;
 import org.hyperledger.fabric.protos.ledger.rwset.kvrwset.KvRwset;
 import org.hyperledger.fabric.protos.peer.EventsPackage;
-import org.hyperledger.fabric.sdk.BlockEvent;
 import org.hyperledger.fabric.sdk.BlockInfo;
 import org.hyperledger.fabric.sdk.TxReadWriteSetInfo;
 import org.springframework.util.CollectionUtils;
@@ -29,10 +28,12 @@ public class FabricEventParseUtil {
 
   static ObjectMapper mapper = new ObjectMapper();
 
-  public static String getWriteInfoFromBlock(BlockEvent.TransactionEvent transactionEvent)
+  public static String getWriteInfoFromBlock(
+      BlockInfo.TransactionEnvelopeInfo transactionEnvelopeInfo)
       throws JsonProcessingException, InvalidProtocolBufferException {
     List<BlockEventWriteSet> writes =
-        getBlockEventWriteSet(transactionEvent.getTransactionActionInfos(), StringUtils.EMPTY);
+        getBlockEventWriteSet(
+            transactionEnvelopeInfo.getTransactionActionInfos(), StringUtils.EMPTY);
     return mapper.writeValueAsString(writes);
   }
 

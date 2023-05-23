@@ -5,7 +5,7 @@ import hlf.java.rest.client.service.EventPublishService;
 import hlf.java.rest.client.util.FabricClientConstants;
 import hlf.java.rest.client.util.FabricEventParseUtil;
 import lombok.extern.slf4j.Slf4j;
-import org.hyperledger.fabric.sdk.BlockEvent;
+import org.hyperledger.fabric.sdk.BlockInfo;
 import org.hyperledger.fabric.sdk.ChaincodeEvent;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -24,9 +24,7 @@ public class ChaincodeEventListener {
   private static String eventTxnId = FabricClientConstants.FABRIC_TRANSACTION_ID;
 
   public void listener(
-      String handle, BlockEvent blockEvent, ChaincodeEvent chaincodeEvent, String channelName) {
-
-    String es = blockEvent.getPeer() != null ? blockEvent.getPeer().getName() : "peer was null!!!";
+      String handle, BlockInfo blockEvent, ChaincodeEvent chaincodeEvent, String channelName) {
 
     synchronized (this) {
       if (!chaincodeEvent.getTxId().equalsIgnoreCase(eventTxnId)) {
@@ -35,7 +33,6 @@ public class ChaincodeEventListener {
         log.info("Event Name: {}", chaincodeEvent.getEventName());
         log.info("Transaction ID: {}", chaincodeEvent.getTxId());
         log.info("Payload: {}", new String(chaincodeEvent.getPayload()));
-        log.info("Event Source: {}", es);
         log.info("Channel Name: {}", channelName);
 
         if (eventPublishService == null) {
