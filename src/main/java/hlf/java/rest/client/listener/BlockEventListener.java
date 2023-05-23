@@ -1,5 +1,7 @@
 package hlf.java.rest.client.listener;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.google.protobuf.InvalidProtocolBufferException;
 import hlf.java.rest.client.model.EventType;
 import hlf.java.rest.client.service.EventPublishService;
 import hlf.java.rest.client.util.FabricClientConstants;
@@ -9,6 +11,7 @@ import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.hyperledger.fabric.sdk.BlockEvent;
+import org.hyperledger.fabric.sdk.BlockInfo;
 import org.hyperledger.fabric.sdk.BlockListener;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -73,6 +76,49 @@ public class BlockEventListener implements BlockListener {
                   StandardCharsets.UTF_8),
               StringUtils.isNotEmpty(privateDataPayload));
           BlockEventListener.blockTxId = transactionEvent.getTransactionID();
+        }
+      }
+    }
+  }
+
+  public void received(BlockInfo blockInfo)
+      throws InvalidProtocolBufferException, JsonProcessingException {
+    if (blockInfo.getEnvelopeInfos().iterator().hasNext()) {
+      BlockInfo.EnvelopeInfo envelopeInfo = blockInfo.getEnvelopeInfos().iterator().next();
+      synchronized (this) {
+        if (!envelopeInfo.getTransactionID().equalsIgnoreCase(BlockEventListener.blockTxId)) {
+          log.info("Channel ID: {}", envelopeInfo.getChannelId());
+          log.info("Envelop Type: {}", envelopeInfo.getType().toString());
+          log.info("Transaction ID: {}", envelopeInfo.getTransactionID());
+          log.info("Is Valid: {}", envelopeInfo.isValid());
+          log.info("Block Number: {}", blockInfo.getBlockNumber());
+          String privateDataPayload =
+              FabricEventParseUtil.getPrivateDataFromBlock(blockInfo.getBlockAndPrivateData());
+          log.info("Private Data: {}", privateDataPayload);
+          BlockInfo.TransactionEnvelopeInfo transactionEnvelopeInfo =
+              (BlockInfo.TransactionEnvelopeInfo) envelopeInfo;
+          String blockPayload = FabricEventParseUtil.getWriteInfoFromBlock(transactionEnvelopeInfo);
+          log.info("Block Data: {}", blockPayload);
+
+          if (eventPublishServiceImpl == null) {
+            log.info("Event Publish is disabled, block event is not sent...");
+            return;
+          }
+
+          eventPublishServiceImpl.publishBlockEvents(
+              FabricEventParseUtil.createEventStructure(
+                  blockPayload,
+                  privateDataPayload,
+                  transactionEnvelopeInfo.getTransactionID(),
+                  blockInfo.getBlockNumber(),
+                  EventType.BLOCK_EVENT),
+              transactionEnvelopeInfo.getTransactionID(),
+              transactionEnvelopeInfo.getChannelId(),
+              transactionEnvelopeInfo.getTransactionActionInfo(0).getChaincodeIDName(),
+              new String(
+                  transactionEnvelopeInfo.getTransactionActionInfo(0).getChaincodeInputArgs(0),
+                  StandardCharsets.UTF_8),
+              StringUtils.isNotEmpty(privateDataPayload));
         }
       }
     }
