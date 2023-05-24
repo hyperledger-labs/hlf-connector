@@ -81,7 +81,7 @@ public class BlockEventListener implements BlockListener {
     }
   }
 
-  public void received(BlockInfo blockInfo)
+  public void receivedBlockInfo(BlockInfo blockInfo)
       throws InvalidProtocolBufferException, JsonProcessingException {
     if (blockInfo.getEnvelopeInfos().iterator().hasNext()) {
       BlockInfo.EnvelopeInfo envelopeInfo = blockInfo.getEnvelopeInfos().iterator().next();

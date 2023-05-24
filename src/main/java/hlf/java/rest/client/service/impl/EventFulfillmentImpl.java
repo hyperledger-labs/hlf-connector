@@ -72,11 +72,11 @@ public class EventFulfillmentImpl implements EventFulfillment {
       Network network = gateway.getNetwork(networkName);
       Channel channel = network.getChannel();
       for (Long blockNumber = startBlockNumber; blockNumber <= endBlockNumber; blockNumber++) {
-        BlockInfo blockInfo = channel.queryBlockByNumber(startBlockNumber);
+        BlockInfo blockInfo = channel.queryBlockByNumber(blockNumber);
         // subscribed to the block event
         if (eventType.equals(EventType.BLOCK_EVENT.toString())) {
           // process the block info
-          blockEventListener.received(blockInfo);
+          blockEventListener.receivedBlockInfo(blockInfo);
         } else if (eventType.equals(EventType.CHAINCODE_EVENT.toString())) {
           Iterable<BlockInfo.EnvelopeInfo> envelopeInfos = blockInfo.getEnvelopeInfos();
           for (BlockInfo.EnvelopeInfo info : envelopeInfos) {
