@@ -6,6 +6,7 @@ import hlf.java.rest.client.service.ChaincodeOperationsService;
 import java.util.Optional;
 import java.util.Set;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringEscapeUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -57,6 +58,9 @@ public class ChaincodeOperationsController {
       @RequestParam("network_name") @Validated String networkName,
       @RequestParam("chaincode_name") @Validated String chaincodeName,
       @RequestParam("chaincode_version") @Validated String chaincodeVersion) {
+    networkName = StringEscapeUtils.escapeHtml4(networkName);
+    chaincodeName = StringEscapeUtils.escapeHtml4(chaincodeName);
+    chaincodeVersion = StringEscapeUtils.escapeHtml4(chaincodeVersion);
     return new ResponseEntity<>(
         chaincodeOperationsService.getCurrentPackageId(
             networkName, chaincodeName, chaincodeVersion),
