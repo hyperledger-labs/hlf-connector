@@ -13,7 +13,10 @@ import org.hyperledger.fabric.sdk.Peer;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.cloud.context.config.annotation.RefreshScope;
+import org.springframework.cloud.context.scope.refresh.RefreshScopeRefreshedEvent;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.event.ContextRefreshedEvent;
+import org.springframework.context.event.EventListener;
 import org.springframework.util.CollectionUtils;
 
 @Slf4j
@@ -31,6 +34,18 @@ public class FabricEventListener {
   @Autowired private HFClientWrapper hfClientWrapper;
 
   @Autowired private ChaincodeEventListener chaincodeEventService;
+
+  @EventListener
+  public void handleEvent(ContextRefreshedEvent event) {
+    log.info("Initializing Chaincode/Block Event Listeners..");
+    startEventListener();
+  }
+
+  @EventListener(RefreshScopeRefreshedEvent.class)
+  public void onRefresh(RefreshScopeRefreshedEvent event) {
+    log.info("Initializing Chaincode/Block Event Listeners..");
+    startEventListener();
+  }
 
   @PostConstruct
   public void startEventListener() {
