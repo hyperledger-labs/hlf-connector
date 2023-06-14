@@ -4,6 +4,7 @@ import hlf.java.rest.client.model.ClientResponseModel;
 import hlf.java.rest.client.model.EventAPIResponseModel;
 import hlf.java.rest.client.model.MultiDataTransactionPayload;
 import hlf.java.rest.client.service.TransactionFulfillment;
+import hlf.java.rest.client.util.XssProtectionUtil;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -178,6 +179,8 @@ public class FabricClientController {
       @RequestParam("key") @Validated String transactionId,
       @RequestParam(value = "collection", required = false) String collections,
       @RequestParam(value = "transientKey", required = false) String transientKey) {
+    XssProtectionUtil.validateXssSafeString(
+        networkName, transactionFunctionName, collections, transientKey);
     log.info(
         "Initiated Transaction Read for Network Name: {}, Contract Name: {}, Transaction Function Name: {}, Transaction Id: {}",
         networkName,
@@ -218,6 +221,7 @@ public class FabricClientController {
       @RequestParam("channel") @Validated String networkName,
       @RequestParam(value = "chaincode", required = false) String chaincode,
       @RequestParam("eventType") @Validated String eventType) {
+    XssProtectionUtil.validateXssSafeString(networkName, transactionId, chaincode, eventType);
     log.info(
         "Initiated Transaction Read for Network Name: {}, Block Number: {}",
         networkName,
@@ -242,7 +246,7 @@ public class FabricClientController {
       @RequestParam("chaincode") @Validated String chaincodeName,
       @RequestParam("function") @Validated String functionName,
       @RequestBody MultiDataTransactionPayload payload) {
-
+    XssProtectionUtil.validateXssSafeString(channelName, chaincodeName, functionName);
     log.info(
         "Initiated Transaction Write for Network Name: {}, Chaincode Name: {}, Function: {} with Request-Payload: {}",
         channelName,

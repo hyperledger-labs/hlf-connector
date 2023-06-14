@@ -3,6 +3,7 @@ package hlf.java.rest.client.controller;
 import hlf.java.rest.client.model.ChannelOperationRequest;
 import hlf.java.rest.client.model.ClientResponseModel;
 import hlf.java.rest.client.service.ChannelService;
+import hlf.java.rest.client.util.XssProtectionUtil;
 import java.util.Set;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -39,6 +40,7 @@ public class ChannelOperationController {
   @GetMapping("/members-mspid")
   public ResponseEntity<Set<String>> getChannelMembersMSPID(
       @RequestParam("channel_name") String channelName) {
+    XssProtectionUtil.validateXssSafeString(channelName);
     return new ResponseEntity<>(channelService.getChannelMembersMSPID(channelName), HttpStatus.OK);
   }
 }

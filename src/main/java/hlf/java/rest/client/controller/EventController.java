@@ -2,6 +2,7 @@ package hlf.java.rest.client.controller;
 
 import hlf.java.rest.client.model.ClientResponseModel;
 import hlf.java.rest.client.service.EventFulfillment;
+import hlf.java.rest.client.util.XssProtectionUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -35,6 +36,7 @@ public class EventController {
       @RequestParam("block-number-end") Long endBlockNumber,
       @RequestParam("channel") @Validated String networkName,
       @RequestParam("eventType") @Validated String eventType) {
+    XssProtectionUtil.validateXssSafeString(networkName, eventType);
     log.info(
         "Triggering blocks since: {}, to: {}, on: {}, type: {}",
         startBlockNumber,

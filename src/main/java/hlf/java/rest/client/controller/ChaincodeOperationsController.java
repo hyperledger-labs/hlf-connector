@@ -3,10 +3,10 @@ package hlf.java.rest.client.controller;
 import hlf.java.rest.client.model.ChaincodeOperations;
 import hlf.java.rest.client.model.ChaincodeOperationsType;
 import hlf.java.rest.client.service.ChaincodeOperationsService;
+import hlf.java.rest.client.util.XssProtectionUtil;
 import java.util.Optional;
 import java.util.Set;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang3.StringEscapeUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -33,7 +33,10 @@ public class ChaincodeOperationsController {
       @RequestPart("chaincodeOperations") ChaincodeOperations chaincodeOperations,
       // accept optional collection configuration for the approval and commit
       @RequestPart(value = "collection_config", required = false)
-          MultipartFile collectionConfigFile) {
+          MultipartFile collectionConfigFile)
+      throws Exception {
+    XssProtectionUtil.validateXssSafeString(networkName, operationsType.name());
+    XssProtectionUtil.validateXssSafeFile(collectionConfigFile);
     return new ResponseEntity<>(
         chaincodeOperationsService.performChaincodeOperation(
             networkName,
@@ -47,7 +50,9 @@ public class ChaincodeOperationsController {
   public ResponseEntity<String> getCurrentSequence(
       @RequestParam("network_name") @Validated String networkName,
       @RequestParam("chaincode_name") @Validated String chaincodeName,
-      @RequestParam("chaincode_version") @Validated String chaincodeVersion) {
+      @RequestParam("chaincode_version") @Validated String chaincodeVersion)
+      throws Exception {
+    XssProtectionUtil.validateXssSafeString(networkName, chaincodeName, chaincodeVersion);
     return new ResponseEntity<>(
         chaincodeOperationsService.getCurrentSequence(networkName, chaincodeName, chaincodeVersion),
         HttpStatus.OK);
@@ -57,10 +62,9 @@ public class ChaincodeOperationsController {
   public ResponseEntity<String> getCurrentPackageId(
       @RequestParam("network_name") @Validated String networkName,
       @RequestParam("chaincode_name") @Validated String chaincodeName,
-      @RequestParam("chaincode_version") @Validated String chaincodeVersion) {
-    networkName = StringEscapeUtils.escapeHtml4(networkName);
-    chaincodeName = StringEscapeUtils.escapeHtml4(chaincodeName);
-    chaincodeVersion = StringEscapeUtils.escapeHtml4(chaincodeVersion);
+      @RequestParam("chaincode_version") @Validated String chaincodeVersion)
+      throws Exception {
+    XssProtectionUtil.validateXssSafeString(networkName, chaincodeName, chaincodeVersion);
     return new ResponseEntity<>(
         chaincodeOperationsService.getCurrentPackageId(
             networkName, chaincodeName, chaincodeVersion),
@@ -73,7 +77,9 @@ public class ChaincodeOperationsController {
       @RequestParam("chaincode_name") String chaincodeName,
       @RequestParam("chaincode_version") String chaincodeVersion,
       @RequestParam("sequence") Long sequence,
-      @RequestParam(value = "init_required", defaultValue = "false") boolean initRequired) {
+      @RequestParam(value = "init_required", defaultValue = "false") boolean initRequired)
+      throws Exception {
+    XssProtectionUtil.validateXssSafeString(networkName, chaincodeName, chaincodeVersion);
     ChaincodeOperations chaincodeOperations =
         ChaincodeOperations.builder()
             .chaincodeName(chaincodeName)

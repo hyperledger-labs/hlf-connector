@@ -55,6 +55,8 @@ public enum ErrorCode {
 
   AUTH_INVALID_API_KEY(9000, "Invalid api key"),
 
+  XSS_VALIDATION_FAILED(9007, "Xss validation failed"),
+
   NOT_DEFINED(
       9999,
       "The exception is not a BaseException OR error code is not yet defined by the developer");
