@@ -179,8 +179,12 @@ public class FabricClientController {
       @RequestParam("key") @Validated String transactionId,
       @RequestParam(value = "collection", required = false) String collections,
       @RequestParam(value = "transientKey", required = false) String transientKey) {
-    XssProtectionUtil.validateXssSafeString(
-        networkName, transactionFunctionName, collections, transientKey);
+    networkName = XssProtectionUtil.validateAndGetXssSafeString(networkName);
+    contractName = XssProtectionUtil.validateAndGetXssSafeString(contractName);
+    transactionFunctionName =
+        XssProtectionUtil.validateAndGetXssSafeString(transactionFunctionName);
+    networkName = XssProtectionUtil.validateAndGetXssSafeString(networkName);
+
     log.info(
         "Initiated Transaction Read for Network Name: {}, Contract Name: {}, Transaction Function Name: {}, Transaction Id: {}",
         networkName,
@@ -221,7 +225,10 @@ public class FabricClientController {
       @RequestParam("channel") @Validated String networkName,
       @RequestParam(value = "chaincode", required = false) String chaincode,
       @RequestParam("eventType") @Validated String eventType) {
-    XssProtectionUtil.validateXssSafeString(networkName, transactionId, chaincode, eventType);
+    networkName = XssProtectionUtil.validateAndGetXssSafeString(networkName);
+    transactionId = XssProtectionUtil.validateAndGetXssSafeString(transactionId);
+    chaincode = XssProtectionUtil.validateAndGetXssSafeString(chaincode);
+    eventType = XssProtectionUtil.validateAndGetXssSafeString(eventType);
     log.info(
         "Initiated Transaction Read for Network Name: {}, Block Number: {}",
         networkName,
@@ -246,7 +253,10 @@ public class FabricClientController {
       @RequestParam("chaincode") @Validated String chaincodeName,
       @RequestParam("function") @Validated String functionName,
       @RequestBody MultiDataTransactionPayload payload) {
-    XssProtectionUtil.validateXssSafeString(channelName, chaincodeName, functionName);
+    channelName = XssProtectionUtil.validateAndGetXssSafeString(channelName);
+    chaincodeName = XssProtectionUtil.validateAndGetXssSafeString(chaincodeName);
+    functionName = XssProtectionUtil.validateAndGetXssSafeString(functionName);
+
     log.info(
         "Initiated Transaction Write for Network Name: {}, Chaincode Name: {}, Function: {} with Request-Payload: {}",
         channelName,

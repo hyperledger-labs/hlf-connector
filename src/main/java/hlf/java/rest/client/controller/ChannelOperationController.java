@@ -40,7 +40,7 @@ public class ChannelOperationController {
   @GetMapping("/members-mspid")
   public ResponseEntity<Set<String>> getChannelMembersMSPID(
       @RequestParam("channel_name") String channelName) {
-    XssProtectionUtil.validateXssSafeString(channelName);
+    channelName = XssProtectionUtil.validateAndGetXssSafeString(channelName);
     return new ResponseEntity<>(channelService.getChannelMembersMSPID(channelName), HttpStatus.OK);
   }
 }

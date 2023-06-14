@@ -36,7 +36,9 @@ public class EventController {
       @RequestParam("block-number-end") Long endBlockNumber,
       @RequestParam("channel") @Validated String networkName,
       @RequestParam("eventType") @Validated String eventType) {
-    XssProtectionUtil.validateXssSafeString(networkName, eventType);
+    networkName = XssProtectionUtil.validateAndGetXssSafeString(networkName);
+    eventType = XssProtectionUtil.validateAndGetXssSafeString(eventType);
+
     log.info(
         "Triggering blocks since: {}, to: {}, on: {}, type: {}",
         startBlockNumber,
