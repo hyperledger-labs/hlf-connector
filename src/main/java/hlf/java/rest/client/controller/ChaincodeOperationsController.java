@@ -6,6 +6,7 @@ import hlf.java.rest.client.service.ChaincodeOperationsService;
 import java.util.Optional;
 import java.util.Set;
 import lombok.extern.slf4j.Slf4j;
+import org.owasp.esapi.ESAPI;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -41,6 +42,8 @@ public class ChaincodeOperationsController {
             operationsType,
             Optional.ofNullable(collectionConfigFile));
 
+    operationResponse = ESAPI.encoder().encodeForHTML(operationResponse);
+
     return new ResponseEntity<>(operationResponse, HttpStatus.OK);
   }
 
@@ -53,6 +56,8 @@ public class ChaincodeOperationsController {
     String operationResponse =
         chaincodeOperationsService.getCurrentSequence(networkName, chaincodeName, chaincodeVersion);
 
+    operationResponse = ESAPI.encoder().encodeForHTML(operationResponse);
+
     return new ResponseEntity<>(operationResponse, HttpStatus.OK);
   }
 
@@ -64,6 +69,8 @@ public class ChaincodeOperationsController {
 
     String operationResponse =
         chaincodeOperationsService.getCurrentSequence(networkName, chaincodeName, chaincodeVersion);
+
+    operationResponse = ESAPI.encoder().encodeForHTML(operationResponse);
 
     return new ResponseEntity<>(operationResponse, HttpStatus.OK);
   }

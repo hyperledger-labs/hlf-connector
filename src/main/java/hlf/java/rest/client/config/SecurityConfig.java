@@ -37,11 +37,9 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
             new HeaderAuthenticationFilter(fabricProperties, handlerExceptionResolver),
             LogoutFilter.class)
         .csrf()
-        .disable()
-    .headers()
-    .xssProtection()
-    .and()
-    .contentSecurityPolicy("script-src 'self'"); // NOSONAR
+        .disable() // NOSONAR
+        .headers()
+        .xssProtection();
     // @formatter:on
   }
 
