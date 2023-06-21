@@ -6,6 +6,7 @@ import hlf.java.rest.client.service.ChaincodeOperationsService;
 import java.util.Optional;
 import java.util.Set;
 import lombok.extern.slf4j.Slf4j;
+import org.owasp.esapi.ESAPI;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -33,13 +34,17 @@ public class ChaincodeOperationsController {
       // accept optional collection configuration for the approval and commit
       @RequestPart(value = "collection_config", required = false)
           MultipartFile collectionConfigFile) {
-    return new ResponseEntity<>(
+
+    String operationResponse =
         chaincodeOperationsService.performChaincodeOperation(
             networkName,
             chaincodeOperations,
             operationsType,
-            Optional.ofNullable(collectionConfigFile)),
-        HttpStatus.OK);
+            Optional.ofNullable(collectionConfigFile));
+
+    operationResponse = ESAPI.encoder().encodeForHTML(operationResponse);
+
+    return new ResponseEntity<>(operationResponse, HttpStatus.OK);
   }
 
   @GetMapping(value = "/sequence")
@@ -47,9 +52,13 @@ public class ChaincodeOperationsController {
       @RequestParam("network_name") @Validated String networkName,
       @RequestParam("chaincode_name") @Validated String chaincodeName,
       @RequestParam("chaincode_version") @Validated String chaincodeVersion) {
-    return new ResponseEntity<>(
-        chaincodeOperationsService.getCurrentSequence(networkName, chaincodeName, chaincodeVersion),
-        HttpStatus.OK);
+
+    String operationResponse =
+        chaincodeOperationsService.getCurrentSequence(networkName, chaincodeName, chaincodeVersion);
+
+    operationResponse = ESAPI.encoder().encodeForHTML(operationResponse);
+
+    return new ResponseEntity<>(operationResponse, HttpStatus.OK);
   }
 
   @GetMapping(value = "/packageId")
@@ -57,10 +66,13 @@ public class ChaincodeOperationsController {
       @RequestParam("network_name") @Validated String networkName,
       @RequestParam("chaincode_name") @Validated String chaincodeName,
       @RequestParam("chaincode_version") @Validated String chaincodeVersion) {
-    return new ResponseEntity<>(
-        chaincodeOperationsService.getCurrentPackageId(
-            networkName, chaincodeName, chaincodeVersion),
-        HttpStatus.OK);
+
+    String operationResponse =
+        chaincodeOperationsService.getCurrentSequence(networkName, chaincodeName, chaincodeVersion);
+
+    operationResponse = ESAPI.encoder().encodeForHTML(operationResponse);
+
+    return new ResponseEntity<>(operationResponse, HttpStatus.OK);
   }
 
   @GetMapping(value = "/approved-organisations")
@@ -77,9 +89,11 @@ public class ChaincodeOperationsController {
             .sequence(sequence)
             .initRequired(initRequired)
             .build();
-    return new ResponseEntity<>(
+
+    Set<String> approvedOrganizations =
         chaincodeOperationsService.getApprovedOrganizations(
-            networkName, chaincodeOperations, Optional.empty(), Optional.empty()),
-        HttpStatus.OK);
+            networkName, chaincodeOperations, Optional.empty(), Optional.empty());
+
+    return new ResponseEntity<>(approvedOrganizations, HttpStatus.OK);
   }
 }
