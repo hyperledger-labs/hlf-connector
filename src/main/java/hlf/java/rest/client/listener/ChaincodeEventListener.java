@@ -19,7 +19,7 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 @ConditionalOnProperty(prefix = "fabric.events", name = "enable", havingValue = "true")
 @RefreshScope
-public class CustomChaincodeEventListener {
+public class ChaincodeEventListener {
 
   @Autowired(required = false)
   private EventPublishService eventPublishService;
