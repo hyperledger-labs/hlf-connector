@@ -30,8 +30,12 @@ fabric:
       apikey: ePVYHwAaQ0V1XOTX6U
   events:
     enable: true
-    chaincode: <comma separated list of channels>
+    chaincode: <comma separated list of channels> (Note : Will soon be deprecated / removed)
     block: <comma separated list of channels>
+    chaincodeDetails:
+           -
+             channelName: Name of the Channel
+             chaincodeId: chaincode-id of the deployed chaincode in this Channel
 
 
 ---

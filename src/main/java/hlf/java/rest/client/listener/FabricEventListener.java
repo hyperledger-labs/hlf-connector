@@ -4,8 +4,8 @@ import hlf.java.rest.client.config.FabricProperties;
 import hlf.java.rest.client.service.HFClientWrapper;
 import java.util.List;
 import java.util.regex.Pattern;
-import javax.annotation.PostConstruct;
 import lombok.extern.slf4j.Slf4j;
+import org.hyperledger.fabric.gateway.Contract;
 import org.hyperledger.fabric.gateway.Gateway;
 import org.hyperledger.fabric.gateway.Network;
 import org.hyperledger.fabric.sdk.Channel;
@@ -47,7 +47,6 @@ public class FabricEventListener {
     startEventListener();
   }
 
-  @PostConstruct
   public void startEventListener() {
 
     try {
@@ -80,8 +79,31 @@ public class FabricEventListener {
         }
       }
 
+      List<FabricProperties.ChaincodeDetails> chaincodeDetails =
+          fabricProperties.getEvents().getChaincodeDetails();
       List<String> chaincodeChannelNames = fabricProperties.getEvents().getChaincode();
-      if (!CollectionUtils.isEmpty(chaincodeChannelNames)) {
+
+      /**
+       * In-order to ensure backward compatiability, registering event-listeners through
+       * 'chaincodeChannelNames' is preserved until this Listener service fully moves to utilising
+       * Chaincode & Channel names provided via the 'chaincodeDetails' property. Until that,
+       * registering events via Channel names provided through 'chaincodeChannelNames' will be used
+       * if 'chaincodeDetails' is empty. If 'chaincodeDetails' is a non-empty list, then preference
+       * will be given to register Event-listener via the 'Contract' object and registering events
+       * through 'chaincodeChannelNames' will be skipped regardless whether it's populated or not.
+       *
+       * <p>P.S it is recommended to 'Contract' object for registering Event-Listeners over
+       * registering it througth 'Channel' Object.
+       */
+      if (!CollectionUtils.isEmpty(chaincodeDetails)) {
+
+        for (FabricProperties.ChaincodeDetails chaincodeDetail : chaincodeDetails) {
+          Network network = gateway.getNetwork(chaincodeDetail.getChannelName());
+          Contract contract = network.getContract(chaincodeDetail.getChaincodeId());
+
+          contract.addContractListener(chaincodeEventService::chaincodeEventListener);
+        }
+      } else if (!CollectionUtils.isEmpty(chaincodeChannelNames)) {
 
         for (String channelName : chaincodeChannelNames) {
           Network network = gateway.getNetwork(channelName);
@@ -101,7 +123,7 @@ public class FabricEventListener {
       }
 
     } catch (Exception ex) {
-      ex.printStackTrace();
+      log.error("Failed to register Block/Chaincode listener with error {}, ", ex.getMessage(), ex);
     }
   }
 }
