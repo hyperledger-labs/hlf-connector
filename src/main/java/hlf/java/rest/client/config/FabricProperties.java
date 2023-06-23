@@ -64,9 +64,9 @@ public class FabricProperties {
   @ConditionalOnProperty(prefix = "fabric.events", name = "enable", havingValue = "true")
   public static class Events {
     private boolean enable;
-    private List<String>
-        chaincode; // TODO: This will removed or deprecated and the property 'chaincodeDetails' will
-    // be preferred for providing Chaincode details for Event subscription
+    // TODO: This will be removed or deprecated and the property 'chaincodeDetails' will be
+    // preferred for providing Chaincode details for Event subscription
+    private List<String> chaincode;
     private List<String> block;
     private List<ChaincodeDetails> chaincodeDetails;
   }

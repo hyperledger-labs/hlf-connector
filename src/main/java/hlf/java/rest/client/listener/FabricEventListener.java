@@ -92,8 +92,8 @@ public class FabricEventListener {
        * will be given to register Event-listener via the 'Contract' object and registering events
        * through 'chaincodeChannelNames' will be skipped regardless whether it's populated or not.
        *
-       * <p>P.S it is recommended to 'Contract' object for registering Event-Listeners over
-       * registering it througth 'Channel' Object.
+       * <p>P.S it is recommended to use 'Contract' object for registering Event-Listeners over
+       * registering it through 'Channel' Object.
        */
       if (!CollectionUtils.isEmpty(chaincodeDetails)) {
 
