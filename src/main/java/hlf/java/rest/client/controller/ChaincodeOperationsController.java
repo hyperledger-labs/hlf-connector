@@ -6,7 +6,6 @@ import hlf.java.rest.client.service.ChaincodeOperationsService;
 import java.util.Optional;
 import java.util.Set;
 import lombok.extern.slf4j.Slf4j;
-import org.owasp.esapi.ESAPI;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -18,6 +17,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.util.HtmlUtils;
 
 @Slf4j
 @RestController
@@ -42,7 +42,7 @@ public class ChaincodeOperationsController {
             operationsType,
             Optional.ofNullable(collectionConfigFile));
 
-    operationResponse = ESAPI.encoder().encodeForHTML(operationResponse);
+    operationResponse = HtmlUtils.htmlEscape(operationResponse);
 
     return new ResponseEntity<>(operationResponse, HttpStatus.OK);
   }
@@ -56,7 +56,7 @@ public class ChaincodeOperationsController {
     String operationResponse =
         chaincodeOperationsService.getCurrentSequence(networkName, chaincodeName, chaincodeVersion);
 
-    operationResponse = ESAPI.encoder().encodeForHTML(operationResponse);
+    operationResponse = HtmlUtils.htmlEscape(operationResponse);
 
     return new ResponseEntity<>(operationResponse, HttpStatus.OK);
   }
@@ -68,9 +68,10 @@ public class ChaincodeOperationsController {
       @RequestParam("chaincode_version") @Validated String chaincodeVersion) {
 
     String operationResponse =
-        chaincodeOperationsService.getCurrentSequence(networkName, chaincodeName, chaincodeVersion);
+        chaincodeOperationsService.getCurrentPackageId(
+            networkName, chaincodeName, chaincodeVersion);
 
-    operationResponse = ESAPI.encoder().encodeForHTML(operationResponse);
+    operationResponse = HtmlUtils.htmlEscape(operationResponse);
 
     return new ResponseEntity<>(operationResponse, HttpStatus.OK);
   }
