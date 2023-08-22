@@ -1,5 +1,6 @@
 package hlf.java.rest.client.controller;
 
+import hlf.java.rest.client.metrics.MetricsTrackedEndpoint;
 import hlf.java.rest.client.model.ChannelOperationRequest;
 import hlf.java.rest.client.model.ClientResponseModel;
 import hlf.java.rest.client.service.ChannelService;
@@ -23,6 +24,7 @@ public class ChannelOperationController {
   @Autowired private ChannelService channelService;
 
   @PostMapping("/create")
+  @MetricsTrackedEndpoint(name = "Create Channel", method = "POST", uri = "/channel/create")
   public ResponseEntity<ClientResponseModel> createChannel(
       @RequestBody ChannelOperationRequest channelCreationRequest) {
     ClientResponseModel response = channelService.createChannel(channelCreationRequest);
@@ -30,6 +32,7 @@ public class ChannelOperationController {
   }
 
   @PostMapping("/join")
+  @MetricsTrackedEndpoint(name = "Join Channel", method = "POST", uri = "/channel/join")
   public ResponseEntity<ClientResponseModel> joinChannel(
       @RequestBody ChannelOperationRequest channelJoinRequest) {
     ClientResponseModel response = channelService.joinChannel(channelJoinRequest);

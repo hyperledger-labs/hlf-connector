@@ -1,5 +1,6 @@
 package hlf.java.rest.client.controller;
 
+import hlf.java.rest.client.metrics.MetricsTrackedEndpoint;
 import hlf.java.rest.client.model.ChaincodeOperations;
 import hlf.java.rest.client.model.ChaincodeOperationsType;
 import hlf.java.rest.client.service.ChaincodeOperationsService;
@@ -27,6 +28,10 @@ public class ChaincodeOperationsController {
   @Autowired private ChaincodeOperationsService chaincodeOperationsService;
 
   @PutMapping(value = "/operations")
+  @MetricsTrackedEndpoint(
+      name = "Chaincode Operations",
+      method = "PUT",
+      uri = "/chaincode/operations")
   public ResponseEntity<String> performChaincodeOperation(
       @RequestParam("network_name") @Validated String networkName,
       @RequestParam("operations_type") @Validated ChaincodeOperationsType operationsType,
@@ -48,6 +53,7 @@ public class ChaincodeOperationsController {
   }
 
   @GetMapping(value = "/sequence")
+  @MetricsTrackedEndpoint(name = "Get Sequence", method = "GET", uri = "/chaincode/sequence")
   public ResponseEntity<String> getCurrentSequence(
       @RequestParam("network_name") @Validated String networkName,
       @RequestParam("chaincode_name") @Validated String chaincodeName,
@@ -62,6 +68,7 @@ public class ChaincodeOperationsController {
   }
 
   @GetMapping(value = "/packageId")
+  @MetricsTrackedEndpoint(name = "Get PackageId", method = "GET", uri = "/chaincode/packageId")
   public ResponseEntity<String> getCurrentPackageId(
       @RequestParam("network_name") @Validated String networkName,
       @RequestParam("chaincode_name") @Validated String chaincodeName,
@@ -77,6 +84,10 @@ public class ChaincodeOperationsController {
   }
 
   @GetMapping(value = "/approved-organisations")
+  @MetricsTrackedEndpoint(
+      name = "Fetch Approved Organizations",
+      method = "GET",
+      uri = "/chaincode/approved-organisations")
   public ResponseEntity<Set<String>> getApprovedOrganisationListForSmartContract(
       @RequestParam("network_name") @Validated String networkName,
       @RequestParam("chaincode_name") String chaincodeName,

@@ -1,5 +1,6 @@
 package hlf.java.rest.client.controller;
 
+import hlf.java.rest.client.metrics.MetricsTrackedEndpoint;
 import hlf.java.rest.client.model.ClientResponseModel;
 import hlf.java.rest.client.model.EventAPIResponseModel;
 import hlf.java.rest.client.model.MultiDataTransactionPayload;
@@ -42,6 +43,7 @@ public class FabricClientController {
    * @return responseEntity ResponseEntity Transaction Response
    */
   @GetMapping(value = "/write_transaction")
+  @MetricsTrackedEndpoint(name = "Write Transaction", method = "GET", uri = "/write_transaction")
   public ResponseEntity<ClientResponseModel> postTransaction(
       @RequestParam("network_name") @Validated String networkName,
       @RequestParam("contract_name") @Validated String contractName,
@@ -69,6 +71,7 @@ public class FabricClientController {
    * @return responseEntity ResponseEntity Transaction Response
    */
   @PostMapping(value = "/init_transaction")
+  @MetricsTrackedEndpoint(name = "Initialise Chaincode", method = "POST", uri = "/init_transaction")
   public ResponseEntity<ClientResponseModel> initTransaction(
       @RequestHeader("channel") @Validated String channelName,
       @RequestHeader("chaincode") @Validated String chaincodeName,
@@ -103,6 +106,7 @@ public class FabricClientController {
    * @return responseEntity ResponseEntity Transaction Response
    */
   @PostMapping(value = "/invoke_transaction")
+  @MetricsTrackedEndpoint(name = "Invoke Transaction", method = "POST", uri = "/invoke_transaction")
   public ResponseEntity<ClientResponseModel> invokeTransaction(
       @RequestHeader("channel") @Validated String channelName,
       @RequestHeader("chaincode") @Validated String chaincodeName,
@@ -171,6 +175,7 @@ public class FabricClientController {
    * @return responseEntity ResponseEntity Transaction Response
    */
   @GetMapping(value = "/query_transaction")
+  @MetricsTrackedEndpoint(name = "Query Transaction", method = "GET", uri = "/query_transaction")
   public ResponseEntity<ClientResponseModel> getTransaction(
       @RequestParam("channel") @Validated String networkName,
       @RequestParam("chaincode") @Validated String contractName,
@@ -212,6 +217,10 @@ public class FabricClientController {
    * @return the EventAPIResponseModel which contain all the events
    */
   @GetMapping(value = "/blocks/{block-number}/transactions/{transaction-id}/events")
+  @MetricsTrackedEndpoint(
+      name = "Query Transaction By Block Number",
+      method = "GET",
+      uri = "/blocks/{block-number}/transactions/{transaction-id}/events")
   public ResponseEntity<EventAPIResponseModel> getTransactionByBlockNumber(
       @PathVariable("transaction-id") String transactionId,
       @PathVariable("block-number") Long blockNumber,
@@ -237,6 +246,10 @@ public class FabricClientController {
    * @return responseEntity ResponseEntity Transaction Response
    */
   @PostMapping(value = "/invoke_transaction/v2")
+  @MetricsTrackedEndpoint(
+      name = "Invoke Transaction V2",
+      method = "POST",
+      uri = "/invoke_transaction/v2")
   public ResponseEntity<ClientResponseModel> invokeTransaction(
       @RequestParam("channel") @Validated String channelName,
       @RequestParam("chaincode") @Validated String chaincodeName,
