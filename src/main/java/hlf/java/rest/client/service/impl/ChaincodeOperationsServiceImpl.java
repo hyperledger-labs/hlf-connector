@@ -195,7 +195,7 @@ public class ChaincodeOperationsServiceImpl implements ChaincodeOperationsServic
       String networkName,
       ChaincodeOperations chaincodeOperationsModel,
       Optional<LifecycleChaincodeEndorsementPolicy> chaincodeEndorsementPolicyOptional,
-      Optional<ChaincodeCollectionConfiguration> chaincodeCollectionConfigurationOptional) {
+      Optional<MultipartFile> collectionConfigFileOptional) {
     Set<String> organizationSet = new HashSet<>();
     try {
 
@@ -215,9 +215,21 @@ public class ChaincodeOperationsServiceImpl implements ChaincodeOperationsServic
         lifecycleCheckCommitReadinessRequest.setChaincodeEndorsementPolicy(
             chaincodeEndorsementPolicyOptional.get());
       }
-      if (chaincodeCollectionConfigurationOptional.isPresent()) {
-        lifecycleCheckCommitReadinessRequest.setChaincodeCollectionConfiguration(
-            chaincodeCollectionConfigurationOptional.get());
+
+      if (collectionConfigFileOptional.isPresent()) {
+
+        try (InputStream inputStream = collectionConfigFileOptional.get().getInputStream()) {
+
+          ChaincodeCollectionConfiguration chaincodeCollectionConfiguration =
+              ChaincodeCollectionConfiguration.fromJsonStream(inputStream);
+
+          lifecycleCheckCommitReadinessRequest.setChaincodeCollectionConfiguration(
+              chaincodeCollectionConfiguration);
+        } catch (ChaincodeCollectionConfigurationException | IOException e) {
+          throw new ServiceException(
+              ErrorCode.DESERIALIZATION_FAILURE,
+              "Error occurred while extracting details from the uploaded Collection-Config file");
+        }
       }
 
       lifecycleCheckCommitReadinessRequest.setInitRequired(

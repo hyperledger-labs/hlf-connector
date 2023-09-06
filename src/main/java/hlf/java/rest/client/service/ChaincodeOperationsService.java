@@ -4,7 +4,6 @@ import hlf.java.rest.client.model.ChaincodeOperations;
 import hlf.java.rest.client.model.ChaincodeOperationsType;
 import java.util.Optional;
 import java.util.Set;
-import org.hyperledger.fabric.sdk.ChaincodeCollectionConfiguration;
 import org.hyperledger.fabric.sdk.LifecycleChaincodeEndorsementPolicy;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -48,5 +47,5 @@ public interface ChaincodeOperationsService {
       String networkName,
       ChaincodeOperations chaincodeOperationsModel,
       Optional<LifecycleChaincodeEndorsementPolicy> chaincodeEndorsementPolicyOptional,
-      Optional<ChaincodeCollectionConfiguration> chaincodeCollectionConfigurationOptional);
+      Optional<MultipartFile> collectionConfigFileOptional);
 }
