@@ -93,7 +93,9 @@ public class ChaincodeOperationsController {
       @RequestParam("chaincode_name") String chaincodeName,
       @RequestParam("chaincode_version") String chaincodeVersion,
       @RequestParam("sequence") Long sequence,
-      @RequestParam(value = "init_required", defaultValue = "false") boolean initRequired) {
+      @RequestParam(value = "init_required", defaultValue = "false") boolean initRequired,
+      @RequestPart(value = "collection_config", required = false)
+          MultipartFile collectionConfigFile) {
     ChaincodeOperations chaincodeOperations =
         ChaincodeOperations.builder()
             .chaincodeName(chaincodeName)
@@ -104,7 +106,10 @@ public class ChaincodeOperationsController {
 
     Set<String> approvedOrganizations =
         chaincodeOperationsService.getApprovedOrganizations(
-            networkName, chaincodeOperations, Optional.empty(), Optional.empty());
+            networkName,
+            chaincodeOperations,
+            Optional.empty(),
+            Optional.ofNullable(collectionConfigFile));
 
     return new ResponseEntity<>(approvedOrganizations, HttpStatus.OK);
   }
