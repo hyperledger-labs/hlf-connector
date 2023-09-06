@@ -23,6 +23,8 @@ public enum ErrorCode {
   CHAINCODE_PACKAGE_ID_VALIDATION_FAILED(
       1005, "The chaincode packageId is not same in all the peers or not present."),
 
+  CHANNEL_CREATION_FAILED(3000, "Failed to create Channel"),
+
   CHANNEL_JOIN_FAILED(3006, "Failed to join channel"),
 
   CHANNEL_CREATION_MISSING_ORDERER(4000, "Orderer is missing"),

@@ -107,7 +107,7 @@ public class ChannelServiceImpl implements ChannelService {
     } catch (Exception e) {
       log.error("Error in creating new channel: ", e);
       throw new ChannelOperationException(
-          ErrorCode.CHANNEL_JOIN_FAILED, "channel creation failed", e.getCause());
+          ErrorCode.CHANNEL_CREATION_FAILED, "channel creation failed", e.getCause());
     }
   }
 
