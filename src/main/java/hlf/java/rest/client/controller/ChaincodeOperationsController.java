@@ -12,6 +12,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -83,26 +84,16 @@ public class ChaincodeOperationsController {
     return new ResponseEntity<>(operationResponse, HttpStatus.OK);
   }
 
-  @GetMapping(value = "/approved-organisations")
+  @PostMapping(value = "/approved-organisations")
   @MetricsTrackedEndpoint(
       name = "Fetch Approved Organizations",
-      method = "GET",
+      method = "POST",
       uri = "/chaincode/approved-organisations")
   public ResponseEntity<Set<String>> getApprovedOrganisationListForSmartContract(
       @RequestParam("network_name") @Validated String networkName,
-      @RequestParam("chaincode_name") String chaincodeName,
-      @RequestParam("chaincode_version") String chaincodeVersion,
-      @RequestParam("sequence") Long sequence,
-      @RequestParam(value = "init_required", defaultValue = "false") boolean initRequired,
+      @RequestPart("chaincodeOperations") ChaincodeOperations chaincodeOperations,
       @RequestPart(value = "collection_config", required = false)
           MultipartFile collectionConfigFile) {
-    ChaincodeOperations chaincodeOperations =
-        ChaincodeOperations.builder()
-            .chaincodeName(chaincodeName)
-            .chaincodeVersion(chaincodeVersion)
-            .sequence(sequence)
-            .initRequired(initRequired)
-            .build();
 
     Set<String> approvedOrganizations =
         chaincodeOperationsService.getApprovedOrganizations(
