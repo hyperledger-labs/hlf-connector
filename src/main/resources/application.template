@@ -36,8 +36,29 @@ fabric:
            -
              channelName: Name of the Channel
              chaincodeId: chaincode-id of the deployed chaincode in this Channel
+kafka:
+  integration-points: <Note : This is a list and Multiple intgration points can be configured)
+    - groupId: test_group_id
+      enableParallelListenerCapabilities: boolean
+      topicPartitions: <Number of Partitions in the Topic>
+      brokerHost: <Comma separated list of boostrap servers>
+      topic: <topic to listen from>
+      ssl-enabled: boolean
+      security-protocol: <Only supports SSL>
+      ssl-keystore-base64: <if ssl-enabled is true, provide the Base64 encoded value of keystore file>
+      ssl-truststore-base64: <if ssl-enabled is true, provide the Base64 encoded value of Trsutstore file>
+  event-listener:
+    brokerHost: <Comma separated list of boostrap servers>
+    topic: <topic to publish Block or Chaincode Events>
+    ssl-enabled: boolean
+    security-protocol: <Only supports SSL>
+    listenToFailedMessages: boolean <set as true if you wish to recieve errored Transaction records back to this topic>
 
-
+  failed-message-listener: <Note, if you wish to receive errored Transactions to a dedicated topic, these details should be filled up>
+    brokerHost: <Comma separated list of boostrap servers>
+    topic: <topic to publish errored Records>
+    ssl-enabled: boolean
+    security-protocol: <Only supports SSL>
 ---
 spring:
   profiles: container
