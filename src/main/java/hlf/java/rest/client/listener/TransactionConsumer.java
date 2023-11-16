@@ -6,7 +6,6 @@ import hlf.java.rest.client.exception.FabricTransactionException;
 import hlf.java.rest.client.exception.ServiceException;
 import hlf.java.rest.client.metrics.EmitKafkaCustomMetrics;
 import hlf.java.rest.client.model.MultiDataTransactionPayload;
-import hlf.java.rest.client.service.EventPublishService;
 import hlf.java.rest.client.service.TransactionFulfillment;
 import hlf.java.rest.client.util.FabricClientConstants;
 import java.nio.charset.StandardCharsets;
@@ -30,11 +29,8 @@ public class TransactionConsumer {
   private static final String PAYLOAD_KIND = "payload_kind";
   private static final String PL_KIND_MULTI_DATA = "multi_data";
 
-  @Autowired TransactionFulfillment transactionFulfillment;
-  @Autowired ObjectMapper objectMapper;
-
-  @Autowired(required = false)
-  EventPublishService eventPublishServiceImpl;
+  @Autowired private TransactionFulfillment transactionFulfillment;
+  @Autowired private ObjectMapper objectMapper;
 
   /**
    * This method routes the kafka messages to appropriate methods and acknowledges once processing
@@ -125,9 +121,9 @@ public class TransactionConsumer {
       if (isIdentifiableFunction(networkName, contractName, transactionFunctionName)
           && !transactionParams.isEmpty()) {
 
-        if (null != peerNames && !peerNames.isEmpty()) {
+        if (!peerNames.isEmpty()) {
           List<String> lstPeerNames = Arrays.asList(peerNames.split(","));
-          if (null != lstPeerNames && !lstPeerNames.isEmpty()) {
+          if (!lstPeerNames.isEmpty()) {
             if (StringUtils.isNotBlank(collections) && StringUtils.isNotBlank(transientKey)) {
               transactionFulfillment.writePrivateTransactionToLedger(
                   networkName,
@@ -166,13 +162,19 @@ public class TransactionConsumer {
         }
 
       } else {
-        log.info("Incorrect Transaction Payload");
+        log.error("Incorrect Transaction Payload");
+        throw new ServiceException(
+            ErrorCode.VALIDATION_FAILED,
+            "Inbound transaction format is incorrect or doesn't contain valid parameters.");
       }
 
     } catch (FabricTransactionException fte) {
-      eventPublishServiceImpl.publishTransactionFailureEvent(
-          fte.getMessage(), networkName, contractName, transactionFunctionName, transactionParams);
       log.error("Error in Submitting Transaction - Exception - " + fte.getMessage());
+      /*
+       If the error handler has dead letter publish enabled, the errored Record header will be enriched by extracting
+       the error cause and message from the thrown exception.
+      */
+      throw fte;
     } catch (Exception ex) {
       log.error("Error in Kafka Listener - Message Format exception - " + ex.getMessage());
       throw new ServiceException(ErrorCode.HYPERLEDGER_FABRIC_TRANSACTION_ERROR, ex.getMessage());
