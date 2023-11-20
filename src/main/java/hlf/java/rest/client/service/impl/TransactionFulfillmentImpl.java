@@ -5,6 +5,7 @@ import hlf.java.rest.client.exception.ErrorCode;
 import hlf.java.rest.client.exception.ErrorConstants;
 import hlf.java.rest.client.exception.FabricTransactionException;
 import hlf.java.rest.client.exception.NotFoundException;
+import hlf.java.rest.client.exception.RetryableServiceException;
 import hlf.java.rest.client.exception.ServiceException;
 import hlf.java.rest.client.model.AbstractModelValidator;
 import hlf.java.rest.client.model.BlockEventWriteSet;
@@ -57,6 +58,11 @@ import org.springframework.util.CollectionUtils;
 @Slf4j
 @Service
 public class TransactionFulfillmentImpl implements TransactionFulfillment {
+
+  // List of exceptions that would be wrapped as 'FabricTransactionException' once caught.
+  private static final List<Class<? extends Exception>> fabricTransactionExceptionCandidates =
+      Arrays.asList(
+          GatewayRuntimeException.class, ContractException.class, InterruptedException.class);
 
   private static final long DEFAULT_ORDERER_TIMEOUT = 60;
   private static final TimeUnit DEFAULT_ORDERER_TIMEOUT_UNIT = TimeUnit.SECONDS;
@@ -189,7 +195,7 @@ public class TransactionFulfillmentImpl implements TransactionFulfillment {
       Optional<List<String>> peerNames,
       String... transactionParams) {
     log.info("Initiate the Write Transaction to Ledger process");
-    String resultString;
+    String resultString = StringUtils.EMPTY;
     List<Peer> endorsingPeers = new ArrayList<>();
     try {
       Network network = gateway.getNetwork(networkName);
@@ -216,38 +222,8 @@ public class TransactionFulfillmentImpl implements TransactionFulfillment {
       resultString = new String(result, StandardCharsets.UTF_8);
       log.info("Transaction Successfully Submitted - Response: " + resultString);
 
-    } catch (GatewayRuntimeException gre) {
-      log.error("Action Failed: A problem occured with Gateway transaction to the peer");
-      throw new FabricTransactionException(
-          ErrorCode.HYPERLEDGER_FABRIC_TRANSACTION_ERROR, gre.getMessage(), gre);
-    } catch (TimeoutException e) {
-      // Retry in case of timeout, add limit on number of times this section gets hit.
-      // For now, it is an infinite trials i.e. ServiceException would not acknowledge
-      // for the Kafka
-      // topic.
-      log.error("Action Failed: Timeout occurred while waiting to submit");
-      throw new ServiceException(ErrorCode.HYPERLEDGER_FABRIC_CONNECTION_ERROR, e.getMessage(), e);
-    } catch (ContractException e) {
-      // SDK converts the nio exception into an instance of RuntimeException. The
-      // whole exception
-      // trace is converted into a ContractException before it is sent back. Rely on
-      // cause
-      // information to know if it was an IOException so that a retry can be
-      // attempted.
-      if (e.getCause() instanceof IOException
-          || fabricTxErrorList.stream().anyMatch(e.getMessage()::contains)) {
-        log.error("Action Failed: A problem occurred with the network connection");
-        throw new ServiceException(
-            ErrorCode.HYPERLEDGER_FABRIC_CONNECTION_ERROR, e.getMessage(), e);
-      }
-      log.error("Action Failed: A problem occured while submitting the transaction to the peer");
-      throw new FabricTransactionException(
-          ErrorCode.HYPERLEDGER_FABRIC_TRANSACTION_ERROR, e.getMessage(), e);
-    } catch (InterruptedException e) {
-      log.error("Action Failed: A problem occured while submitting the transaction to the peer");
-      Thread.currentThread().interrupt();
-      throw new FabricTransactionException(
-          ErrorCode.HYPERLEDGER_FABRIC_TRANSACTION_ERROR, e.getMessage(), e);
+    } catch (Exception exception) {
+      handleTransactionException(exception);
     }
     return new ResponseEntity<>(
         new ClientResponseModel(ErrorConstants.NO_ERROR, resultString), HttpStatus.OK);
@@ -281,7 +257,7 @@ public class TransactionFulfillmentImpl implements TransactionFulfillment {
       Optional<List<String>> peerNames,
       String jsonPayload) {
     log.info("Initiate the Write Transaction to Ledger process");
-    String resultString;
+    String resultString = StringUtils.EMPTY;
     Collection<Peer> endorsingPeers = new ArrayList<>();
     Map<String, byte[]> transientParam = new HashMap<>();
     try {
@@ -310,19 +286,8 @@ public class TransactionFulfillmentImpl implements TransactionFulfillment {
       byte[] result = fabricTransaction.submit(collection, transientKey);
       resultString = new String(result, StandardCharsets.UTF_8);
       log.info("Transaction Successfully Submitted - Response: " + resultString);
-    } catch (GatewayRuntimeException gre) {
-      log.error("Action Failed: A problem occurred with Gateway transaction to the peer");
-      throw new FabricTransactionException(
-          ErrorCode.HYPERLEDGER_FABRIC_TRANSACTION_ERROR, gre.getMessage(), gre);
-    } catch (ContractException | TimeoutException e) {
-      log.error("Action Failed: A problem occurred while submitting the transaction to the peer");
-      throw new FabricTransactionException(
-          ErrorCode.HYPERLEDGER_FABRIC_TRANSACTION_ERROR, e.getMessage(), e);
-    } catch (InterruptedException e) {
-      log.error("Action Failed: A problem occurred while submitting the transaction to the peer");
-      Thread.currentThread().interrupt();
-      throw new FabricTransactionException(
-          ErrorCode.HYPERLEDGER_FABRIC_TRANSACTION_ERROR, e.getMessage(), e);
+    } catch (Exception exception) {
+      handleTransactionException(exception);
     }
     return new ResponseEntity<>(
         new ClientResponseModel(ErrorConstants.NO_ERROR, resultString), HttpStatus.OK);
@@ -485,7 +450,7 @@ public class TransactionFulfillmentImpl implements TransactionFulfillment {
     validator.validate(multiDataTransactionPayload);
 
     Collection<Peer> endorsingPeers;
-    String resultString;
+    String resultString = StringUtils.EMPTY;
 
     try {
 
@@ -555,30 +520,47 @@ public class TransactionFulfillmentImpl implements TransactionFulfillment {
 
       resultString = new String(result, StandardCharsets.UTF_8);
       log.info("Transaction Successfully Submitted - Response: " + resultString);
-    } catch (GatewayRuntimeException gre) {
-      log.error("Action Failed: A problem occurred with Gateway transaction to the peer");
-      throw new FabricTransactionException(
-          ErrorCode.HYPERLEDGER_FABRIC_TRANSACTION_ERROR, gre.getMessage(), gre);
-    } catch (TimeoutException e) {
-      log.error("Action Failed: Timeout occurred while waiting to submit");
-      throw new ServiceException(ErrorCode.HYPERLEDGER_FABRIC_CONNECTION_ERROR, e.getMessage(), e);
-    } catch (ContractException e) {
-      if (e.getCause() instanceof IOException
-          || fabricTxErrorList.stream().anyMatch(e.getMessage()::contains)) {
-        log.error("Action Failed: A problem occurred with the network connection");
-        throw new ServiceException(
-            ErrorCode.HYPERLEDGER_FABRIC_CONNECTION_ERROR, e.getMessage(), e);
-      }
-      log.error("Action Failed: A problem occured while submitting the transaction to the peer");
-      throw new FabricTransactionException(
-          ErrorCode.HYPERLEDGER_FABRIC_TRANSACTION_ERROR, e.getMessage(), e);
-    } catch (InterruptedException e) {
-      log.error("Action Failed: A problem occurred while submitting the transaction to the peer");
-      Thread.currentThread().interrupt();
-      throw new FabricTransactionException(
-          ErrorCode.HYPERLEDGER_FABRIC_TRANSACTION_ERROR, e.getMessage(), e);
+    } catch (Exception exception) {
+      handleTransactionException(exception);
     }
     return new ResponseEntity<>(
         new ClientResponseModel(ErrorConstants.NO_ERROR, resultString), HttpStatus.OK);
+  }
+
+  private void handleTransactionException(Exception incomingException) {
+
+    log.error(
+        "An error occurred while submitting the transaction to the Network. Error Type: {} & Error Message: {}",
+        incomingException.getCause(),
+        incomingException.getMessage());
+
+    if (fabricTransactionExceptionCandidates.contains(incomingException.getClass())) {
+
+      if (Objects.nonNull(incomingException.getCause())
+          && (incomingException.getCause() instanceof IOException
+              || fabricTxErrorList.stream().anyMatch(incomingException.getMessage()::contains))) {
+        throw new RetryableServiceException(
+            ErrorCode.HYPERLEDGER_FABRIC_CONNECTION_ERROR,
+            incomingException.getMessage(),
+            incomingException);
+      }
+
+      throw new FabricTransactionException(
+          ErrorCode.HYPERLEDGER_FABRIC_TRANSACTION_ERROR,
+          incomingException.getMessage(),
+          incomingException);
+    }
+
+    if (incomingException instanceof TimeoutException) {
+      throw new RetryableServiceException(
+          ErrorCode.HYPERLEDGER_FABRIC_CONNECTION_TIMEOUT_ERROR,
+          incomingException.getMessage(),
+          incomingException);
+    }
+
+    throw new ServiceException(
+        ErrorCode.HYPERLEDGER_FABRIC_TRANSACTION_ERROR,
+        incomingException.getMessage(),
+        incomingException);
   }
 }

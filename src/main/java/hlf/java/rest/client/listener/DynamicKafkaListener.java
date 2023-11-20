@@ -21,6 +21,7 @@ import org.springframework.kafka.core.DefaultKafkaConsumerFactory;
 import org.springframework.kafka.listener.AcknowledgingMessageListener;
 import org.springframework.kafka.listener.BatchAcknowledgingMessageListener;
 import org.springframework.kafka.listener.BatchListenerFailedException;
+import org.springframework.kafka.listener.CommonErrorHandler;
 import org.springframework.kafka.listener.ConcurrentMessageListenerContainer;
 import org.springframework.kafka.listener.ContainerProperties;
 import org.springframework.kafka.support.Acknowledgment;
@@ -39,13 +40,15 @@ public class DynamicKafkaListener {
 
   private List<ConcurrentMessageListenerContainer> existingContainers = new ArrayList<>();
 
-  @Autowired KafkaProperties kafkaProperties;
+  @Autowired private KafkaProperties kafkaProperties;
 
-  @Autowired KafkaConsumerConfig kafkaConsumerConfig;
+  @Autowired private KafkaConsumerConfig kafkaConsumerConfig;
 
-  @Autowired TransactionConsumer transactionConsumer;
+  @Autowired private TransactionConsumer transactionConsumer;
 
-  @Autowired TaskExecutor defaultTaskExecutor;
+  @Autowired private TaskExecutor defaultTaskExecutor;
+
+  @Autowired private CommonErrorHandler topicTransactionErrorHandler;
 
   @EventListener
   public void handleEvent(ContextRefreshedEvent event) {
@@ -78,6 +81,7 @@ public class DynamicKafkaListener {
 
     DefaultKafkaConsumerFactory<String, String> factory =
         kafkaConsumerConfig.consumerFactory(consumer);
+
     ContainerProperties containerProperties = new ContainerProperties(consumer.getTopic());
     containerProperties.setAckMode(ContainerProperties.AckMode.MANUAL_IMMEDIATE);
 
@@ -94,6 +98,7 @@ public class DynamicKafkaListener {
     }
 
     container.setConcurrency(consumerListenerConcurrency);
+    container.setCommonErrorHandler(topicTransactionErrorHandler);
 
     container.start();
     existingContainers.add(container);

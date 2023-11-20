@@ -20,7 +20,8 @@ import org.springframework.context.annotation.Configuration;
 public class KafkaProperties {
 
   private List<Consumer> integrationPoints;
-  private Producer eventListener;
+  private EventProducer eventListener;
+  private Producer failedMessageListener;
 
   @Getter
   @Setter
@@ -43,6 +44,12 @@ public class KafkaProperties {
           + '\''
           + '}';
     }
+  }
+
+  @Getter
+  @Setter
+  public static class EventProducer extends Producer {
+    private boolean listenToFailedMessages;
   }
 
   /** The type Ssl properties is added for configuring SSL configuration for Kafka Cluster. */

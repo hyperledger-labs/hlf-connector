@@ -51,6 +51,9 @@ public enum ErrorCode {
       5002,
       "Hyperledger Fabric chaincode operations request has illegal argument or argument is missing."),
 
+  HYPERLEDGER_FABRIC_CONNECTION_TIMEOUT_ERROR(
+      5000, "Hyperledger Fabric Connection timed-out during Transaction"),
+
   HYPERLEDGER_FABRIC_TRANSACTION_ERROR(6000, "Hyperledger Fabric transaction related error"),
 
   HYPERLEDGER_FABRIC_NOT_SUPPORTED(8000, "In Hyperledger Fabric this feature is not supported"),
