@@ -7,6 +7,7 @@ import lombok.Data;
 public class NewOrgParamsDTO {
 
   private String organizationName;
+  private String organizationMspId;
   private MSPDTO mspDTO;
   private List<AnchorPeerDTO> anchorPeerDTOs;
 }
