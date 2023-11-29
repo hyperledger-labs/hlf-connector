@@ -40,7 +40,7 @@ public class AddOrgToChannelWriteSetBuilderImpl implements AddOrgToChannelWriteS
   public ConfigGroup buildWriteset(ConfigGroup readset, NewOrgParamsDTO organizationDetails)
       throws ServiceException {
     this.organizationDetails = organizationDetails;
-    String newOrgName = organizationDetails.getOrganizationName();
+    String newOrgMspId = organizationDetails.getOrganizationMspId();
     // Get existing organizations in the channel and set with as objects and their
     // version to prevent deletion or modification
     // Omitting existing groups results in their deletion.
@@ -58,7 +58,7 @@ public class AddOrgToChannelWriteSetBuilderImpl implements AddOrgToChannelWriteS
         ConfigGroup.newBuilder()
             .setModPolicy(FabricClientConstants.CHANNEL_CONFIG_MOD_POLICY_ADMINS)
             .putAllPolicies(setApplicationPolicies(readset))
-            .putGroups(newOrgName, setNewOrgGroup(newOrgName))
+            .putGroups(newOrgMspId, setNewOrgGroup(newOrgMspId))
             .putAllGroups(organizations)
             // Application group version
             .setVersion(
@@ -166,10 +166,10 @@ public class AddOrgToChannelWriteSetBuilderImpl implements AddOrgToChannelWriteS
     return applicationPoliciesMap;
   }
 
-  private ConfigGroup setNewOrgGroup(String newOrgName) {
+  private ConfigGroup setNewOrgGroup(String newOrgMspId) {
     Map<String, ConfigValue> valueMap = new HashMap<>();
     valueMap.put(
-        FabricClientConstants.CHANNEL_CONFIG_GROUP_VALUE_MSP, setNewOrgMspValue(newOrgName));
+        FabricClientConstants.CHANNEL_CONFIG_GROUP_VALUE_MSP, setNewOrgMspValue(newOrgMspId));
     if (organizationDetails.getAnchorPeerDTOs() != null) {
       valueMap.put(
           FabricClientConstants.CHANNEL_CONFIG_GROUP_VALUE_ANCHORPEERS, setNewOrgAnchorPeerValue());
@@ -177,7 +177,7 @@ public class AddOrgToChannelWriteSetBuilderImpl implements AddOrgToChannelWriteS
 
     return ConfigGroup.newBuilder()
         .setModPolicy(FabricClientConstants.CHANNEL_CONFIG_MOD_POLICY_ADMINS)
-        .putAllPolicies(setNewOrgPolicies(newOrgName))
+        .putAllPolicies(setNewOrgPolicies(newOrgMspId))
         .putAllValues(valueMap)
         .setVersion(0)
         .build();
@@ -289,21 +289,21 @@ public class AddOrgToChannelWriteSetBuilderImpl implements AddOrgToChannelWriteS
     return Policy.newBuilder().setType(1).setValue(spe.toByteString()).build();
   }
 
-  private ConfigValue setNewOrgMspValue(String newOrgName) {
+  private ConfigValue setNewOrgMspValue(String newOrgMspId) {
     return ConfigValue.newBuilder()
         .setModPolicy(FabricClientConstants.CHANNEL_CONFIG_MOD_POLICY_ADMINS)
         .setValue(
-            setMspConfig(newOrgName)
+            setMspConfig(newOrgMspId)
                 .toByteString()) // ByteString, need to figure out how to build the proper
         // structure
         .setVersion(0)
         .build();
   }
 
-  private MSPConfig setMspConfig(String newOrgName) {
+  private MSPConfig setMspConfig(String newOrgMspId) {
     return MSPConfig.newBuilder()
         .setType(0)
-        .setConfig(newOrgValue(newOrgName).toByteString())
+        .setConfig(newOrgValue(newOrgMspId).toByteString())
         .build();
   }
 
@@ -328,7 +328,7 @@ public class AddOrgToChannelWriteSetBuilderImpl implements AddOrgToChannelWriteS
   }
 
   // Error with this section when converting block.pb from PROTO to JSONBtye
-  private FabricMSPConfig newOrgValue(String newOrgName) {
+  private FabricMSPConfig newOrgValue(String newOrgMspId) {
     // MSP cacerts full certificate (including the ----BEGIN... and ----END...
     // tags), NOT base64 as that's done by fabric on commit
     List<ByteString> rootCertCollection = new ArrayList<>();
@@ -366,7 +366,7 @@ public class AddOrgToChannelWriteSetBuilderImpl implements AddOrgToChannelWriteS
                     FabricClientConstants.CHANNEL_CONFIG_SIGNATURE_HASH_FAMILY_SHA2)
                 .build())
         .setFabricNodeOus(builder)
-        .setName(newOrgName)
+        .setName(newOrgMspId)
         .addAllRootCerts(rootCertCollection)
         .addAllTlsRootCerts(tlsRootCertCollection)
         .build();
