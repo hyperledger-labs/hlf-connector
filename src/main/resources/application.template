@@ -30,6 +30,7 @@ fabric:
       apikey: ePVYHwAaQ0V1XOTX6U
   events:
     enable: true
+    standardCCEventEnabled: boolean (if set to true then the chaincode event is attempted at deserializing in the connector)
     chaincode: <comma separated list of channels> (Note : Will soon be deprecated / removed)
     block: <comma separated list of channels>
     chaincodeDetails:

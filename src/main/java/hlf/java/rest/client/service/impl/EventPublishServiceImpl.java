@@ -1,7 +1,11 @@
 package hlf.java.rest.client.service.impl;
 
+import hlf.java.rest.client.config.FabricProperties;
+import hlf.java.rest.client.config.KafkaProperties;
+import hlf.java.rest.client.sdk.StandardCCEvent;
 import hlf.java.rest.client.service.EventPublishService;
 import hlf.java.rest.client.util.FabricClientConstants;
+import hlf.java.rest.client.util.FabricEventParseUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.common.header.internals.RecordHeader;
@@ -19,8 +23,9 @@ import org.springframework.util.concurrent.ListenableFutureCallback;
 @ConditionalOnProperty("kafka.event-listener.topic")
 public class EventPublishServiceImpl implements EventPublishService {
 
-  @Value("${kafka.event-listener.topic}")
-  private String topicName;
+  @Autowired private KafkaProperties kafkaProperties;
+
+  @Autowired private FabricProperties fabricProperties;
 
   @Autowired private KafkaTemplate<String, String> kafkaTemplate;
 
@@ -34,7 +39,7 @@ public class EventPublishServiceImpl implements EventPublishService {
     try {
 
       ProducerRecord<String, String> producerRecord =
-          new ProducerRecord<String, String>(topicName, String.valueOf(msg.hashCode()), msg);
+          new ProducerRecord<String, String>(kafkaProperties.getEventListener().getTopic(), String.valueOf(msg.hashCode()), msg);
 
       producerRecord
           .headers()
@@ -86,9 +91,17 @@ public class EventPublishServiceImpl implements EventPublishService {
     boolean status = true;
 
     try {
+        String key = String.valueOf(payload.hashCode());
+        if (fabricProperties.getEvents().isStandardCCEventEnabled()) {
+            // Fetch the key information for chaincode events,
+            // but only if the feature is enabled.
 
+            // Parse the payload and use the key.
+            StandardCCEvent standardCCEvent = FabricEventParseUtil.parseString(payload, StandardCCEvent.class);
+            key = standardCCEvent.getKey();
+        }
       ProducerRecord<String, String> producerRecord =
-          new ProducerRecord<>(topicName, String.valueOf(payload.hashCode()), payload);
+          new ProducerRecord<>(kafkaProperties.getEventListener().getTopic(), key, payload);
 
       producerRecord
           .headers()
@@ -113,7 +126,7 @@ public class EventPublishServiceImpl implements EventPublishService {
                   FabricClientConstants.FABRIC_EVENT_TYPE,
                   FabricClientConstants.FABRIC_EVENT_TYPE_CHAINCODE.getBytes()));
 
-      log.info("Publishing Chaincode event to outbound topic {}", topicName);
+      log.info("Publishing Chaincode event to outbound topic {}", kafkaProperties.getEventListener().getTopic());
 
       ListenableFuture<SendResult<String, String>> future = kafkaTemplate.send(producerRecord);
 
@@ -157,7 +170,7 @@ public class EventPublishServiceImpl implements EventPublishService {
     try {
 
       ProducerRecord<String, String> producerRecord =
-          new ProducerRecord<>(topicName, String.valueOf(payload.hashCode()), payload);
+          new ProducerRecord<>(kafkaProperties.getEventListener().getTopic(), String.valueOf(payload.hashCode()), payload);
 
       producerRecord
           .headers()
@@ -192,7 +205,7 @@ public class EventPublishServiceImpl implements EventPublishService {
                   FabricClientConstants.IS_PRIVATE_DATA_PRESENT,
                   isPrivateDataPresent.toString().getBytes()));
 
-      log.info("Publishing Block event to outbound topic {}", topicName);
+      log.info("Publishing Block event to outbound topic {}", kafkaProperties.getEventListener().getTopic());
 
       ListenableFuture<SendResult<String, String>> future = kafkaTemplate.send(producerRecord);
 

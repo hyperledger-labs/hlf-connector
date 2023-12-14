@@ -67,6 +67,7 @@ public class FabricProperties {
     // TODO: This will be removed or deprecated and the property 'chaincodeDetails' will be
     // preferred for providing Chaincode details for Event subscription
     private List<String> chaincode;
+    private boolean standardCCEventEnabled;
     private List<String> block;
     private List<ChaincodeDetails> chaincodeDetails;
   }
