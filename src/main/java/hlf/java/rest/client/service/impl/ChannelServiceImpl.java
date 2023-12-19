@@ -249,7 +249,9 @@ public class ChannelServiceImpl implements ChannelService {
    */
   private Configtx.ConfigUpdate newConfigUpdate(ChannelOperationRequest channelOperationRequest) {
     Map<String, MSPDTO> mspMap = new HashMap<>();
-    channelOperationRequest.getPeers().forEach(p -> mspMap.putIfAbsent(p.getMspid(), p.getMspDTO()));
+    channelOperationRequest
+        .getPeers()
+        .forEach(p -> mspMap.putIfAbsent(p.getMspid(), p.getMspDTO()));
     return Configtx.ConfigUpdate.newBuilder()
         .setChannelId(channelOperationRequest.getChannelName())
         .setReadSet(newChannelGroup(channelOperationRequest.getConsortiumName(), mspMap, false))

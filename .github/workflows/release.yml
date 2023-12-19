@@ -54,7 +54,7 @@ jobs:
           USERNAME_OR_ORG: "${{ github.repository_owner }}"
       - name: Release the SDK to GitHub
         run: |
-          mvn -B deploy -Dsdk
+          mvn -B jar:jar deploy:deploy -Dsdk
         env:
           GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
       - name: Increment the pom version
