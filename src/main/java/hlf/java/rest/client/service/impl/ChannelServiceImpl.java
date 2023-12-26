@@ -8,6 +8,7 @@ import hlf.java.rest.client.exception.ServiceException;
 import hlf.java.rest.client.model.ChannelOperationRequest;
 import hlf.java.rest.client.model.ChannelOperationType;
 import hlf.java.rest.client.model.ClientResponseModel;
+import hlf.java.rest.client.model.MSPDTO;
 import hlf.java.rest.client.service.ChannelService;
 import hlf.java.rest.client.service.HFClientWrapper;
 import hlf.java.rest.client.util.FabricChannelUtil;
@@ -247,18 +248,12 @@ public class ChannelServiceImpl implements ChannelService {
    * @return config update
    */
   private Configtx.ConfigUpdate newConfigUpdate(ChannelOperationRequest channelOperationRequest) {
+    Map<String, MSPDTO> mspMap = new HashMap<>();
+    channelOperationRequest.getPeers().forEach(p -> mspMap.put(p.getMspid(), p.getMspDTO()));
     return Configtx.ConfigUpdate.newBuilder()
         .setChannelId(channelOperationRequest.getChannelName())
-        .setReadSet(
-            newChannelGroup(
-                channelOperationRequest.getConsortiumName(),
-                channelOperationRequest.getPeers(),
-                false))
-        .setWriteSet(
-            newChannelGroup(
-                channelOperationRequest.getConsortiumName(),
-                channelOperationRequest.getPeers(),
-                true))
+        .setReadSet(newChannelGroup(channelOperationRequest.getConsortiumName(), mspMap, false))
+        .setWriteSet(newChannelGroup(channelOperationRequest.getConsortiumName(), mspMap, true))
         .build();
   }
 
@@ -266,14 +261,14 @@ public class ChannelServiceImpl implements ChannelService {
    * generate default read/write set
    *
    * @param consortiumName
-   * @param peers list of peers to be added to channel
+   * @param mspMap MSPID to MSPDTO mapping for all the to-be added organizations
    * @param isWriteSet true if it's for a writeset, false if it's for a readset
    * @return
    */
   private Configtx.ConfigGroup newChannelGroup(
-      String consortiumName, List<hlf.java.rest.client.model.Peer> peers, boolean isWriteSet) {
+      String consortiumName, Map<String, MSPDTO> mspMap, boolean isWriteSet) {
     Configtx.ConfigGroup.Builder channelGroupBuilder = Configtx.ConfigGroup.newBuilder();
-    channelGroupBuilder.putGroups(GROUP_TAG_APPLICATION, newApplicationGroup(peers, isWriteSet));
+    channelGroupBuilder.putGroups(GROUP_TAG_APPLICATION, newApplicationGroup(mspMap, isWriteSet));
     if (isWriteSet) {
       channelGroupBuilder.putValues(VALUE_TAG_CONSORTIUM, getConsortium(consortiumName));
     } else {
@@ -289,12 +284,11 @@ public class ChannelServiceImpl implements ChannelService {
   /**
    * generate the application group
    *
-   * @param peers list of peers to be added to the channel
+   * @param mspMap MSPID to MSPDTO mapping of all the organizations to be added
    * @param isWriteSet true if it's for a writeset, false if it's for a readset
    * @return application config group
    */
-  private Configtx.ConfigGroup newApplicationGroup(
-      List<hlf.java.rest.client.model.Peer> peers, boolean isWriteSet) {
+  private Configtx.ConfigGroup newApplicationGroup(Map<String, MSPDTO> mspMap, boolean isWriteSet) {
     Configtx.ConfigGroup.Builder appGroupBuilder = Configtx.ConfigGroup.newBuilder();
     appGroupBuilder.setModPolicy(DEFAULT_MOD_POLICY).setVersion(EMPTY_VERSION);
     if (isWriteSet) {
@@ -302,11 +296,11 @@ public class ChannelServiceImpl implements ChannelService {
       appGroupBuilder.setVersion(INIT_VERSION);
       appGroupBuilder.putValues(VALUE_TAG_CAPABILITIES, getCapabilities(FABRIC_2_0));
     }
-    for (hlf.java.rest.client.model.Peer peer : peers) {
-      if (peer.getMspDTO() != null) {
-        appGroupBuilder.putGroups(peer.getMspid(), getMSPConfigGroup(peer));
+    for (Map.Entry<String, MSPDTO> entry : mspMap.entrySet()) {
+      if (entry.getValue() != null) {
+        appGroupBuilder.putGroups(entry.getKey(), getMSPConfigGroup(entry));
       } else {
-        appGroupBuilder.putGroups(peer.getMspid(), emptyMSPConfigGroup());
+        appGroupBuilder.putGroups(entry.getKey(), emptyMSPConfigGroup());
       }
     }
     return appGroupBuilder.build();
@@ -347,12 +341,12 @@ public class ChannelServiceImpl implements ChannelService {
   /**
    * generate msp config group based on the mspdto passed
    *
-   * @param peer
+   * @param mspEntry
    * @return
    */
-  private Configtx.ConfigGroup getMSPConfigGroup(hlf.java.rest.client.model.Peer peer) {
+  private Configtx.ConfigGroup getMSPConfigGroup(Map.Entry<String, MSPDTO> mspEntry) {
     Map<String, Configtx.ConfigValue> valueMap = new HashMap<>();
-    valueMap.put(FabricClientConstants.CHANNEL_CONFIG_GROUP_VALUE_MSP, getOrgMspValue(peer));
+    valueMap.put(FabricClientConstants.CHANNEL_CONFIG_GROUP_VALUE_MSP, getOrgMspValue(mspEntry));
 
     // Organization's role policy defines what role can perform what operation
     // For example, there are typically four roles policies defined
@@ -367,7 +361,7 @@ public class ChannelServiceImpl implements ChannelService {
         .putAllGroups(new HashMap<>())
         .setModPolicy(EMPTY_MOD_POLICY)
         .putAllPolicies(
-            FabricChannelUtil.getDefaultRolePolicy(peer.getMspid())) // Organization's role policies
+            FabricChannelUtil.getDefaultRolePolicy(mspEntry.getKey())) // Organization's role policies
         .putAllValues(valueMap)
         .build();
   }
@@ -375,19 +369,18 @@ public class ChannelServiceImpl implements ChannelService {
   private Configtx.ConfigValue getOrgMspValue(hlf.java.rest.client.model.Peer peer) {
     return Configtx.ConfigValue.newBuilder()
         .setModPolicy(FabricClientConstants.CHANNEL_CONFIG_MOD_POLICY_ADMINS)
-        .setValue(getMspConfig(peer).toByteString())
+        .setValue(getMspConfig(mspEntry).toByteString())
         .build();
   }
 
-  private MspConfigPackage.MSPConfig getMspConfig(hlf.java.rest.client.model.Peer peer) {
+  private MspConfigPackage.MSPConfig getMspConfig(Map.Entry<String, MSPDTO> mspEntry) {
     return MspConfigPackage.MSPConfig.newBuilder()
         .setType(0)
-        .setConfig(getFabricMSPConfig(peer).toByteString())
+        .setConfig(getFabricMSPConfig(mspEntry).toByteString())
         .build();
   }
 
-  private MspConfigPackage.FabricMSPConfig getFabricMSPConfig(
-      hlf.java.rest.client.model.Peer peer) {
+  private MspConfigPackage.FabricMSPConfig getFabricMSPConfig(Map.Entry<String, MSPDTO> mspEntry) {
 
     List<ByteString> rootCertCollection = new ArrayList<>();
     List<ByteString> tlsRootCertCollection = new ArrayList<>();
@@ -395,15 +388,15 @@ public class ChannelServiceImpl implements ChannelService {
     byte[] clientCert = null;
     byte[] peerCert = null;
 
-    for (String rootCerts : peer.getMspDTO().getRootCerts()) {
+    for (String rootCerts : mspEntry.getValue().getRootCerts()) {
       rootCertCollection.add(ByteString.copyFrom(rootCerts.getBytes()));
     }
-    for (String tlsRootCerts : peer.getMspDTO().getTlsRootCerts()) {
+    for (String tlsRootCerts : mspEntry.getValue().getTlsRootCerts()) {
       tlsRootCertCollection.add(ByteString.copyFrom(tlsRootCerts.getBytes()));
     }
-    adminCert = peer.getMspDTO().getAdminOUCert().getBytes();
-    clientCert = peer.getMspDTO().getClientOUCert().getBytes();
-    peerCert = peer.getMspDTO().getPeerOUCert().getBytes();
+    adminCert = mspEntry.getValue().getAdminOUCert().getBytes();
+    clientCert = mspEntry.getValue().getClientOUCert().getBytes();
+    peerCert = mspEntry.getValue().getPeerOUCert().getBytes();
 
     return MspConfigPackage.FabricMSPConfig.newBuilder()
         .setCryptoConfig(
@@ -431,7 +424,7 @@ public class ChannelServiceImpl implements ChannelService {
                             FabricClientConstants.CHANNEL_CONFIG_ORGANIZATIONAL_UNIT_ID_PEER)
                         .setCertificate(ByteString.copyFrom(peerCert)))
                 .setEnable(true))
-        .setName(peer.getMspid())
+        .setName(mspEntry.getKey())
         .addAllRootCerts(rootCertCollection)
         .addAllTlsRootCerts(tlsRootCertCollection)
         .build();
