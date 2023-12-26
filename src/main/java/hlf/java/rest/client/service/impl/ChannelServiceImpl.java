@@ -371,11 +371,16 @@ public class ChannelServiceImpl implements ChannelService {
         .build();
   }
 
-  // The method returns a default policy for each organization
-  // that maps the roles. The policy type is signature. Roles
-  // are identified by their signatures, as those signatures
-  // represent the certificate.
-  private HashMap<String, Configtx.ConfigPolicy> getDefaultRolePolicy(String orgMSPId) {
+  /**
+   * get default configuration policy for organization that maps the roles. The policy type is
+   * signature. Roles are identified by their signatures, as those signatures represent the
+   * certificate.
+   *
+   * @param orgMSPId Org MSP ID
+   * @return HashMap with role and the configuration policy
+   */
+  @Override
+  public HashMap<String, Configtx.ConfigPolicy> getDefaultRolePolicy(String orgMSPId) {
     HashMap<String, Configtx.ConfigPolicy> defaultOrgRolePolicy = new HashMap<>();
     // add Admins, Readers, Writers and Endorsement policies
     defaultOrgRolePolicy.put(
@@ -488,8 +493,13 @@ public class ChannelServiceImpl implements ChannelService {
     return mspPrincipals;
   }
 
-  // The method returns a ConfigPolicy of type signature for the
-  // passed organization's MSP ID.
+  /**
+   * returns a ConfigPolicy of type signature for the passed organization's MSP ID
+   *
+   * @param policyFor Policy for which role
+   * @param orgMSPId new org MSP ID
+   * @return configuration policy
+   */
   private Configtx.ConfigPolicy getDefaultRoleConfigPolicyForMSP(
       String policyFor, String orgMSPId) {
     List<MspPrincipal.MSPPrincipal> mspPrincipals = getRolesFor(policyFor, orgMSPId);
@@ -653,8 +663,7 @@ public class ChannelServiceImpl implements ChannelService {
    * @param modPolicy
    * @return
    */
-  private Configtx.ConfigPolicy getConfigPolicy(
-      String subPolicyName, int rule, String modPolicy) {
+  private Configtx.ConfigPolicy getConfigPolicy(String subPolicyName, int rule, String modPolicy) {
     return Configtx.ConfigPolicy.newBuilder()
         .setPolicy(getImplicitMetaPolicy(subPolicyName, rule))
         .setModPolicy(modPolicy)

@@ -6,6 +6,7 @@ import hlf.java.rest.client.exception.ServiceException;
 import hlf.java.rest.client.model.AnchorPeerDTO;
 import hlf.java.rest.client.model.NewOrgParamsDTO;
 import hlf.java.rest.client.service.AddOrgToChannelWriteSetBuilder;
+import hlf.java.rest.client.service.ChannelService;
 import hlf.java.rest.client.util.FabricClientConstants;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -28,12 +29,14 @@ import org.hyperledger.fabric.protos.msp.MspConfigPackage.FabricOUIdentifier;
 import org.hyperledger.fabric.protos.msp.MspConfigPackage.MSPConfig;
 import org.hyperledger.fabric.protos.peer.Configuration.AnchorPeer;
 import org.hyperledger.fabric.protos.peer.Configuration.AnchorPeers;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 @Service
 public class AddOrgToChannelWriteSetBuilderImpl implements AddOrgToChannelWriteSetBuilder {
 
   private NewOrgParamsDTO organizationDetails;
+  @Autowired private ChannelService channelService;
   private static final int DEFAULT_VERSION = 0;
 
   @Override
@@ -44,25 +47,27 @@ public class AddOrgToChannelWriteSetBuilderImpl implements AddOrgToChannelWriteS
     // Get existing organizations in the channel and set with as objects and their
     // version to prevent deletion or modification
     // Omitting existing groups results in their deletion.
-    Map<String, ConfigGroup> organizations = new HashMap<>();
+    Map<String, ConfigGroup> existingOrganizations = new HashMap<>();
     ConfigGroup applicationConfigGroup =
         readset.getGroupsOrThrow(FabricClientConstants.CHANNEL_CONFIG_GROUP_APPLICATION);
     applicationConfigGroup
         .getGroupsMap()
         .forEach(
             (k, v) ->
-                organizations.put(
-                    k, setEmptyGroup(retrieveGroupVersionFromReadset(applicationConfigGroup, k))));
+                existingOrganizations.put(
+                    k,
+                    setEmptyGroup(retrieveMSPGroupVersionFromReadset(applicationConfigGroup, k))));
     // The "Application" group
     ConfigGroup applicationGroup =
         ConfigGroup.newBuilder()
             .setModPolicy(FabricClientConstants.CHANNEL_CONFIG_MOD_POLICY_ADMINS)
             .putAllPolicies(setApplicationPolicies(readset))
             .putGroups(newOrgMspId, setNewOrgGroup(newOrgMspId))
-            .putAllGroups(organizations)
+            // putAllGroups excludes new organization
+            .putAllGroups(existingOrganizations)
             // Application group version
             .setVersion(
-                retrieveGroupVersionFromReadset(
+                retrieveMSPGroupVersionFromReadset(
                         readset, FabricClientConstants.CHANNEL_CONFIG_GROUP_APPLICATION)
                     + 1) // will
             // be
@@ -84,17 +89,17 @@ public class AddOrgToChannelWriteSetBuilderImpl implements AddOrgToChannelWriteS
         .build();
   }
 
-  private long retrieveGroupVersionFromReadset(ConfigGroup readset, String groupName)
+  private long retrieveMSPGroupVersionFromReadset(ConfigGroup readset, String mspId)
       throws ServiceException {
     long versionLong = DEFAULT_VERSION;
     try {
-      ConfigGroup group = readset.getGroupsOrThrow(groupName);
+      ConfigGroup group = readset.getGroupsOrThrow(mspId);
       versionLong = group.getVersion();
     } catch (IllegalArgumentException e) {
       throw new ServiceException(
           ErrorCode.NOT_FOUND,
           "WriteBuilder version iteration error: ConfigGroup with name - \""
-              + groupName
+              + mspId
               + "\" - not found in Readset",
           e);
     }
@@ -150,8 +155,9 @@ public class AddOrgToChannelWriteSetBuilderImpl implements AddOrgToChannelWriteS
             .setModPolicy("")
             .setVersion(map.get(FabricClientConstants.CHANNEL_CONFIG_POLICY_TYPE_WRITERS))
             .build();
-
     Map<String, ConfigPolicy> applicationPoliciesMap = new HashMap<>();
+    // add Admins, Readers, Writers, Endorsement and LifeCycle Endorsement policies at the channel
+    // level
     applicationPoliciesMap.put(
         FabricClientConstants.CHANNEL_CONFIG_POLICY_TYPE_ADMINS, adminPolicy);
     applicationPoliciesMap.put(
@@ -177,32 +183,14 @@ public class AddOrgToChannelWriteSetBuilderImpl implements AddOrgToChannelWriteS
 
     return ConfigGroup.newBuilder()
         .setModPolicy(FabricClientConstants.CHANNEL_CONFIG_MOD_POLICY_ADMINS)
-        .putAllPolicies(setNewOrgPolicies(newOrgMspId))
+        .putAllPolicies(channelService.getDefaultRolePolicy(newOrgMspId))
         .putAllValues(valueMap)
-        .setVersion(0)
+        .setVersion(0) // First time update, hence version is 0
         .build();
   }
 
   private ConfigGroup setEmptyGroup(long version) {
     return ConfigGroup.newBuilder().setModPolicy("").setVersion(version).build();
-  }
-
-  private Map<String, ConfigPolicy> setNewOrgPolicies(String newOrgName) {
-    Map<String, ConfigPolicy> applicationPoliciesMap = new HashMap<>();
-    applicationPoliciesMap.put(
-        FabricClientConstants.CHANNEL_CONFIG_POLICY_TYPE_ADMINS,
-        setNewOrgPolicy(newOrgName, FabricClientConstants.CHANNEL_CONFIG_POLICY_TYPE_ADMINS));
-    applicationPoliciesMap.put(
-        FabricClientConstants.CHANNEL_CONFIG_POLICY_TYPE_ENDORSEMENT,
-        setNewOrgPolicy(newOrgName, FabricClientConstants.CHANNEL_CONFIG_POLICY_TYPE_ENDORSEMENT));
-    applicationPoliciesMap.put(
-        FabricClientConstants.CHANNEL_CONFIG_POLICY_TYPE_READERS,
-        setNewOrgPolicy(newOrgName, FabricClientConstants.CHANNEL_CONFIG_POLICY_TYPE_READERS));
-    applicationPoliciesMap.put(
-        FabricClientConstants.CHANNEL_CONFIG_POLICY_TYPE_WRITERS,
-        setNewOrgPolicy(newOrgName, FabricClientConstants.CHANNEL_CONFIG_POLICY_TYPE_WRITERS));
-
-    return applicationPoliciesMap;
   }
 
   private ConfigPolicy setNewOrgPolicy(String newOrgName, String policyTarget) {
