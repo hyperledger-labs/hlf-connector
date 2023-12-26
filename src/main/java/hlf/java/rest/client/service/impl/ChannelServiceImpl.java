@@ -122,7 +122,7 @@ public class ChannelServiceImpl implements ChannelService {
       throw new ChannelOperationException(validationResult);
     }
 
-    Channel channel = null;
+    Channel channel;
     try {
       String channelName = channelOperationRequest.getChannelName();
 
@@ -244,12 +244,12 @@ public class ChannelServiceImpl implements ChannelService {
   /**
    * config update for channel creation: empty readset with msp listed writeset with default setting
    *
-   * @param channelOperationRequest
+   * @param channelOperationRequest incoming request from the caller of the API
    * @return config update
    */
   private Configtx.ConfigUpdate newConfigUpdate(ChannelOperationRequest channelOperationRequest) {
     Map<String, MSPDTO> mspMap = new HashMap<>();
-    channelOperationRequest.getPeers().forEach(p -> mspMap.put(p.getMspid(), p.getMspDTO()));
+    channelOperationRequest.getPeers().forEach(p -> mspMap.putIfAbsent(p.getMspid(), p.getMspDTO()));
     return Configtx.ConfigUpdate.newBuilder()
         .setChannelId(channelOperationRequest.getChannelName())
         .setReadSet(newChannelGroup(channelOperationRequest.getConsortiumName(), mspMap, false))
@@ -260,10 +260,10 @@ public class ChannelServiceImpl implements ChannelService {
   /**
    * generate default read/write set
    *
-   * @param consortiumName
+   * @param consortiumName consortium where the channel is created
    * @param mspMap MSPID to MSPDTO mapping for all the to-be added organizations
    * @param isWriteSet true if it's for a writeset, false if it's for a readset
-   * @return
+   * @return new channel group information with the constructed payload for either read/write set
    */
   private Configtx.ConfigGroup newChannelGroup(
       String consortiumName, Map<String, MSPDTO> mspMap, boolean isWriteSet) {
@@ -298,7 +298,8 @@ public class ChannelServiceImpl implements ChannelService {
     }
     for (Map.Entry<String, MSPDTO> entry : mspMap.entrySet()) {
       if (entry.getValue() != null) {
-        appGroupBuilder.putGroups(entry.getKey(), getMSPConfigGroup(entry));
+        appGroupBuilder.putGroups(
+            entry.getKey(), getMSPConfigGroup(entry.getKey(), entry.getValue()));
       } else {
         appGroupBuilder.putGroups(entry.getKey(), emptyMSPConfigGroup());
       }
@@ -308,7 +309,7 @@ public class ChannelServiceImpl implements ChannelService {
 
   /**
    * @param capabilities capabilities need to be added to config
-   * @return
+   * @return channel capabilities
    */
   private Configtx.ConfigValue getCapabilities(String... capabilities) {
     Configtx.ConfigValue.Builder valueBuilder = Configtx.ConfigValue.newBuilder();
@@ -341,12 +342,13 @@ public class ChannelServiceImpl implements ChannelService {
   /**
    * generate msp config group based on the mspdto passed
    *
-   * @param mspEntry
-   * @return
+   * @param mspId organization's MSP ID
+   * @param msp organization's MSP information
+   * @return policies set as config group for that particular MSP
    */
-  private Configtx.ConfigGroup getMSPConfigGroup(Map.Entry<String, MSPDTO> mspEntry) {
+  private Configtx.ConfigGroup getMSPConfigGroup(String mspId, MSPDTO msp) {
     Map<String, Configtx.ConfigValue> valueMap = new HashMap<>();
-    valueMap.put(FabricClientConstants.CHANNEL_CONFIG_GROUP_VALUE_MSP, getOrgMspValue(mspEntry));
+    valueMap.put(FabricClientConstants.CHANNEL_CONFIG_GROUP_VALUE_MSP, getOrgMspValue(mspId, msp));
 
     // Organization's role policy defines what role can perform what operation
     // For example, there are typically four roles policies defined
@@ -361,42 +363,42 @@ public class ChannelServiceImpl implements ChannelService {
         .putAllGroups(new HashMap<>())
         .setModPolicy(EMPTY_MOD_POLICY)
         .putAllPolicies(
-            FabricChannelUtil.getDefaultRolePolicy(mspEntry.getKey())) // Organization's role policies
+            FabricChannelUtil.getDefaultRolePolicy(mspId)) // Organization's role policies
         .putAllValues(valueMap)
         .build();
   }
 
-  private Configtx.ConfigValue getOrgMspValue(hlf.java.rest.client.model.Peer peer) {
+  private Configtx.ConfigValue getOrgMspValue(String mspId, MSPDTO msp) {
     return Configtx.ConfigValue.newBuilder()
         .setModPolicy(FabricClientConstants.CHANNEL_CONFIG_MOD_POLICY_ADMINS)
-        .setValue(getMspConfig(mspEntry).toByteString())
+        .setValue(getMspConfig(mspId, msp).toByteString())
         .build();
   }
 
-  private MspConfigPackage.MSPConfig getMspConfig(Map.Entry<String, MSPDTO> mspEntry) {
+  private MspConfigPackage.MSPConfig getMspConfig(String mspId, MSPDTO msp) {
     return MspConfigPackage.MSPConfig.newBuilder()
         .setType(0)
-        .setConfig(getFabricMSPConfig(mspEntry).toByteString())
+        .setConfig(getFabricMSPConfig(mspId, msp).toByteString())
         .build();
   }
 
-  private MspConfigPackage.FabricMSPConfig getFabricMSPConfig(Map.Entry<String, MSPDTO> mspEntry) {
+  private MspConfigPackage.FabricMSPConfig getFabricMSPConfig(String mspId, MSPDTO msp) {
 
     List<ByteString> rootCertCollection = new ArrayList<>();
     List<ByteString> tlsRootCertCollection = new ArrayList<>();
-    byte[] adminCert = null;
-    byte[] clientCert = null;
-    byte[] peerCert = null;
+    byte[] adminCert;
+    byte[] clientCert;
+    byte[] peerCert;
 
-    for (String rootCerts : mspEntry.getValue().getRootCerts()) {
+    for (String rootCerts : msp.getRootCerts()) {
       rootCertCollection.add(ByteString.copyFrom(rootCerts.getBytes()));
     }
-    for (String tlsRootCerts : mspEntry.getValue().getTlsRootCerts()) {
+    for (String tlsRootCerts : msp.getTlsRootCerts()) {
       tlsRootCertCollection.add(ByteString.copyFrom(tlsRootCerts.getBytes()));
     }
-    adminCert = mspEntry.getValue().getAdminOUCert().getBytes();
-    clientCert = mspEntry.getValue().getClientOUCert().getBytes();
-    peerCert = mspEntry.getValue().getPeerOUCert().getBytes();
+    adminCert = msp.getAdminOUCert().getBytes();
+    clientCert = msp.getClientOUCert().getBytes();
+    peerCert = msp.getPeerOUCert().getBytes();
 
     return MspConfigPackage.FabricMSPConfig.newBuilder()
         .setCryptoConfig(
@@ -424,7 +426,7 @@ public class ChannelServiceImpl implements ChannelService {
                             FabricClientConstants.CHANNEL_CONFIG_ORGANIZATIONAL_UNIT_ID_PEER)
                         .setCertificate(ByteString.copyFrom(peerCert)))
                 .setEnable(true))
-        .setName(mspEntry.getKey())
+        .setName(mspId)
         .addAllRootCerts(rootCertCollection)
         .addAllTlsRootCerts(tlsRootCertCollection)
         .build();
@@ -433,12 +435,12 @@ public class ChannelServiceImpl implements ChannelService {
   /**
    * get consortium config
    *
-   * @param consortiumName
+   * @param consortiumName name of the consortium where channel is created
    * @return consortium config
    */
   private Configtx.ConfigValue getConsortium(String consortiumName) {
     return Configtx.ConfigValue.newBuilder()
-        .setVersion(0)
+        .setVersion(EMPTY_VERSION)
         .setValue(
             Configuration.Consortium.newBuilder().setName(consortiumName).build().toByteString())
         .build();
@@ -452,30 +454,25 @@ public class ChannelServiceImpl implements ChannelService {
   private void addDefaultImplicitMetaPolicy(Configtx.ConfigGroup.Builder builder) {
     builder.putPolicies(
         "Admins",
-        getConfigPolicy(
-            "Admins", Policies.ImplicitMetaPolicy.Rule.MAJORITY_VALUE, DEFAULT_MOD_POLICY));
+        getDefaultConfigPolicy("Admins", Policies.ImplicitMetaPolicy.Rule.MAJORITY_VALUE));
     builder.putPolicies(
-        "Writers",
-        getConfigPolicy("Writers", Policies.ImplicitMetaPolicy.Rule.ANY_VALUE, DEFAULT_MOD_POLICY));
+        "Writers", getDefaultConfigPolicy("Writers", Policies.ImplicitMetaPolicy.Rule.ANY_VALUE));
     builder.putPolicies(
-        "Readers",
-        getConfigPolicy("Readers", Policies.ImplicitMetaPolicy.Rule.ANY_VALUE, DEFAULT_MOD_POLICY));
+        "Readers", getDefaultConfigPolicy("Readers", Policies.ImplicitMetaPolicy.Rule.ANY_VALUE));
     builder.putPolicies(
         "Endorsement",
-        getConfigPolicy(
-            "Endorsement", Policies.ImplicitMetaPolicy.Rule.MAJORITY_VALUE, DEFAULT_MOD_POLICY));
+        getDefaultConfigPolicy("Endorsement", Policies.ImplicitMetaPolicy.Rule.MAJORITY_VALUE));
     builder.putPolicies(
         "LifecycleEndorsement",
-        getConfigPolicy(
-            "Endorsement", Policies.ImplicitMetaPolicy.Rule.MAJORITY_VALUE, DEFAULT_MOD_POLICY));
+        getDefaultConfigPolicy("Endorsement", Policies.ImplicitMetaPolicy.Rule.MAJORITY_VALUE));
   }
 
   /**
    * get implicit meta policy
    *
-   * @param subPolicyName
-   * @param rule
-   * @return
+   * @param subPolicyName what is this policy for? is it an admin, writer, reader
+   * @param rule whether majority or any signature
+   * @return configuration policy
    */
   private Policies.Policy getImplicitMetaPolicy(String subPolicyName, int rule) {
     Policies.ImplicitMetaPolicy metaPolicy =
@@ -490,23 +487,22 @@ public class ChannelServiceImpl implements ChannelService {
   }
 
   /**
-   * @param subPolicyName
-   * @param rule
-   * @param modPolicy
-   * @return
+   * @param subPolicyName what is this policy for? is it an admin, writer, reader
+   * @param rule whether majority or any signature
+   * @return configuration policy
    */
-  private Configtx.ConfigPolicy getConfigPolicy(String subPolicyName, int rule, String modPolicy) {
+  private Configtx.ConfigPolicy getDefaultConfigPolicy(String subPolicyName, int rule) {
     return Configtx.ConfigPolicy.newBuilder()
         .setPolicy(getImplicitMetaPolicy(subPolicyName, rule))
-        .setModPolicy(modPolicy)
+        .setModPolicy(DEFAULT_MOD_POLICY)
         .build();
   }
 
   /**
    * validate the request
    *
-   * @param channelOperationRequest
-   * @param channelOperationType
+   * @param channelOperationRequest input parameters from the API
+   * @param channelOperationType whether interested in creation/joining etc.
    * @return status code 0 if it's valid, otherwise return 400
    */
   private ErrorCode validateRequest(
