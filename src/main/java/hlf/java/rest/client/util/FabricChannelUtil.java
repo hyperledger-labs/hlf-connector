@@ -3,12 +3,12 @@ package hlf.java.rest.client.util;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
-import lombok.extern.slf4j.Slf4j;
+import lombok.experimental.UtilityClass;
 import org.hyperledger.fabric.protos.common.Configtx;
 import org.hyperledger.fabric.protos.common.MspPrincipal;
 import org.hyperledger.fabric.protos.common.Policies;
 
-@Slf4j
+@UtilityClass
 public class FabricChannelUtil {
 
   /**
@@ -96,77 +96,36 @@ public class FabricChannelUtil {
   //      SignaturePolicy{index: 1}
   //   }
   // }
+
+  private static MspPrincipal.MSPPrincipal createMSPPrincipal(
+      String orgMSPId, MspPrincipal.MSPRole.MSPRoleType roleType) {
+    MspPrincipal.MSPRole mspRole =
+        MspPrincipal.MSPRole.newBuilder().setMspIdentifier(orgMSPId).setRole(roleType).build();
+    return MspPrincipal.MSPPrincipal.newBuilder()
+        .setPrincipal(mspRole.toByteString())
+        .setPrincipalClassification(MspPrincipal.MSPPrincipal.Classification.ROLE)
+        .build();
+  }
+
   private static List<MspPrincipal.MSPPrincipal> getRolesFor(String policyFor, String orgMSPId) {
     List<MspPrincipal.MSPPrincipal> mspPrincipals = new ArrayList<>();
-    MspPrincipal.MSPRole mspRole;
-    MspPrincipal.MSPPrincipal mspPrincipal;
     switch (policyFor) {
       case FabricClientConstants.CHANNEL_CONFIG_POLICY_TYPE_ADMINS:
-        mspRole =
-            MspPrincipal.MSPRole.newBuilder()
-                .setMspIdentifier(orgMSPId)
-                .setRole(MspPrincipal.MSPRole.MSPRoleType.ADMIN)
-                .build();
-        mspPrincipal =
-            MspPrincipal.MSPPrincipal.newBuilder()
-                .setPrincipal(mspRole.toByteString())
-                .setPrincipalClassification(MspPrincipal.MSPPrincipal.Classification.ROLE)
-                .build();
-        mspPrincipals.add(mspPrincipal);
+        mspPrincipals.add(createMSPPrincipal(orgMSPId, MspPrincipal.MSPRole.MSPRoleType.ADMIN));
         break;
       case FabricClientConstants.CHANNEL_CONFIG_POLICY_TYPE_WRITERS:
         // any member who is an admin can write
-        mspRole =
-            MspPrincipal.MSPRole.newBuilder()
-                .setMspIdentifier(orgMSPId)
-                .setRole(MspPrincipal.MSPRole.MSPRoleType.ADMIN)
-                .build();
-        mspPrincipal =
-            MspPrincipal.MSPPrincipal.newBuilder()
-                .setPrincipal(mspRole.toByteString())
-                .setPrincipalClassification(MspPrincipal.MSPPrincipal.Classification.ROLE)
-                .build();
-        mspPrincipals.add(mspPrincipal);
+        mspPrincipals.add(createMSPPrincipal(orgMSPId, MspPrincipal.MSPRole.MSPRoleType.ADMIN));
         // any client can also write
-        mspRole =
-            MspPrincipal.MSPRole.newBuilder()
-                .setMspIdentifier(orgMSPId)
-                .setRole(MspPrincipal.MSPRole.MSPRoleType.CLIENT)
-                .build();
-        mspPrincipal =
-            MspPrincipal.MSPPrincipal.newBuilder()
-                .setPrincipal(mspRole.toByteString())
-                .setPrincipalClassification(MspPrincipal.MSPPrincipal.Classification.ROLE)
-                .build();
-        mspPrincipals.add(mspPrincipal);
+        mspPrincipals.add(createMSPPrincipal(orgMSPId, MspPrincipal.MSPRole.MSPRoleType.CLIENT));
         break;
       case FabricClientConstants.CHANNEL_CONFIG_POLICY_TYPE_ENDORSEMENT:
         // any member who is peer can only endorse
-        mspRole =
-            MspPrincipal.MSPRole.newBuilder()
-                .setMspIdentifier(orgMSPId)
-                .setRole(MspPrincipal.MSPRole.MSPRoleType.PEER)
-                .build();
-        mspPrincipal =
-            MspPrincipal.MSPPrincipal.newBuilder()
-                .setPrincipal(mspRole.toByteString())
-                .setPrincipalClassification(MspPrincipal.MSPPrincipal.Classification.ROLE)
-                .build();
-        mspPrincipals.add(mspPrincipal);
+        mspPrincipals.add(createMSPPrincipal(orgMSPId, MspPrincipal.MSPRole.MSPRoleType.PEER));
         break;
       case FabricClientConstants.CHANNEL_CONFIG_POLICY_TYPE_READERS:
         // any member can read
-        mspRole =
-            MspPrincipal.MSPRole.newBuilder()
-                .setMspIdentifier(orgMSPId)
-                .setRole(MspPrincipal.MSPRole.MSPRoleType.MEMBER)
-                .build();
-        mspPrincipal =
-            MspPrincipal.MSPPrincipal.newBuilder()
-                .setPrincipal(mspRole.toByteString())
-                .setPrincipalClassification(MspPrincipal.MSPPrincipal.Classification.ROLE)
-                .build();
-        mspPrincipals.add(mspPrincipal);
+        mspPrincipals.add(createMSPPrincipal(orgMSPId, MspPrincipal.MSPRole.MSPRoleType.MEMBER));
         break;
     }
     return mspPrincipals;
