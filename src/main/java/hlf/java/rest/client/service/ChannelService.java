@@ -2,9 +2,7 @@ package hlf.java.rest.client.service;
 
 import hlf.java.rest.client.model.ChannelOperationRequest;
 import hlf.java.rest.client.model.ClientResponseModel;
-import java.util.HashMap;
 import java.util.Set;
-import org.hyperledger.fabric.protos.common.Configtx;
 
 public interface ChannelService {
 
@@ -33,12 +31,4 @@ public interface ChannelService {
    * @return
    */
   Set<String> getChannelMembersMSPID(String channelName);
-
-  /**
-   * get default configuration policy for org MSP that maps the roles.
-   *
-   * @param orgMSPId Org MSP ID
-   * @return HashMap with role and the configuration policy
-   */
-  HashMap<String, Configtx.ConfigPolicy> getDefaultRolePolicy(String orgMSPId);
 }
