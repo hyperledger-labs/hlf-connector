@@ -57,15 +57,15 @@ public class FabricChannelUtil {
     // set rules
     // create those roles
     Policies.SignaturePolicyEnvelope.Builder signaturePolicyEnvelopeBuilder =
-        Policies.SignaturePolicyEnvelope.newBuilder();
+        Policies.SignaturePolicyEnvelope.newBuilder().addAllIdentities(mspPrincipals);
     Policies.SignaturePolicy.Builder signaturePolicyBuilder = Policies.SignaturePolicy.newBuilder();
     Policies.SignaturePolicy.NOutOf.Builder signatureNOutOfBuilder =
         Policies.SignaturePolicy.NOutOf.newBuilder().setN(1); // expect just one signature always
+    List<Policies.SignaturePolicy> signaturePolicies = new ArrayList<>();
     for (int idx = 0; idx < mspPrincipals.size(); idx++) {
-      signaturePolicyEnvelopeBuilder.setIdentities(idx, mspPrincipals.get(idx));
-      signatureNOutOfBuilder.setRules(
-          idx, Policies.SignaturePolicy.newBuilder().setSignedBy(idx).build());
+      signaturePolicies.add(Policies.SignaturePolicy.newBuilder().setSignedBy(idx).build());
     }
+    signatureNOutOfBuilder.addAllRules(signaturePolicies);
     signaturePolicyBuilder.setNOutOf(signatureNOutOfBuilder.build());
     signaturePolicyEnvelopeBuilder.setRule(signaturePolicyBuilder.build());
     // get the policy
