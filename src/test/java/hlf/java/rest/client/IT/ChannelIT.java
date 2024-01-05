@@ -1,8 +1,8 @@
 package hlf.java.rest.client.IT;
 
 import hlf.java.rest.client.model.AnchorPeerDTO;
-import hlf.java.rest.client.model.AnchorPeerParamsDTO;
 import hlf.java.rest.client.model.ChannelOperationRequest;
+import hlf.java.rest.client.model.ChannelUpdateParamsDTO;
 import hlf.java.rest.client.model.ClientResponseModel;
 import hlf.java.rest.client.model.MSPDTO;
 import hlf.java.rest.client.model.NewOrgParamsDTO;
@@ -343,7 +343,7 @@ public class ChannelIT {
   @Test
   @Order(7)
   public void addAnchorPeersToChannelTest() {
-    AnchorPeerParamsDTO anchorPeerParamsDTO = new AnchorPeerParamsDTO();
+    ChannelUpdateParamsDTO anchorPeerParamsDTO = new ChannelUpdateParamsDTO();
     anchorPeerParamsDTO.setOrganizationMspId(ORG_1_MSP);
     List<AnchorPeerDTO> anchorPeerDTOs = new ArrayList<>();
     AnchorPeerDTO anchorPeerDTO = new AnchorPeerDTO();

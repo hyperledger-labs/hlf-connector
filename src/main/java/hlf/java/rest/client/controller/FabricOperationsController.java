@@ -1,6 +1,6 @@
 package hlf.java.rest.client.controller;
 
-import hlf.java.rest.client.model.AnchorPeerParamsDTO;
+import hlf.java.rest.client.model.ChannelUpdateParamsDTO;
 import hlf.java.rest.client.model.ClientResponseModel;
 import hlf.java.rest.client.model.CommitChannelParamsDTO;
 import hlf.java.rest.client.model.NewOrgParamsDTO;
@@ -140,7 +140,7 @@ public class FabricOperationsController {
   @PostMapping(value = "/channel/{channelName}/add_anchor_peer")
   public ResponseEntity<ClientResponseModel> addAnchorPeersToChannel(
       @PathVariable @Validated String channelName,
-      @RequestBody @Validated AnchorPeerParamsDTO anchorPeerParamsDTO) {
+      @RequestBody @Validated ChannelUpdateParamsDTO anchorPeerParamsDTO) {
     return networkStatus.addAnchorPeersToChannel(channelName, anchorPeerParamsDTO);
   }
 }

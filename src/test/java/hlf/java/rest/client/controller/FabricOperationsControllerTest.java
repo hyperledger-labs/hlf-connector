@@ -2,7 +2,7 @@ package hlf.java.rest.client.controller;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-import hlf.java.rest.client.model.AnchorPeerParamsDTO;
+import hlf.java.rest.client.model.ChannelUpdateParamsDTO;
 import hlf.java.rest.client.model.CommitChannelParamsDTO;
 import hlf.java.rest.client.model.NewOrgParamsDTO;
 import hlf.java.rest.client.service.NetworkStatus;
@@ -98,11 +98,11 @@ public class FabricOperationsControllerTest {
     ResponseEntity responseEntity = new ResponseEntity(HttpStatus.OK);
     Mockito.when(
             networkStatus.addAnchorPeersToChannel(
-                Mockito.anyString(), Mockito.any(AnchorPeerParamsDTO.class)))
+                Mockito.anyString(), Mockito.any(ChannelUpdateParamsDTO.class)))
         .thenReturn(responseEntity);
     assertEquals(
         responseEntity,
         fabricOperationsController.addAnchorPeersToChannel(
-            "some_channel_name", new AnchorPeerParamsDTO()));
+            "some_channel_name", new ChannelUpdateParamsDTO()));
   }
 }

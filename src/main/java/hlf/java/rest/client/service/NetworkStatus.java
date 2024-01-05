@@ -1,6 +1,6 @@
 package hlf.java.rest.client.service;
 
-import hlf.java.rest.client.model.AnchorPeerParamsDTO;
+import hlf.java.rest.client.model.ChannelUpdateParamsDTO;
 import hlf.java.rest.client.model.ClientResponseModel;
 import hlf.java.rest.client.model.CommitChannelParamsDTO;
 import hlf.java.rest.client.model.NewOrgParamsDTO;
@@ -23,5 +23,5 @@ public interface NetworkStatus {
       String channelName, NewOrgParamsDTO organizationDetails);
 
   ResponseEntity<ClientResponseModel> addAnchorPeersToChannel(
-      String channelName, AnchorPeerParamsDTO anchorPeerParamsDTO);
+      String channelName, ChannelUpdateParamsDTO anchorPeerParamsDTO);
 }

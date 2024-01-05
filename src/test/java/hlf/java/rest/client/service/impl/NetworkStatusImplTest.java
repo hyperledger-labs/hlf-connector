@@ -10,12 +10,10 @@ import com.google.protobuf.util.JsonFormat.Parser;
 import com.google.protobuf.util.JsonFormat.Printer;
 import hlf.java.rest.client.exception.ErrorCode;
 import hlf.java.rest.client.exception.ErrorConstants;
-import hlf.java.rest.client.model.AnchorPeerParamsDTO;
+import hlf.java.rest.client.model.ChannelUpdateParamsDTO;
 import hlf.java.rest.client.model.ClientResponseModel;
 import hlf.java.rest.client.model.CommitChannelParamsDTO;
 import hlf.java.rest.client.model.NewOrgParamsDTO;
-import hlf.java.rest.client.service.AddAnchorPeerToChannelWriteSetBuilder;
-import hlf.java.rest.client.service.AddOrgToChannelWriteSetBuilder;
 import hlf.java.rest.client.service.ChannelConfigDeserialization;
 import java.util.ArrayList;
 import java.util.List;
@@ -60,10 +58,9 @@ public class NetworkStatusImplTest {
 
   @Mock private Printer printer;
 
-  @Mock private AddOrgToChannelWriteSetBuilder addOrgToChannelWriteSetBuilder;
-
   @Mock private ChannelConfigDeserialization channelConfigDeserialization;
-  @Mock private AddAnchorPeerToChannelWriteSetBuilder addAnchorPeerToChannelWriteSetBuilder;
+
+  @Mock private UpdateChannelImpl updateChannel;
 
   @Mock private MockedStatic<ConfigUpdate> staticConfigUpdate;
 
@@ -121,9 +118,7 @@ public class NetworkStatusImplTest {
     Mockito.when(configUpdate.getReadSet()).thenReturn(readset);
     Mockito.when(builder.setChannelId(Mockito.anyString())).thenReturn(builder);
     Mockito.when(builder.setReadSet(Mockito.any(ConfigGroup.class))).thenReturn(builder);
-    Mockito.when(
-            addOrgToChannelWriteSetBuilder.buildWriteset(
-                Mockito.any(), Mockito.any(NewOrgParamsDTO.class)))
+    Mockito.when(updateChannel.buildWriteset(Mockito.any(), Mockito.any(NewOrgParamsDTO.class)))
         .thenReturn(readset);
     Mockito.when(builder.setWriteSet(Mockito.any(ConfigGroup.class))).thenReturn(builder);
     Mockito.when(builder.build()).thenReturn(configUpdate);
@@ -210,9 +205,7 @@ public class NetworkStatusImplTest {
     Mockito.when(configUpdate.getReadSet()).thenReturn(readset);
     Mockito.when(builder.setChannelId(Mockito.anyString())).thenReturn(builder);
     Mockito.when(builder.setReadSet(Mockito.any(ConfigGroup.class))).thenReturn(builder);
-    Mockito.when(
-            addOrgToChannelWriteSetBuilder.buildWriteset(
-                Mockito.any(), Mockito.any(NewOrgParamsDTO.class)))
+    Mockito.when(updateChannel.buildWriteset(Mockito.any(), Mockito.any(NewOrgParamsDTO.class)))
         .thenReturn(writeset);
     Mockito.when(builder.setWriteSet(writeset)).thenReturn(builder);
     Mockito.when(builder.build()).thenReturn(configUpdate);
@@ -254,8 +247,8 @@ public class NetworkStatusImplTest {
     Mockito.when(builder.setChannelId(Mockito.anyString())).thenReturn(builder);
     Mockito.when(builder.setReadSet(Mockito.any(ConfigGroup.class))).thenReturn(builder);
     Mockito.doReturn(writeset)
-        .when(addAnchorPeerToChannelWriteSetBuilder)
-        .buildWriteSetForAnchorPeers(Mockito.any(), Mockito.any(AnchorPeerParamsDTO.class));
+        .when(updateChannel)
+        .buildWriteset(Mockito.any(), Mockito.any(ChannelUpdateParamsDTO.class));
     Mockito.when(builder.setWriteSet(writeset)).thenReturn(builder);
     Mockito.when(builder.build()).thenReturn(configUpdate);
     staticJsonFormat.when(JsonFormat::printer).thenReturn(printer);
@@ -271,7 +264,7 @@ public class NetworkStatusImplTest {
     assertEquals(
         responseEntity.getBody().getMessage(),
         networkStatus
-            .addAnchorPeersToChannel("some_channel_name", new AnchorPeerParamsDTO())
+            .addAnchorPeersToChannel("some_channel_name", new ChannelUpdateParamsDTO())
             .getBody()
             .getMessage());
   }
