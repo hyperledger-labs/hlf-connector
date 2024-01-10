@@ -4,7 +4,6 @@ import com.google.protobuf.ByteString;
 import hlf.java.rest.client.exception.ServiceException;
 import hlf.java.rest.client.model.AnchorPeerDTO;
 import hlf.java.rest.client.model.ChannelUpdateParamsDTO;
-import hlf.java.rest.client.model.NewOrgParamsDTO;
 import hlf.java.rest.client.service.UpdateChannel;
 import hlf.java.rest.client.util.FabricChannelUtil;
 import hlf.java.rest.client.util.FabricClientConstants;
@@ -26,28 +25,23 @@ import org.springframework.stereotype.Service;
 @Service
 public class UpdateChannelImpl implements UpdateChannel {
 
-  private NewOrgParamsDTO newOrganizationDetails;
-  private ChannelUpdateParamsDTO channelUpdateParamsDTO;
-
   @Override
   public ConfigGroup buildWriteset(ConfigGroup readset, ChannelUpdateParamsDTO organizationDetails)
       throws ServiceException {
-
-    newOrganizationDetails = (NewOrgParamsDTO) organizationDetails;
-    String newOrgMspId = newOrganizationDetails.getOrganizationMspId();
-
+    String newOrgMspId = organizationDetails.getOrganizationMspId();
     Map<String, ConfigGroup> existingOrganizations =
         FabricChannelUtil.getExistingOrgsFromReadset(readset);
+
     ConfigGroup applicationGroup;
 
-    if (newOrganizationDetails.getMspDTO() != null) {
+    if (organizationDetails.getMspDTO() != null) {
       // New org addition scenario
       // The "Application" group
       applicationGroup =
           ConfigGroup.newBuilder()
               .setModPolicy(FabricClientConstants.CHANNEL_CONFIG_MOD_POLICY_ADMINS)
               .putAllPolicies(FabricChannelUtil.setApplicationPolicies(readset))
-              .putGroups(newOrgMspId, setNewOrgGroup(newOrgMspId))
+              .putGroups(newOrgMspId, setNewOrgGroup(newOrgMspId, organizationDetails))
               // putAllGroups excludes new organization
               .putAllGroups(existingOrganizations)
               // Application group version
@@ -62,7 +56,8 @@ public class UpdateChannelImpl implements UpdateChannel {
           ConfigGroup.newBuilder()
               .setModPolicy(FabricClientConstants.CHANNEL_CONFIG_MOD_POLICY_ADMINS)
               .putAllPolicies(FabricChannelUtil.setApplicationPolicies(readset))
-              .putGroups(newOrgMspId, setAnchorPeerInGroup(newOrgMspId, readset))
+              .putGroups(
+                  newOrgMspId, setAnchorPeerInGroup(newOrgMspId, readset, organizationDetails))
               // putAllGroups excludes new organization
               .putAllGroups(existingOrganizations)
               // Application group version
@@ -82,11 +77,13 @@ public class UpdateChannelImpl implements UpdateChannel {
         .build();
   }
 
-  private ConfigGroup setAnchorPeerInGroup(String orgMspId, ConfigGroup readSet) {
+  private ConfigGroup setAnchorPeerInGroup(
+      String orgMspId, ConfigGroup readSet, ChannelUpdateParamsDTO channelUpdateParamsDTO) {
     Map<String, ConfigValue> valueMap = new HashMap<>();
-    if (newOrganizationDetails.getAnchorPeerDTOs() != null) {
+    if (channelUpdateParamsDTO.getAnchorPeerDTOs() != null) {
       valueMap.put(
-          FabricClientConstants.CHANNEL_CONFIG_GROUP_VALUE_ANCHORPEERS, setNewOrgAnchorPeerValue());
+          FabricClientConstants.CHANNEL_CONFIG_GROUP_VALUE_ANCHORPEERS,
+          setNewOrgAnchorPeerValue(channelUpdateParamsDTO));
     }
     return ConfigGroup.newBuilder()
         .setModPolicy(FabricClientConstants.CHANNEL_CONFIG_MOD_POLICY_ADMINS)
@@ -99,13 +96,15 @@ public class UpdateChannelImpl implements UpdateChannel {
         .build();
   }
 
-  private ConfigGroup setNewOrgGroup(String newOrgMspId) {
+  private ConfigGroup setNewOrgGroup(String newOrgMspId, ChannelUpdateParamsDTO newOrgParamsDTO) {
     Map<String, ConfigValue> valueMap = new HashMap<>();
     valueMap.put(
-        FabricClientConstants.CHANNEL_CONFIG_GROUP_VALUE_MSP, setNewOrgMspValue(newOrgMspId));
-    if (newOrganizationDetails.getAnchorPeerDTOs() != null) {
+        FabricClientConstants.CHANNEL_CONFIG_GROUP_VALUE_MSP,
+        setNewOrgMspValue(newOrgMspId, newOrgParamsDTO));
+    if (newOrgParamsDTO.getAnchorPeerDTOs() != null) {
       valueMap.put(
-          FabricClientConstants.CHANNEL_CONFIG_GROUP_VALUE_ANCHORPEERS, setNewOrgAnchorPeerValue());
+          FabricClientConstants.CHANNEL_CONFIG_GROUP_VALUE_ANCHORPEERS,
+          setNewOrgAnchorPeerValue(newOrgParamsDTO));
     }
 
     return ConfigGroup.newBuilder()
@@ -116,35 +115,36 @@ public class UpdateChannelImpl implements UpdateChannel {
         .build();
   }
 
-  private ConfigValue setNewOrgMspValue(String newOrgMspId) {
+  private ConfigValue setNewOrgMspValue(
+      String newOrgMspId, ChannelUpdateParamsDTO newOrgParamsDTO) {
     return ConfigValue.newBuilder()
         .setModPolicy(FabricClientConstants.CHANNEL_CONFIG_MOD_POLICY_ADMINS)
         .setValue(
-            setMspConfig(newOrgMspId)
+            setMspConfig(newOrgMspId, newOrgParamsDTO)
                 .toByteString()) // ByteString, need to figure out how to build the proper
         // structure
         .setVersion(0)
         .build();
   }
 
-  private MSPConfig setMspConfig(String newOrgMspId) {
+  private MSPConfig setMspConfig(String newOrgMspId, ChannelUpdateParamsDTO newOrgParamsDTO) {
     return MSPConfig.newBuilder()
         .setType(0)
-        .setConfig(newOrgValue(newOrgMspId).toByteString())
+        .setConfig(newOrgValue(newOrgMspId, newOrgParamsDTO).toByteString())
         .build();
   }
 
-  private ConfigValue setNewOrgAnchorPeerValue() {
+  private ConfigValue setNewOrgAnchorPeerValue(ChannelUpdateParamsDTO channelUpdateParamsDTO) {
     return ConfigValue.newBuilder()
         .setModPolicy(FabricClientConstants.CHANNEL_CONFIG_MOD_POLICY_ADMINS)
-        .setValue(setAnchorPeers().toByteString())
+        .setValue(setAnchorPeers(channelUpdateParamsDTO).toByteString())
         .setVersion(0)
         .build();
   }
 
-  private AnchorPeers setAnchorPeers() {
+  private AnchorPeers setAnchorPeers(ChannelUpdateParamsDTO channelUpdateParamsDTO) {
     List<AnchorPeer> anchorPeerList = new ArrayList<>();
-    for (AnchorPeerDTO anchorPeerDTO : newOrganizationDetails.getAnchorPeerDTOs()) {
+    for (AnchorPeerDTO anchorPeerDTO : channelUpdateParamsDTO.getAnchorPeerDTOs()) {
       anchorPeerList.add(
           AnchorPeer.newBuilder()
               .setHost(anchorPeerDTO.getHostname())
@@ -155,7 +155,7 @@ public class UpdateChannelImpl implements UpdateChannel {
   }
 
   // Error with this section when converting block.pb from PROTO to JSONBtye
-  private FabricMSPConfig newOrgValue(String newOrgMspId) {
+  private FabricMSPConfig newOrgValue(String newOrgMspId, ChannelUpdateParamsDTO newOrgParamsDTO) {
     // MSP cacerts full certificate (including the ----BEGIN... and ----END...
     // tags), NOT base64 as that's done by fabric on commit
     List<ByteString> rootCertCollection = new ArrayList<>();
@@ -165,22 +165,22 @@ public class UpdateChannelImpl implements UpdateChannel {
     byte[] ordererCert;
     byte[] peerCert;
 
-    for (String rootCerts : newOrganizationDetails.getMspDTO().getRootCerts()) {
+    for (String rootCerts : newOrgParamsDTO.getMspDTO().getRootCerts()) {
       rootCertCollection.add(ByteString.copyFrom(rootCerts.getBytes()));
     }
-    for (String tlsRootCerts : newOrganizationDetails.getMspDTO().getTlsRootCerts()) {
+    for (String tlsRootCerts : newOrgParamsDTO.getMspDTO().getTlsRootCerts()) {
       tlsRootCertCollection.add(ByteString.copyFrom(tlsRootCerts.getBytes()));
     }
-    adminCert = newOrganizationDetails.getMspDTO().getAdminOUCert().getBytes();
-    clientCert = newOrganizationDetails.getMspDTO().getClientOUCert().getBytes();
+    adminCert = newOrgParamsDTO.getMspDTO().getAdminOUCert().getBytes();
+    clientCert = newOrgParamsDTO.getMspDTO().getClientOUCert().getBytes();
 
     FabricNodeOUs.Builder builder = null;
-    if (newOrganizationDetails.getMspDTO().getOrdererOUCert() != null) {
-      ordererCert = newOrganizationDetails.getMspDTO().getOrdererOUCert().getBytes();
+    if (newOrgParamsDTO.getMspDTO().getOrdererOUCert() != null) {
+      ordererCert = newOrgParamsDTO.getMspDTO().getOrdererOUCert().getBytes();
       builder = getFabricNodeOUs(true, adminCert, clientCert, ordererCert);
     }
-    if (newOrganizationDetails.getMspDTO().getPeerOUCert() != null) {
-      peerCert = newOrganizationDetails.getMspDTO().getPeerOUCert().getBytes();
+    if (newOrgParamsDTO.getMspDTO().getPeerOUCert() != null) {
+      peerCert = newOrgParamsDTO.getMspDTO().getPeerOUCert().getBytes();
       builder = getFabricNodeOUs(false, adminCert, clientCert, peerCert);
     }
 

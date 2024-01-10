@@ -13,7 +13,6 @@ import hlf.java.rest.client.exception.ErrorConstants;
 import hlf.java.rest.client.model.ChannelUpdateParamsDTO;
 import hlf.java.rest.client.model.ClientResponseModel;
 import hlf.java.rest.client.model.CommitChannelParamsDTO;
-import hlf.java.rest.client.model.NewOrgParamsDTO;
 import hlf.java.rest.client.service.ChannelConfigDeserialization;
 import java.util.ArrayList;
 import java.util.List;
@@ -118,7 +117,8 @@ public class NetworkStatusImplTest {
     Mockito.when(configUpdate.getReadSet()).thenReturn(readset);
     Mockito.when(builder.setChannelId(Mockito.anyString())).thenReturn(builder);
     Mockito.when(builder.setReadSet(Mockito.any(ConfigGroup.class))).thenReturn(builder);
-    Mockito.when(updateChannel.buildWriteset(Mockito.any(), Mockito.any(NewOrgParamsDTO.class)))
+    Mockito.when(
+            updateChannel.buildWriteset(Mockito.any(), Mockito.any(ChannelUpdateParamsDTO.class)))
         .thenReturn(readset);
     Mockito.when(builder.setWriteSet(Mockito.any(ConfigGroup.class))).thenReturn(builder);
     Mockito.when(builder.build()).thenReturn(configUpdate);
@@ -127,7 +127,7 @@ public class NetworkStatusImplTest {
     assertEquals(
         responseEntity.getBody().getMessage(),
         networkStatus
-            .generateConfigUpdate("some_channelname", new NewOrgParamsDTO())
+            .generateConfigUpdate("some_channelname", new ChannelUpdateParamsDTO())
             .getBody()
             .getMessage());
   }
@@ -205,7 +205,8 @@ public class NetworkStatusImplTest {
     Mockito.when(configUpdate.getReadSet()).thenReturn(readset);
     Mockito.when(builder.setChannelId(Mockito.anyString())).thenReturn(builder);
     Mockito.when(builder.setReadSet(Mockito.any(ConfigGroup.class))).thenReturn(builder);
-    Mockito.when(updateChannel.buildWriteset(Mockito.any(), Mockito.any(NewOrgParamsDTO.class)))
+    Mockito.when(
+            updateChannel.buildWriteset(Mockito.any(), Mockito.any(ChannelUpdateParamsDTO.class)))
         .thenReturn(writeset);
     Mockito.when(builder.setWriteSet(writeset)).thenReturn(builder);
     Mockito.when(builder.build()).thenReturn(configUpdate);
@@ -221,7 +222,7 @@ public class NetworkStatusImplTest {
     assertEquals(
         responseEntity.getBody().getMessage(),
         networkStatus
-            .addOrgToChannel("some_channel_name", new NewOrgParamsDTO())
+            .addOrgToChannel("some_channel_name", new ChannelUpdateParamsDTO())
             .getBody()
             .getMessage());
   }

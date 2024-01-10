@@ -7,4 +7,5 @@ import lombok.Data;
 public class ChannelUpdateParamsDTO {
   private String organizationMspId;
   private List<AnchorPeerDTO> anchorPeerDTOs;
+  private MSPDTO mspDTO;
 }

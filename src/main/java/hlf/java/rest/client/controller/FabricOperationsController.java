@@ -3,7 +3,6 @@ package hlf.java.rest.client.controller;
 import hlf.java.rest.client.model.ChannelUpdateParamsDTO;
 import hlf.java.rest.client.model.ClientResponseModel;
 import hlf.java.rest.client.model.CommitChannelParamsDTO;
-import hlf.java.rest.client.model.NewOrgParamsDTO;
 import hlf.java.rest.client.service.NetworkStatus;
 import hlf.java.rest.client.util.SerializationUtil;
 import lombok.extern.slf4j.Slf4j;
@@ -54,7 +53,7 @@ public class FabricOperationsController {
   @PutMapping(value = "/channel/{channelName}/configuration/config_update")
   public ResponseEntity<ClientResponseModel> generateConfigUpdateFile(
       @PathVariable @Validated String channelName,
-      @RequestBody @Validated NewOrgParamsDTO organizationDetails) {
+      @RequestBody @Validated ChannelUpdateParamsDTO organizationDetails) {
     return networkStatus.generateConfigUpdate(channelName, organizationDetails);
   }
 
@@ -103,7 +102,7 @@ public class FabricOperationsController {
   @PostMapping(value = "/channel/{channelName}/new_org")
   public ResponseEntity<ClientResponseModel> addOrgToChannel(
       @PathVariable @Validated String channelName,
-      @RequestBody @Validated NewOrgParamsDTO organizationDetails) {
+      @RequestBody @Validated ChannelUpdateParamsDTO organizationDetails) {
     return networkStatus.addOrgToChannel(channelName, organizationDetails);
   }
   /**
@@ -133,14 +132,14 @@ public class FabricOperationsController {
    *
    * @param channelName - the name of the channel for which you wish to add the anchor peer nodes
    *     to.
-   * @param anchorPeerParamsDTO - contains the details for the organization peers you wish to be
+   * @param channelUpdateParamsDTO - contains the details for the organization peers you wish to be
    *     added to the channel as anchor peer.
    * @return ResponseEntity<ClientResponseModel> - contains the result of the operation.
    */
   @PostMapping(value = "/channel/{channelName}/add_anchor_peer")
   public ResponseEntity<ClientResponseModel> addAnchorPeersToChannel(
       @PathVariable @Validated String channelName,
-      @RequestBody @Validated ChannelUpdateParamsDTO anchorPeerParamsDTO) {
-    return networkStatus.addAnchorPeersToChannel(channelName, anchorPeerParamsDTO);
+      @RequestBody @Validated ChannelUpdateParamsDTO channelUpdateParamsDTO) {
+    return networkStatus.addAnchorPeersToChannel(channelName, channelUpdateParamsDTO);
   }
 }

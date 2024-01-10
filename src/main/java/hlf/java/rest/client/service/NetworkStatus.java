@@ -3,7 +3,6 @@ package hlf.java.rest.client.service;
 import hlf.java.rest.client.model.ChannelUpdateParamsDTO;
 import hlf.java.rest.client.model.ClientResponseModel;
 import hlf.java.rest.client.model.CommitChannelParamsDTO;
-import hlf.java.rest.client.model.NewOrgParamsDTO;
 import org.springframework.http.ResponseEntity;
 
 public interface NetworkStatus {
@@ -14,14 +13,14 @@ public interface NetworkStatus {
       String channelName, String configUpdate);
 
   ResponseEntity<ClientResponseModel> generateConfigUpdate(
-      String channelName, NewOrgParamsDTO organizationDetails);
+      String channelName, ChannelUpdateParamsDTO organizationDetails);
 
   ResponseEntity<ClientResponseModel> commitChannelConfigTransaction(
       String channelName, CommitChannelParamsDTO commitChannelParamsDTO);
 
   ResponseEntity<ClientResponseModel> addOrgToChannel(
-      String channelName, NewOrgParamsDTO organizationDetails);
+      String channelName, ChannelUpdateParamsDTO organizationDetails);
 
   ResponseEntity<ClientResponseModel> addAnchorPeersToChannel(
-      String channelName, ChannelUpdateParamsDTO anchorPeerParamsDTO);
+      String channelName, ChannelUpdateParamsDTO channelUpdateParamsDTO);
 }

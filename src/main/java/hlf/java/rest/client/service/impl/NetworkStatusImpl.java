@@ -11,7 +11,6 @@ import hlf.java.rest.client.exception.ServiceException;
 import hlf.java.rest.client.model.ChannelUpdateParamsDTO;
 import hlf.java.rest.client.model.ClientResponseModel;
 import hlf.java.rest.client.model.CommitChannelParamsDTO;
-import hlf.java.rest.client.model.NewOrgParamsDTO;
 import hlf.java.rest.client.service.ChannelConfigDeserialization;
 import hlf.java.rest.client.service.NetworkStatus;
 import hlf.java.rest.client.service.UpdateChannel;
@@ -98,23 +97,14 @@ public class NetworkStatusImpl implements NetworkStatus {
         HttpStatus.OK);
   }
 
-  private ConfigUpdate getChannelConfig(
-      String channelName, ChannelUpdateParamsDTO organizationDetails) {
-    ConfigUpdate.Builder configUpdateBuilder = createConfigUpdate(channelName);
-    return configUpdateBuilder
-        .setWriteSet(
-            updateChannel.buildWriteset(configUpdateBuilder.getReadSet(), organizationDetails))
-        .build();
-  }
-
   @Override
   public ResponseEntity<ClientResponseModel> generateConfigUpdate(
-      String channelName, NewOrgParamsDTO organizationDetails) {
+      String channelName, ChannelUpdateParamsDTO organizationDetails) {
     Network network = gateway.getNetwork(channelName);
 
     if (network != null) {
       String base64EncodedByteArrayDeserialized =
-          getDeserializedConfig(getChannelConfig(channelName, organizationDetails));
+          getDeserializedConfig(createConfigUpdate(channelName, organizationDetails));
       return new ResponseEntity<>(
           new ClientResponseModel(ErrorConstants.NO_ERROR, base64EncodedByteArrayDeserialized),
           HttpStatus.OK);
@@ -131,7 +121,8 @@ public class NetworkStatusImpl implements NetworkStatus {
     }
   }
 
-  private ConfigUpdate.Builder createConfigUpdate(String channelName) {
+  private ConfigUpdate createConfigUpdate(
+      String channelName, ChannelUpdateParamsDTO organizationDetails) {
     Network network = gateway.getNetwork(channelName);
     if (network != null) {
       try {
@@ -144,18 +135,22 @@ public class NetworkStatusImpl implements NetworkStatus {
           if (selectedChannelConfigUpdate.getReadSet() != null) {
             ConfigGroup readSet = selectedChannelConfigUpdate.getReadSet();
             // ConfigGroups consist of: groups, modPolicy, policies, values, and version.
-            return ConfigUpdate.newBuilder().setChannelId(channelName).setReadSet(readSet);
+            return ConfigUpdate.newBuilder()
+                .setChannelId(channelName)
+                .setReadSet(readSet)
+                .setWriteSet(updateChannel.buildWriteset(readSet, organizationDetails))
+                .build();
           } else {
             log.warn("Error fetching channel config: ReadSet is null");
             // Handle the case where readSet is null appropriately
             // You might want to throw an exception or return a default value
-            return ConfigUpdate.newBuilder();
+            return ConfigUpdate.newBuilder().build();
           }
         } else {
           log.warn("Error fetching channel config: Channel configuration bytes are null");
           // Handle the case where channelConfigBytes is null appropriately
           // You might want to throw an exception or return a default value
-          return ConfigUpdate.newBuilder();
+          return ConfigUpdate.newBuilder().build();
         }
 
       } catch (InvalidArgumentException e) {
@@ -181,7 +176,7 @@ public class NetworkStatusImpl implements NetworkStatus {
     } else {
       log.warn(
           "Error fetching the channel config: Network cannot be NULL: " + "Network = " + network);
-      return ConfigUpdate.newBuilder();
+      return ConfigUpdate.newBuilder().build();
     }
   }
   /**
@@ -321,12 +316,12 @@ public class NetworkStatusImpl implements NetworkStatus {
 
   @Override
   public ResponseEntity<ClientResponseModel> addOrgToChannel(
-      String channelName, NewOrgParamsDTO organizationDetails) {
+      String channelName, ChannelUpdateParamsDTO organizationDetails) {
     Network network = gateway.getNetwork(channelName);
     if (network != null && user != null) {
       try {
         Channel selectedChannel = network.getChannel();
-        ConfigUpdate configUpdate = getChannelConfig(channelName, organizationDetails);
+        ConfigUpdate configUpdate = createConfigUpdate(channelName, organizationDetails);
         String channelConfigString = JsonFormat.printer().print(configUpdate);
         log.info(channelConfigDeserialization.deserializeValueFields(channelConfigString));
         UpdateChannelConfiguration updateChannelConfiguration = new UpdateChannelConfiguration();
@@ -371,12 +366,12 @@ public class NetworkStatusImpl implements NetworkStatus {
 
   @Override
   public ResponseEntity<ClientResponseModel> addAnchorPeersToChannel(
-      String channelName, ChannelUpdateParamsDTO anchorPeerParamsDTO) {
+      String channelName, ChannelUpdateParamsDTO channelUpdateParamsDTO) {
     Network network = gateway.getNetwork(channelName);
     if (network != null && user != null) {
       try {
         Channel selectedChannel = network.getChannel();
-        ConfigUpdate configUpdate = getChannelConfig(channelName, anchorPeerParamsDTO);
+        ConfigUpdate configUpdate = createConfigUpdate(channelName, channelUpdateParamsDTO);
         String channelConfigString = JsonFormat.printer().print(configUpdate);
         log.info(channelConfigDeserialization.deserializeValueFields(channelConfigString));
         UpdateChannelConfiguration updateChannelConfiguration = new UpdateChannelConfiguration();

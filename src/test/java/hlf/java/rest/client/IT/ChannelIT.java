@@ -5,7 +5,6 @@ import hlf.java.rest.client.model.ChannelOperationRequest;
 import hlf.java.rest.client.model.ChannelUpdateParamsDTO;
 import hlf.java.rest.client.model.ClientResponseModel;
 import hlf.java.rest.client.model.MSPDTO;
-import hlf.java.rest.client.model.NewOrgParamsDTO;
 import hlf.java.rest.client.model.Orderer;
 import hlf.java.rest.client.model.Peer;
 import hlf.java.rest.client.service.ChannelService;
@@ -306,8 +305,7 @@ public class ChannelIT {
   @Test
   @Order(6)
   public void addOrgToChannelTest() {
-    NewOrgParamsDTO newOrgParamsDTO = new NewOrgParamsDTO();
-    newOrgParamsDTO.setOrganizationName(ORG_2_MSP);
+    ChannelUpdateParamsDTO newOrgParamsDTO = new ChannelUpdateParamsDTO();
     try {
       String signcert =
           FileUtils.readFileToString(
@@ -343,16 +341,16 @@ public class ChannelIT {
   @Test
   @Order(7)
   public void addAnchorPeersToChannelTest() {
-    ChannelUpdateParamsDTO anchorPeerParamsDTO = new ChannelUpdateParamsDTO();
-    anchorPeerParamsDTO.setOrganizationMspId(ORG_1_MSP);
+    ChannelUpdateParamsDTO channelUpdateParamsDTO = new ChannelUpdateParamsDTO();
+    channelUpdateParamsDTO.setOrganizationMspId(ORG_1_MSP);
     List<AnchorPeerDTO> anchorPeerDTOs = new ArrayList<>();
     AnchorPeerDTO anchorPeerDTO = new AnchorPeerDTO();
     anchorPeerDTO.setHostname("peer0.org1.example.com");
     anchorPeerDTO.setPort(7051);
     anchorPeerDTOs.add(anchorPeerDTO);
-    anchorPeerParamsDTO.setAnchorPeerDTOs(anchorPeerDTOs);
+    channelUpdateParamsDTO.setAnchorPeerDTOs(anchorPeerDTOs);
     ResponseEntity<ClientResponseModel> responseModel =
-        networkStatus.addAnchorPeersToChannel(CHANNEL_NAME, anchorPeerParamsDTO);
+        networkStatus.addAnchorPeersToChannel(CHANNEL_NAME, channelUpdateParamsDTO);
     Assertions.assertEquals(new Integer(200), responseModel.getStatusCodeValue());
   }
 }
