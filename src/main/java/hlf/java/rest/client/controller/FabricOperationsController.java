@@ -1,8 +1,8 @@
 package hlf.java.rest.client.controller;
 
+import hlf.java.rest.client.model.ChannelUpdateParamsDTO;
 import hlf.java.rest.client.model.ClientResponseModel;
 import hlf.java.rest.client.model.CommitChannelParamsDTO;
-import hlf.java.rest.client.model.NewOrgParamsDTO;
 import hlf.java.rest.client.service.NetworkStatus;
 import hlf.java.rest.client.util.SerializationUtil;
 import lombok.extern.slf4j.Slf4j;
@@ -53,7 +53,7 @@ public class FabricOperationsController {
   @PutMapping(value = "/channel/{channelName}/configuration/config_update")
   public ResponseEntity<ClientResponseModel> generateConfigUpdateFile(
       @PathVariable @Validated String channelName,
-      @RequestBody @Validated NewOrgParamsDTO organizationDetails) {
+      @RequestBody @Validated ChannelUpdateParamsDTO organizationDetails) {
     return networkStatus.generateConfigUpdate(channelName, organizationDetails);
   }
 
@@ -102,10 +102,9 @@ public class FabricOperationsController {
   @PostMapping(value = "/channel/{channelName}/new_org")
   public ResponseEntity<ClientResponseModel> addOrgToChannel(
       @PathVariable @Validated String channelName,
-      @RequestBody @Validated NewOrgParamsDTO organizationDetails) {
+      @RequestBody @Validated ChannelUpdateParamsDTO organizationDetails) {
     return networkStatus.addOrgToChannel(channelName, organizationDetails);
   }
-
   /**
    * Use to decode an base64 encoded json file, with options to also decode the interior elements
    * and/or print the output in a cleaner format
@@ -125,5 +124,22 @@ public class FabricOperationsController {
       @RequestParam(name = "decodeInterior", required = true) boolean decodeInterior,
       @RequestParam(name = "prettyPrint", required = true) boolean prettyPrint) {
     return serializationUtil.decodeContents(encodedJson, decodeInterior, prettyPrint);
+  }
+
+  /**
+   * Add anchor peer(s) of an organization to a channel. Anchor peer addition should be done once
+   * the peer nodes of the organization have joined the channel.
+   *
+   * @param channelName - the name of the channel for which you wish to add the anchor peer nodes
+   *     to.
+   * @param channelUpdateParamsDTO - contains the details for the organization peers you wish to be
+   *     added to the channel as anchor peer.
+   * @return ResponseEntity<ClientResponseModel> - contains the result of the operation.
+   */
+  @PostMapping(value = "/channel/{channelName}/add_anchor_peer")
+  public ResponseEntity<ClientResponseModel> addAnchorPeersToChannel(
+      @PathVariable @Validated String channelName,
+      @RequestBody @Validated ChannelUpdateParamsDTO channelUpdateParamsDTO) {
+    return networkStatus.addAnchorPeersToChannel(channelName, channelUpdateParamsDTO);
   }
 }

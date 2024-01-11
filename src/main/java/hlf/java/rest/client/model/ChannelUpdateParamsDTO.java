@@ -4,10 +4,8 @@ import java.util.List;
 import lombok.Data;
 
 @Data
-public class NewOrgParamsDTO {
-
-  private String organizationName;
+public class ChannelUpdateParamsDTO {
   private String organizationMspId;
-  private MSPDTO mspDTO;
   private List<AnchorPeerDTO> anchorPeerDTOs;
+  private MSPDTO mspDTO;
 }

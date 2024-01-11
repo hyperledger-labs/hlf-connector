@@ -8,12 +8,12 @@ import hlf.java.rest.client.exception.ErrorCode;
 import hlf.java.rest.client.exception.ErrorConstants;
 import hlf.java.rest.client.exception.FabricTransactionException;
 import hlf.java.rest.client.exception.ServiceException;
+import hlf.java.rest.client.model.ChannelUpdateParamsDTO;
 import hlf.java.rest.client.model.ClientResponseModel;
 import hlf.java.rest.client.model.CommitChannelParamsDTO;
-import hlf.java.rest.client.model.NewOrgParamsDTO;
-import hlf.java.rest.client.service.AddOrgToChannelWriteSetBuilder;
 import hlf.java.rest.client.service.ChannelConfigDeserialization;
 import hlf.java.rest.client.service.NetworkStatus;
+import hlf.java.rest.client.service.UpdateChannel;
 import java.io.IOException;
 import java.util.Base64;
 import lombok.extern.slf4j.Slf4j;
@@ -38,8 +38,19 @@ public class NetworkStatusImpl implements NetworkStatus {
 
   @Autowired private Gateway gateway;
   @Autowired private User user;
-  @Autowired private AddOrgToChannelWriteSetBuilder addOrgToChannelWriteSetBuilder;
   @Autowired private ChannelConfigDeserialization channelConfigDeserialization;
+  @Autowired private UpdateChannel updateChannel;
+
+  private String getDeserializedConfig(MessageOrBuilder message) {
+    String channelConfigString;
+    try {
+      channelConfigString = JsonFormat.printer().print(message);
+    } catch (InvalidProtocolBufferException e) {
+      throw new RuntimeException(e);
+    }
+    log.info(channelConfigString);
+    return Base64.getEncoder().encodeToString(channelConfigString.getBytes());
+  }
 
   @Override
   /**
@@ -49,17 +60,13 @@ public class NetworkStatusImpl implements NetworkStatus {
    * @return ResponseEntity<ClientResponseModel> - Contains the channel configuration
    */
   public ResponseEntity<ClientResponseModel> getChannelFromNetwork(String channelName) {
-    Network network = null;
+    Network network;
     try {
       network = gateway.getNetwork(channelName);
       if (network != null) {
         Channel selectedChannel = network.getChannel();
-        Config channelConfig = Config.parseFrom(selectedChannel.getChannelConfigurationBytes());
-        MessageOrBuilder message = channelConfig;
-        String channelConfigString = JsonFormat.printer().print(message);
-        log.info(channelConfigString);
-        String base64EncodedByteArraySerialized =
-            Base64.getEncoder().encodeToString(channelConfigString.getBytes());
+        MessageOrBuilder message = Config.parseFrom(selectedChannel.getChannelConfigurationBytes());
+        String base64EncodedByteArraySerialized = getDeserializedConfig(message);
         return new ResponseEntity<>(
             new ClientResponseModel(ErrorConstants.NO_ERROR, base64EncodedByteArraySerialized),
             HttpStatus.OK);
@@ -92,52 +99,15 @@ public class NetworkStatusImpl implements NetworkStatus {
 
   @Override
   public ResponseEntity<ClientResponseModel> generateConfigUpdate(
-      String channelName, NewOrgParamsDTO organizationDetails) {
+      String channelName, ChannelUpdateParamsDTO organizationDetails) {
     Network network = gateway.getNetwork(channelName);
 
     if (network != null) {
-      try {
-        Channel selectedChannel = network.getChannel();
-        ConfigUpdate selectedChannelConfigUpdate =
-            ConfigUpdate.parseFrom(selectedChannel.getChannelConfigurationBytes());
-        // ReadSet must have version, all other fields ignored; WriteSet must have changes
-        ConfigGroup readset = selectedChannelConfigUpdate.getReadSet();
-        // ConfigGroups consist of: groups, modPolicy, policies, values, and version.
-        ConfigUpdate configUpdate =
-            ConfigUpdate.newBuilder()
-                .setChannelId(channelName)
-                .setReadSet(readset)
-                .setWriteSet(
-                    addOrgToChannelWriteSetBuilder.buildWriteset(readset, organizationDetails))
-                .build();
-        MessageOrBuilder message = configUpdate;
-        String channelConfigString = JsonFormat.printer().print(message);
-        log.info(channelConfigString);
-        String base64EncodedByteArrayDeserialized =
-            Base64.getEncoder().encodeToString(channelConfigString.getBytes());
-        return new ResponseEntity<>(
-            new ClientResponseModel(ErrorConstants.NO_ERROR, base64EncodedByteArrayDeserialized),
-            HttpStatus.OK);
-      } catch (InvalidArgumentException e) {
-        log.warn(
-            "Error while committing channel config: One or more arguments included in the config update are invalid");
-        throw new ServiceException(
-            ErrorCode.HYPERLEDGER_FABRIC_TRANSACTION_ERROR,
-            "One or more arguments included in the config update are invalid",
-            e);
-      } catch (TransactionException e) {
-        log.warn("Error while committing channel config: " + e.getMessage());
-        throw new FabricTransactionException(
-            ErrorCode.HYPERLEDGER_FABRIC_TRANSACTION_ERROR,
-            ErrorCode.HYPERLEDGER_FABRIC_TRANSACTION_ERROR.name(),
-            e);
-      } catch (IOException e) {
-        log.warn("Error while establishing connection to the gateway");
-        throw new ServiceException(
-            ErrorCode.HYPERLEDGER_FABRIC_CONNECTION_ERROR,
-            "Error while establishing connection to the gateway",
-            e);
-      }
+      String base64EncodedByteArrayDeserialized =
+          getDeserializedConfig(createConfigUpdate(channelName, organizationDetails));
+      return new ResponseEntity<>(
+          new ClientResponseModel(ErrorConstants.NO_ERROR, base64EncodedByteArrayDeserialized),
+          HttpStatus.OK);
     } else {
       log.warn(
           "Error generating the Config Update: Network and User cannot be NULL: "
@@ -151,6 +121,64 @@ public class NetworkStatusImpl implements NetworkStatus {
     }
   }
 
+  private ConfigUpdate createConfigUpdate(
+      String channelName, ChannelUpdateParamsDTO organizationDetails) {
+    Network network = gateway.getNetwork(channelName);
+    if (network != null) {
+      try {
+        Channel selectedChannel = network.getChannel();
+        byte[] channelConfigBytes = selectedChannel.getChannelConfigurationBytes();
+        if (channelConfigBytes != null) {
+          ConfigUpdate selectedChannelConfigUpdate = ConfigUpdate.parseFrom(channelConfigBytes);
+          // ReadSet must have version, all other fields ignored; WriteSet must have changes
+          // Check if readSet is not null before accessing it
+          if (selectedChannelConfigUpdate.getReadSet() != null) {
+            ConfigGroup readSet = selectedChannelConfigUpdate.getReadSet();
+            // ConfigGroups consist of: groups, modPolicy, policies, values, and version.
+            return ConfigUpdate.newBuilder()
+                .setChannelId(channelName)
+                .setReadSet(readSet)
+                .setWriteSet(updateChannel.buildWriteset(readSet, organizationDetails))
+                .build();
+          } else {
+            log.warn("Error fetching channel config: ReadSet is null");
+            // Handle the case where readSet is null appropriately
+            // You might want to throw an exception or return a default value
+            return ConfigUpdate.newBuilder().build();
+          }
+        } else {
+          log.warn("Error fetching channel config: Channel configuration bytes are null");
+          // Handle the case where channelConfigBytes is null appropriately
+          // You might want to throw an exception or return a default value
+          return ConfigUpdate.newBuilder().build();
+        }
+
+      } catch (InvalidArgumentException e) {
+        log.warn(
+            "Error while fetching channel config: Channel has no peer or orderers defined. Can not get configuration block");
+        throw new ServiceException(
+            ErrorCode.HYPERLEDGER_FABRIC_TRANSACTION_ERROR,
+            "Channel has no peer or orderers defined. Can not get configuration block",
+            e);
+      } catch (TransactionException e) {
+        log.warn("Error while fetching channel config: " + e.getMessage());
+        throw new FabricTransactionException(
+            ErrorCode.HYPERLEDGER_FABRIC_TRANSACTION_ERROR,
+            ErrorCode.HYPERLEDGER_FABRIC_TRANSACTION_ERROR.name(),
+            e);
+      } catch (InvalidProtocolBufferException e) {
+        log.warn("Error while parsing channel config");
+        throw new ServiceException(
+            ErrorCode.HYPERLEDGER_FABRIC_TRANSACTION_ERROR,
+            "Error while parsing channel config",
+            e);
+      }
+    } else {
+      log.warn(
+          "Error fetching the channel config: Network cannot be NULL: " + "Network = " + network);
+      return ConfigUpdate.newBuilder().build();
+    }
+  }
   /**
    * Signs the channel configuration json using the credentials owned by this application's
    * organization
@@ -288,25 +316,63 @@ public class NetworkStatusImpl implements NetworkStatus {
 
   @Override
   public ResponseEntity<ClientResponseModel> addOrgToChannel(
-      String channelName, NewOrgParamsDTO organizationDetails) {
+      String channelName, ChannelUpdateParamsDTO organizationDetails) {
     Network network = gateway.getNetwork(channelName);
     if (network != null && user != null) {
       try {
         Channel selectedChannel = network.getChannel();
-        ConfigUpdate selectedChannelConfigUpdate =
-            ConfigUpdate.parseFrom(selectedChannel.getChannelConfigurationBytes());
-        // ReadSet must have version, all other fields ignored; WriteSet must have changes
-        ConfigGroup readset = selectedChannelConfigUpdate.getReadSet();
-        // ConfigGroups consist of: groups, modPolicy, policies, values, and version.
-        ConfigUpdate configUpdate =
-            ConfigUpdate.newBuilder()
-                .setChannelId(channelName)
-                .setReadSet(readset)
-                .setWriteSet(
-                    addOrgToChannelWriteSetBuilder.buildWriteset(readset, organizationDetails))
-                .build();
-        MessageOrBuilder message = configUpdate;
-        String channelConfigString = JsonFormat.printer().print(message);
+        ConfigUpdate configUpdate = createConfigUpdate(channelName, organizationDetails);
+        String channelConfigString = JsonFormat.printer().print(configUpdate);
+        log.info(channelConfigDeserialization.deserializeValueFields(channelConfigString));
+        UpdateChannelConfiguration updateChannelConfiguration = new UpdateChannelConfiguration();
+        updateChannelConfiguration.setUpdateChannelConfiguration(
+            configUpdate.toByteString().toByteArray());
+        selectedChannel.updateChannelConfiguration(
+            updateChannelConfiguration,
+            selectedChannel.getUpdateChannelConfigurationSignature(
+                updateChannelConfiguration, user));
+      } catch (InvalidArgumentException e) {
+        log.warn(
+            "Error while committing channel config: One or more arguments included in the config update are invalid");
+        throw new ServiceException(
+            ErrorCode.HYPERLEDGER_FABRIC_TRANSACTION_ERROR,
+            "One or more arguments included in the config update are invalid",
+            e);
+      } catch (TransactionException e) {
+        log.warn("Error while committing channel config: " + e.getMessage());
+        throw new FabricTransactionException(
+            ErrorCode.HYPERLEDGER_FABRIC_TRANSACTION_ERROR,
+            ErrorCode.HYPERLEDGER_FABRIC_TRANSACTION_ERROR.name(),
+            e);
+      } catch (IOException e) {
+        log.warn("Error while establishing connection to the gateway");
+        throw new ServiceException(
+            ErrorCode.HYPERLEDGER_FABRIC_CONNECTION_ERROR,
+            "Error while establishing connection to the gateway",
+            e);
+      }
+      return new ResponseEntity<>(
+          new ClientResponseModel(ErrorConstants.NO_ERROR, ErrorCode.SUCCESS.getReason()),
+          HttpStatus.OK);
+    } else {
+      log.warn("Network and User cannot be NULL: " + "Network = " + network + "and User = " + user);
+      return new ResponseEntity<>(
+          new ClientResponseModel(
+              ErrorCode.NOT_FOUND.getValue(),
+              "Network and User cannot be NULL: " + "Network = " + network + "and User = " + user),
+          HttpStatus.OK);
+    }
+  }
+
+  @Override
+  public ResponseEntity<ClientResponseModel> addAnchorPeersToChannel(
+      String channelName, ChannelUpdateParamsDTO channelUpdateParamsDTO) {
+    Network network = gateway.getNetwork(channelName);
+    if (network != null && user != null) {
+      try {
+        Channel selectedChannel = network.getChannel();
+        ConfigUpdate configUpdate = createConfigUpdate(channelName, channelUpdateParamsDTO);
+        String channelConfigString = JsonFormat.printer().print(configUpdate);
         log.info(channelConfigDeserialization.deserializeValueFields(channelConfigString));
         UpdateChannelConfiguration updateChannelConfiguration = new UpdateChannelConfiguration();
         updateChannelConfiguration.setUpdateChannelConfiguration(

@@ -2,8 +2,8 @@ package hlf.java.rest.client.controller;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
+import hlf.java.rest.client.model.ChannelUpdateParamsDTO;
 import hlf.java.rest.client.model.CommitChannelParamsDTO;
-import hlf.java.rest.client.model.NewOrgParamsDTO;
 import hlf.java.rest.client.service.NetworkStatus;
 import hlf.java.rest.client.util.SerializationUtil;
 import org.junit.jupiter.api.Test;
@@ -38,12 +38,12 @@ public class FabricOperationsControllerTest {
     ResponseEntity responseEntity = new ResponseEntity(HttpStatus.OK);
     Mockito.when(
             networkStatus.generateConfigUpdate(
-                Mockito.anyString(), Mockito.any(NewOrgParamsDTO.class)))
+                Mockito.anyString(), Mockito.any(ChannelUpdateParamsDTO.class)))
         .thenReturn(responseEntity);
     assertEquals(
         responseEntity,
         fabricOperationsController.generateConfigUpdateFile(
-            "some_channel_name", new NewOrgParamsDTO()));
+            "some_channel_name", new ChannelUpdateParamsDTO()));
   }
 
   @Test
@@ -74,11 +74,13 @@ public class FabricOperationsControllerTest {
   public void commitAddOrgToChannelTest() {
     ResponseEntity responseEntity = new ResponseEntity(HttpStatus.OK);
     Mockito.when(
-            networkStatus.addOrgToChannel(Mockito.anyString(), Mockito.any(NewOrgParamsDTO.class)))
+            networkStatus.addOrgToChannel(
+                Mockito.anyString(), Mockito.any(ChannelUpdateParamsDTO.class)))
         .thenReturn(responseEntity);
     assertEquals(
         responseEntity,
-        fabricOperationsController.addOrgToChannel("some_channel_name", new NewOrgParamsDTO()));
+        fabricOperationsController.addOrgToChannel(
+            "some_channel_name", new ChannelUpdateParamsDTO()));
   }
 
   @Test
@@ -90,5 +92,18 @@ public class FabricOperationsControllerTest {
         .thenReturn(responseEntity);
     assertEquals(
         responseEntity, serializationUtil.decodeContents("channel_update_file", true, true));
+  }
+
+  @Test
+  public void addAnchorPeersToChannelTest() {
+    ResponseEntity responseEntity = new ResponseEntity(HttpStatus.OK);
+    Mockito.when(
+            networkStatus.addAnchorPeersToChannel(
+                Mockito.anyString(), Mockito.any(ChannelUpdateParamsDTO.class)))
+        .thenReturn(responseEntity);
+    assertEquals(
+        responseEntity,
+        fabricOperationsController.addAnchorPeersToChannel(
+            "some_channel_name", new ChannelUpdateParamsDTO()));
   }
 }
