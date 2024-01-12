@@ -34,6 +34,15 @@ public interface ChaincodeOperationsService {
   String getCurrentSequence(String networkName, String chaincodeName, String chaincodeVersion);
 
   /**
+   * Gets the current Version of the specified Chainode within the Channel
+   *
+   * @param networkName the network name
+   * @param chaincodeName the chaincode name
+   * @return the current Version
+   */
+  String getCurrentVersion(String networkName, String chaincodeName);
+
+  /**
    * Gets current package id for the passed channel and chaincode.
    *
    * @param networkName the network name

@@ -52,6 +52,8 @@ import org.springframework.web.multipart.MultipartFile;
 @Service
 public class ChaincodeOperationsServiceImpl implements ChaincodeOperationsService {
 
+  private static final String CHAINCODE_VER_UNKNOWN = "unknown";
+
   @Autowired private Gateway gateway;
   @Autowired private HFClientWrapper hfClientWrapper;
 
@@ -98,6 +100,40 @@ public class ChaincodeOperationsServiceImpl implements ChaincodeOperationsServic
               ErrorCode.NOT_SUPPORTED, "The passed chaincode operation not supported.");
         }
     }
+  }
+
+  @Override
+  public String getCurrentVersion(String networkName, String chaincodeName) {
+
+    try {
+
+      Network network = gateway.getNetwork(networkName);
+      Channel channel = network.getChannel();
+
+      Collection<Peer> peers = channel.getPeers();
+
+      final QueryLifecycleQueryChaincodeDefinitionRequest
+          queryLifecycleQueryChaincodeDefinitionRequest =
+              hfClientWrapper.getHfClient().newQueryLifecycleQueryChaincodeDefinitionRequest();
+      queryLifecycleQueryChaincodeDefinitionRequest.setChaincodeName(chaincodeName);
+
+      Collection<LifecycleQueryChaincodeDefinitionProposalResponse>
+          queryChaincodeDefinitionProposalResponses =
+              channel.lifecycleQueryChaincodeDefinition(
+                  queryLifecycleQueryChaincodeDefinitionRequest, peers);
+
+      for (LifecycleQueryChaincodeDefinitionProposalResponse response :
+          queryChaincodeDefinitionProposalResponses) {
+        if (response.getStatus().equals(ProposalResponse.Status.SUCCESS)) {
+          return response.getVersion();
+        }
+      }
+    } catch (ProposalException | InvalidArgumentException e) {
+      throw new ServiceException(
+          ErrorCode.HYPERLEDGER_FABRIC_CHAINCODE_OPERATIONS_REQUEST_REJECTION, e.getMessage(), e);
+    }
+
+    return CHAINCODE_VER_UNKNOWN;
   }
 
   @Override

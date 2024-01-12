@@ -53,6 +53,20 @@ public class ChaincodeOperationsController {
     return new ResponseEntity<>(operationResponse, HttpStatus.OK);
   }
 
+  @GetMapping(value = "/version")
+  @MetricsTrackedEndpoint(name = "Get Version", method = "GET", uri = "/chaincode/version")
+  public ResponseEntity<String> getCurrentSequence(
+      @RequestParam("network_name") @Validated String networkName,
+      @RequestParam("chaincode_name") @Validated String chaincodeName) {
+
+    String operationResponse =
+        chaincodeOperationsService.getCurrentVersion(networkName, chaincodeName);
+
+    operationResponse = HtmlUtils.htmlEscape(operationResponse);
+
+    return new ResponseEntity<>(operationResponse, HttpStatus.OK);
+  }
+
   @GetMapping(value = "/sequence")
   @MetricsTrackedEndpoint(name = "Get Sequence", method = "GET", uri = "/chaincode/sequence")
   public ResponseEntity<String> getCurrentSequence(
