@@ -36,6 +36,7 @@ fabric:
       apikey: expected-key
   events:
     enable: true
+    standardCCEventEnabled: false
     chaincode: chaincode12, chaincode2
     block: block111, block2
 kafka:
@@ -69,6 +70,7 @@ fabric:
     filename: connection.yaml
   events:
     enable: false
+    standardCCEventEnabled: false
     chaincode: channel1
     block: channel1
   client:

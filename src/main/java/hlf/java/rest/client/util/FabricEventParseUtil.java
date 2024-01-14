@@ -198,4 +198,8 @@ public class FabricEventParseUtil {
     }
     return message;
   }
+
+  public static <T> T parseString(String string, Class<T> toClass) throws JsonProcessingException {
+    return mapper.readValue(string, toClass);
+  }
 }

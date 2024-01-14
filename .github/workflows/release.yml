@@ -52,6 +52,11 @@ jobs:
         shell: bash
         env:
           USERNAME_OR_ORG: "${{ github.repository_owner }}"
+      - name: Release the SDK to GitHub
+        run: |
+          mvn -B jar:jar deploy:deploy -Dsdk
+        env:
+          GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
       - name: Increment the pom version
         run: |
           mvn build-helper:parse-version help:effective-pom validate -D${type}
