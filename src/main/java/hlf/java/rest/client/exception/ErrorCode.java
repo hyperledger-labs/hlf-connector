@@ -60,6 +60,8 @@ public enum ErrorCode {
 
   AUTH_INVALID_API_KEY(9000, "Invalid api key"),
 
+  NO_COLLECTION_CONFIG_FOUND(9001, "No Collection Config found"),
+
   NOT_DEFINED(
       9999,
       "The exception is not a BaseException OR error code is not yet defined by the developer");

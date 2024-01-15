@@ -52,6 +52,16 @@ public interface ChaincodeOperationsService {
    */
   String getCurrentPackageId(String networkName, String chaincodeName, String chaincodeVersion);
 
+  /**
+   * Gets the current PDC associated with the specified Chaincode
+   *
+   * @param networkName the network name
+   * @param chaincodeName the chaincode name
+   * @param chaincodeVersion the chaincode version
+   * @return the current package id
+   */
+  String getCollectionConfig(String networkName, String chaincodeName, String chaincodeVersion);
+
   Set<String> getApprovedOrganizations(
       String networkName,
       ChaincodeOperations chaincodeOperationsModel,

@@ -55,7 +55,7 @@ public class ChaincodeOperationsController {
 
   @GetMapping(value = "/version")
   @MetricsTrackedEndpoint(name = "Get Version", method = "GET", uri = "/chaincode/version")
-  public ResponseEntity<String> getCurrentSequence(
+  public ResponseEntity<String> getCurrentVersion(
       @RequestParam("network_name") @Validated String networkName,
       @RequestParam("chaincode_name") @Validated String chaincodeName) {
 
@@ -91,6 +91,25 @@ public class ChaincodeOperationsController {
 
     String operationResponse =
         chaincodeOperationsService.getCurrentPackageId(
+            networkName, chaincodeName, chaincodeVersion);
+
+    operationResponse = HtmlUtils.htmlEscape(operationResponse);
+
+    return new ResponseEntity<>(operationResponse, HttpStatus.OK);
+  }
+
+  @GetMapping(value = "/collection-config")
+  @MetricsTrackedEndpoint(
+      name = "Get Collection Config",
+      method = "GET",
+      uri = "/chaincode/collection-config")
+  public ResponseEntity<String> getCollectionConfig(
+      @RequestParam("network_name") @Validated String networkName,
+      @RequestParam("chaincode_name") @Validated String chaincodeName,
+      @RequestParam("chaincode_version") @Validated String chaincodeVersion) {
+
+    String operationResponse =
+        chaincodeOperationsService.getCollectionConfig(
             networkName, chaincodeName, chaincodeVersion);
 
     operationResponse = HtmlUtils.htmlEscape(operationResponse);

@@ -7,6 +7,7 @@ import static java.util.Objects.isNull;
 import static org.apache.commons.lang3.StringUtils.isEmpty;
 
 import hlf.java.rest.client.exception.ErrorCode;
+import hlf.java.rest.client.exception.NotFoundException;
 import hlf.java.rest.client.exception.ServiceException;
 import hlf.java.rest.client.model.ChaincodeOperations;
 import hlf.java.rest.client.model.ChaincodeOperationsType;
@@ -16,6 +17,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.Collection;
 import java.util.HashSet;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
@@ -221,6 +223,55 @@ public class ChaincodeOperationsServiceImpl implements ChaincodeOperationsServic
 
       return packageId;
     } catch (InvalidArgumentException | ProposalException e) {
+      throw new ServiceException(
+          ErrorCode.HYPERLEDGER_FABRIC_CHAINCODE_OPERATIONS_REQUEST_REJECTION, e.getMessage(), e);
+    }
+  }
+
+  @Override
+  public String getCollectionConfig(
+      String networkName, String chaincodeName, String chaincodeVersion) {
+
+    try {
+
+      Network network = gateway.getNetwork(networkName);
+      Channel channel = network.getChannel();
+
+      Collection<Peer> peers = channel.getPeers();
+
+      final QueryLifecycleQueryChaincodeDefinitionRequest
+          queryLifecycleQueryChaincodeDefinitionRequest =
+              hfClientWrapper.getHfClient().newQueryLifecycleQueryChaincodeDefinitionRequest();
+      queryLifecycleQueryChaincodeDefinitionRequest.setChaincodeName(chaincodeName);
+
+      Collection<LifecycleQueryChaincodeDefinitionProposalResponse>
+          queryChaincodeDefinitionProposalResponses =
+              channel.lifecycleQueryChaincodeDefinition(
+                  queryLifecycleQueryChaincodeDefinitionRequest, peers);
+
+      String collectionConfigAsString;
+
+      for (LifecycleQueryChaincodeDefinitionProposalResponse response :
+          queryChaincodeDefinitionProposalResponses) {
+
+        if (response.getStatus().equals(ProposalResponse.Status.SUCCESS)
+            && response.getVersion().equals(chaincodeVersion)) {
+
+          if (Objects.nonNull(response.getChaincodeCollectionConfiguration())) {
+            collectionConfigAsString =
+                new String(response.getChaincodeCollectionConfiguration().getAsBytes());
+            return collectionConfigAsString;
+          }
+        }
+      }
+
+      throw new NotFoundException(
+          ErrorCode.NO_COLLECTION_CONFIG_FOUND,
+          "Couldn't find any associated Collection config for the Chaincode");
+
+    } catch (ProposalException
+        | InvalidArgumentException
+        | ChaincodeCollectionConfigurationException e) {
       throw new ServiceException(
           ErrorCode.HYPERLEDGER_FABRIC_CHAINCODE_OPERATIONS_REQUEST_REJECTION, e.getMessage(), e);
     }
