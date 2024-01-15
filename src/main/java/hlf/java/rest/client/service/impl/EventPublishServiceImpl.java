@@ -92,6 +92,7 @@ public class EventPublishServiceImpl implements EventPublishService {
 
     try {
       String key = String.valueOf(payload.hashCode());
+      String payloadToPublish = payload;
       if (fabricProperties.getEvents().isStandardCCEventEnabled()) {
         // Fetch the key information for chaincode events,
         // but only if the feature is enabled.
@@ -100,9 +101,12 @@ public class EventPublishServiceImpl implements EventPublishService {
         StandardCCEvent standardCCEvent =
             FabricEventParseUtil.parseString(payload, StandardCCEvent.class);
         key = standardCCEvent.getKey();
+        // Prefer the Raw Event Payload.
+        payloadToPublish = standardCCEvent.getEvent();
       }
       ProducerRecord<String, String> producerRecord =
-          new ProducerRecord<>(kafkaProperties.getEventListener().getTopic(), key, payload);
+          new ProducerRecord<>(
+              kafkaProperties.getEventListener().getTopic(), key, payloadToPublish);
 
       producerRecord
           .headers()
