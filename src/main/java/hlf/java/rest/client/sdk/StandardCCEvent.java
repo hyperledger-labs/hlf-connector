@@ -1,8 +1,7 @@
 package hlf.java.rest.client.sdk;
 
-import java.io.Serializable;
-
 import com.fasterxml.jackson.annotation.JsonProperty;
+import java.io.Serializable;
 import lombok.Data;
 
 /**

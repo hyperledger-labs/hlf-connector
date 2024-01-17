@@ -2,10 +2,8 @@ package hlf.java.rest.client.service.impl;
 
 import hlf.java.rest.client.config.FabricProperties;
 import hlf.java.rest.client.config.KafkaProperties;
-import hlf.java.rest.client.sdk.StandardCCEvent;
 import hlf.java.rest.client.service.EventPublishService;
 import hlf.java.rest.client.util.FabricClientConstants;
-import hlf.java.rest.client.util.FabricEventParseUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.common.header.internals.RecordHeader;
@@ -87,26 +85,13 @@ public class EventPublishServiceImpl implements EventPublishService {
       String chaincodeName,
       String fabricTxId,
       String eventName,
-      String channelName) {
+      String channelName,
+      String messageKey) {
     boolean status = true;
 
     try {
-      String key = String.valueOf(payload.hashCode());
-      String payloadToPublish = payload;
-      if (fabricProperties.getEvents().isStandardCCEventEnabled()) {
-        // Fetch the key information for chaincode events,
-        // but only if the feature is enabled.
-
-        // Parse the payload and use the key.
-        StandardCCEvent standardCCEvent =
-            FabricEventParseUtil.parseString(payload, StandardCCEvent.class);
-        key = standardCCEvent.getKey();
-        // Prefer the Raw Event Payload.
-        payloadToPublish = standardCCEvent.getEvent();
-      }
       ProducerRecord<String, String> producerRecord =
-          new ProducerRecord<>(
-              kafkaProperties.getEventListener().getTopic(), key, payloadToPublish);
+          new ProducerRecord<>(kafkaProperties.getEventListener().getTopic(), messageKey, payload);
 
       producerRecord
           .headers()
