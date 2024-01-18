@@ -1,6 +1,9 @@
 package hlf.java.rest.client.listener;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import hlf.java.rest.client.config.FabricProperties;
 import hlf.java.rest.client.model.EventType;
+import hlf.java.rest.client.sdk.StandardCCEvent;
 import hlf.java.rest.client.service.EventPublishService;
 import hlf.java.rest.client.util.FabricClientConstants;
 import hlf.java.rest.client.util.FabricEventParseUtil;
@@ -23,6 +26,8 @@ public class ChaincodeEventListener {
 
   @Autowired(required = false)
   private EventPublishService eventPublishService;
+
+  @Autowired private FabricProperties fabricProperties;
 
   private static String eventTxnId = FabricClientConstants.FABRIC_TRANSACTION_ID;
 
@@ -75,13 +80,41 @@ public class ChaincodeEventListener {
           return;
         }
 
+        String messageKey = String.valueOf(payload.hashCode());
+        String payloadToPublish = payload;
+
+        if (fabricProperties.getEvents().isStandardCCEventEnabled()) {
+          // Fetch the key information for chaincode events, only if the feature is enabled.
+          // Parse the payload and use the key.
+          try {
+            StandardCCEvent standardCCEvent =
+                FabricEventParseUtil.parseString(payload, StandardCCEvent.class);
+            messageKey =
+                StringUtils.isNotBlank(standardCCEvent.getKey())
+                    ? standardCCEvent.getKey()
+                    : messageKey;
+            // Prefer the Raw Event Payload.
+            payloadToPublish =
+                StringUtils.isNotBlank(standardCCEvent.getEvent())
+                    ? standardCCEvent.getEvent()
+                    : payloadToPublish;
+          } catch (JsonProcessingException e) {
+            // Likely thrown if the Event generated from Chaincode might not be wrapped in a model
+            // that matches 'StandardCCEvent'
+            // Instead of failing the op, fallback to the defaults and proceed with the publish.
+            log.error(
+                "Failed to deserialize Event payload to StandardCCEvent structure. Incoming Event Payload and Default Key will be utilised for publishing.");
+          }
+        }
+
         eventPublishService.publishChaincodeEvents(
             FabricEventParseUtil.createEventStructure(
-                payload, "", txId, blockNumber, EventType.CHAINCODE_EVENT),
+                payloadToPublish, "", txId, blockNumber, EventType.CHAINCODE_EVENT),
             chaincodeId,
             txId,
             eventName,
-            channelName);
+            channelName,
+            messageKey);
         eventTxnId = txId;
       } else {
         log.debug("Duplicate Transaction; ID: {}", txId);

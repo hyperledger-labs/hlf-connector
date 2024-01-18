@@ -24,6 +24,7 @@ public interface EventPublishService {
    * @param fabricTxId String Fabric transaction ID
    * @param eventName String chaincode event-name
    * @param channelName String Name of the channel where the event was generated.
+   * @param messageKey associated key for the payload.
    * @return status boolean status of msg sent
    */
   boolean publishChaincodeEvents(
@@ -31,7 +32,8 @@ public interface EventPublishService {
       String chaincodeName,
       String fabricTxId,
       String eventName,
-      String channelName);
+      String channelName,
+      String messageKey);
 
   /**
    * @param payload String message payload
