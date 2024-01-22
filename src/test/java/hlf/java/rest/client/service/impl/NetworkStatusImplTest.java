@@ -13,6 +13,7 @@ import hlf.java.rest.client.exception.ErrorConstants;
 import hlf.java.rest.client.model.ChannelUpdateParamsDTO;
 import hlf.java.rest.client.model.ClientResponseModel;
 import hlf.java.rest.client.model.CommitChannelParamsDTO;
+import hlf.java.rest.client.model.MSPDTO;
 import hlf.java.rest.client.service.ChannelConfigDeserialization;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -72,6 +73,7 @@ public class NetworkStatusImplTest {
   @Mock private ConfigGroup readset;
 
   @Mock private ConfigGroup writeset;
+  @Mock private MSPDTO mspdto;
 
   @Mock private Builder builder;
 
@@ -106,26 +108,15 @@ public class NetworkStatusImplTest {
   }
 
   @Test
-  public void generateConfigUpdateTest()
-      throws InvalidProtocolBufferException, InvalidArgumentException, TransactionException {
+  public void generateConfigUpdateTest() throws InvalidProtocolBufferException {
     ResponseEntity<ClientResponseModel> responseEntity =
         new ResponseEntity<>(
             new ClientResponseModel(ErrorConstants.NO_ERROR, "dGhlX2NvbmZpZw=="), HttpStatus.OK);
     Mockito.when(gateway.getNetwork(Mockito.anyString())).thenReturn(network);
-    Mockito.when(network.getChannel()).thenReturn(channel);
-
-    Mockito.when(channel.getChannelConfigurationBytes()).thenReturn(new byte[0]);
     staticConfigUpdate
         .when(() -> ConfigUpdate.parseFrom(Mockito.any(byte[].class)))
         .thenReturn(configUpdate);
     staticConfigUpdate.when(() -> ConfigUpdate.newBuilder()).thenReturn(builder);
-    Mockito.when(configUpdate.getReadSet()).thenReturn(readset);
-    Mockito.when(builder.setChannelId(Mockito.anyString())).thenReturn(builder);
-    Mockito.when(builder.setReadSet(Mockito.any(ConfigGroup.class))).thenReturn(builder);
-    Mockito.when(
-            updateChannel.buildWriteset(Mockito.any(), Mockito.any(ChannelUpdateParamsDTO.class)))
-        .thenReturn(readset);
-    Mockito.when(builder.setWriteSet(Mockito.any(ConfigGroup.class))).thenReturn(builder);
     Mockito.when(builder.build()).thenReturn(configUpdate);
     staticJsonFormat.when(JsonFormat::printer).thenReturn(printer);
     Mockito.when(printer.print(Mockito.any(MessageOrBuilder.class))).thenReturn("the_config");
@@ -201,7 +192,6 @@ public class NetworkStatusImplTest {
 
     Mockito.when(gateway.getNetwork(Mockito.anyString())).thenReturn(network);
     Mockito.when(network.getChannel()).thenReturn(channel);
-
     Mockito.when(channel.getChannelConfigurationBytes()).thenReturn(new byte[0]);
     staticConfigUpdate
         .when(() -> ConfigUpdate.parseFrom(Mockito.any(byte[].class)))
@@ -224,10 +214,12 @@ public class NetworkStatusImplTest {
                 Mockito.any(UpdateChannelConfiguration.class), Mockito.any(User.class)))
         .thenReturn(outputByteArray);
 
+    Mockito.when(channelUpdateParamsDTO.getMspDTO()).thenReturn(mspdto);
+
     assertEquals(
         responseEntity.getBody().getMessage(),
         networkStatus
-            .addOrgToChannel("some_channel_name", new ChannelUpdateParamsDTO())
+            .addOrgToChannel("some_channel_name", channelUpdateParamsDTO)
             .getBody()
             .getMessage());
   }

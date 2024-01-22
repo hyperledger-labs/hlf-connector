@@ -82,7 +82,7 @@ public class NetworkStatusImpl implements NetworkStatus {
           "One or more arguments included in the config update are invalid",
           e);
     } catch (TransactionException e) {
-      log.warn("Error retrieving channel config: " + e.getMessage());
+      log.warn("Error retrieving channel config: {} ", e.getMessage());
       throw new FabricTransactionException(
           ErrorCode.HYPERLEDGER_FABRIC_TRANSACTION_ERROR,
           ErrorCode.HYPERLEDGER_FABRIC_TRANSACTION_ERROR.name(),
@@ -94,7 +94,7 @@ public class NetworkStatusImpl implements NetworkStatus {
           "Error while establishing connection to the gateway",
           e);
     }
-    log.warn("Error getting channel config: Network cannot be NULL: " + "Network = " + network);
+    log.warn("Error getting channel config: Network cannot be NULL: Network: {}", network);
     return new ResponseEntity<>(
         new ClientResponseModel(ErrorCode.NOT_FOUND.getValue(), ErrorCode.NOT_FOUND.name()),
         HttpStatus.OK);
@@ -113,9 +113,8 @@ public class NetworkStatusImpl implements NetworkStatus {
           HttpStatus.OK);
     } else {
       log.warn(
-          "Error generating the Config Update: Network and User cannot be NULL: "
-              + "Network = "
-              + network);
+          "Error generating the Config Update: Network and User cannot be NULL: Network: {}",
+          network);
       return new ResponseEntity<>(
           new ClientResponseModel(
               ErrorCode.NOT_FOUND.getValue(),
@@ -127,7 +126,7 @@ public class NetworkStatusImpl implements NetworkStatus {
   private ConfigUpdate createConfigUpdate(
       String channelName, ChannelUpdateParamsDTO organizationDetails) {
     Network network = gateway.getNetwork(channelName);
-    if (network != null) {
+    if (network != null && organizationDetails.getMspDTO() != null) {
       try {
         Channel selectedChannel = network.getChannel();
         byte[] channelConfigBytes = selectedChannel.getChannelConfigurationBytes();
@@ -164,7 +163,7 @@ public class NetworkStatusImpl implements NetworkStatus {
             "Channel has no peer or orderers defined. Can not get configuration block",
             e);
       } catch (TransactionException e) {
-        log.warn("Error while fetching channel config: " + e.getMessage());
+        log.warn("Error while fetching channel config: {} ", e.getMessage());
         throw new FabricTransactionException(
             ErrorCode.HYPERLEDGER_FABRIC_TRANSACTION_ERROR,
             ErrorCode.HYPERLEDGER_FABRIC_TRANSACTION_ERROR.name(),
@@ -178,7 +177,9 @@ public class NetworkStatusImpl implements NetworkStatus {
       }
     } else {
       log.warn(
-          "Error fetching the channel config: Network cannot be NULL: " + "Network = " + network);
+          "Error fetching the channel config: Network and MSP details cannot be NULL: Network: {} and MSP details: {} ",
+          network,
+          organizationDetails.getMspDTO());
       return ConfigUpdate.newBuilder().build();
     }
   }
@@ -230,11 +231,9 @@ public class NetworkStatusImpl implements NetworkStatus {
       }
     } else {
       log.warn(
-          "Error while signing channel config: Network and User cannot be NULL: "
-              + "Network = "
-              + network
-              + "and User = "
-              + user);
+          "Error while signing channel config: Network and User cannot be NULL: Network: {} and User: {}",
+          network,
+          user);
       return new ResponseEntity<>(
           new ClientResponseModel(
               ErrorCode.NOT_FOUND.getValue(),
@@ -290,7 +289,7 @@ public class NetworkStatusImpl implements NetworkStatus {
             "One or more arguments included in the config update are invalid",
             e);
       } catch (TransactionException e) {
-        log.warn("Error while committing channel config: " + e.getMessage());
+        log.warn("Error while committing channel config: {} ", e.getMessage());
         throw new FabricTransactionException(
             ErrorCode.HYPERLEDGER_FABRIC_TRANSACTION_ERROR,
             ErrorCode.HYPERLEDGER_FABRIC_TRANSACTION_ERROR.name(),
@@ -304,11 +303,9 @@ public class NetworkStatusImpl implements NetworkStatus {
       }
     } else {
       log.warn(
-          "Error while committing channel config: Network and User cannot be NULL: "
-              + "Network = "
-              + network
-              + "and User = "
-              + user);
+          "Error while committing channel config: Network and User cannot be NULL: Network: {} and User:{}",
+          network,
+          user);
       return new ResponseEntity<>(
           new ClientResponseModel(
               ErrorCode.NOT_FOUND.getValue(),
@@ -321,7 +318,7 @@ public class NetworkStatusImpl implements NetworkStatus {
   public ResponseEntity<ClientResponseModel> addOrgToChannel(
       String channelName, ChannelUpdateParamsDTO organizationDetails) {
     Network network = gateway.getNetwork(channelName);
-    if (network != null && user != null) {
+    if (network != null && user != null && organizationDetails.getMspDTO() != null) {
       try {
         Channel selectedChannel = network.getChannel();
         ConfigUpdate configUpdate = createConfigUpdate(channelName, organizationDetails);
@@ -342,7 +339,7 @@ public class NetworkStatusImpl implements NetworkStatus {
             "One or more arguments included in the config update are invalid",
             e);
       } catch (TransactionException e) {
-        log.warn("Error while committing channel config: " + e.getMessage());
+        log.warn("Error while committing channel config: {} ", e.getMessage());
         throw new FabricTransactionException(
             ErrorCode.HYPERLEDGER_FABRIC_TRANSACTION_ERROR,
             ErrorCode.HYPERLEDGER_FABRIC_TRANSACTION_ERROR.name(),
@@ -358,11 +355,21 @@ public class NetworkStatusImpl implements NetworkStatus {
           new ClientResponseModel(ErrorConstants.NO_ERROR, ErrorCode.SUCCESS.getReason()),
           HttpStatus.OK);
     } else {
-      log.warn("Network and User cannot be NULL: " + "Network = " + network + "and User = " + user);
+      log.warn(
+          "Network, User and MSP details cannot be NULL: Network: {}, User: {} and MSP details: {}",
+          network,
+          user,
+          organizationDetails.getMspDTO());
       return new ResponseEntity<>(
           new ClientResponseModel(
               ErrorCode.NOT_FOUND.getValue(),
-              "Network and User cannot be NULL: " + "Network = " + network + "and User = " + user),
+              "Network, User and MSP details cannot be NULL: "
+                  + "Network = "
+                  + network
+                  + " User = "
+                  + user
+                  + " and MSP details = "
+                  + organizationDetails.getMspDTO()),
           HttpStatus.OK);
     }
   }
@@ -401,13 +408,13 @@ public class NetworkStatusImpl implements NetworkStatus {
             "One or more arguments included in the config update are invalid",
             e);
       } catch (TransactionException e) {
-        log.warn("Error while committing channel config: " + e.getMessage());
+        log.warn("Error while committing channel config: {}", e.getMessage());
         throw new FabricTransactionException(
             ErrorCode.HYPERLEDGER_FABRIC_TRANSACTION_ERROR,
             ErrorCode.HYPERLEDGER_FABRIC_TRANSACTION_ERROR.name(),
             e);
       } catch (Exception e) {
-        log.warn("Error while channel configuration update : " + e.getMessage());
+        log.warn("Error while channel configuration update: {}", e.getMessage());
         throw new FabricTransactionException(
             ErrorCode.HYPERLEDGER_FABRIC_TRANSACTION_ERROR,
             ErrorCode.HYPERLEDGER_FABRIC_TRANSACTION_ERROR.name(),
@@ -417,7 +424,7 @@ public class NetworkStatusImpl implements NetworkStatus {
           new ClientResponseModel(ErrorConstants.NO_ERROR, ErrorCode.SUCCESS.getReason()),
           HttpStatus.OK);
     } else {
-      log.warn("Network and User cannot be NULL: " + "Network = " + network + "and User = " + user);
+      log.warn("Network and User cannot be NULL: Network: {} and User: {}", network, user);
       return new ResponseEntity<>(
           new ClientResponseModel(
               ErrorCode.NOT_FOUND.getValue(),
