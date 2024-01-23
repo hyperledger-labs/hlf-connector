@@ -8,6 +8,7 @@ import hlf.java.rest.client.exception.ErrorCode;
 import hlf.java.rest.client.exception.ErrorConstants;
 import hlf.java.rest.client.exception.FabricTransactionException;
 import hlf.java.rest.client.exception.ServiceException;
+import hlf.java.rest.client.model.AnchorPeerDTO;
 import hlf.java.rest.client.model.ChannelUpdateParamsDTO;
 import hlf.java.rest.client.model.ClientResponseModel;
 import hlf.java.rest.client.model.CommitChannelParamsDTO;
@@ -15,7 +16,9 @@ import hlf.java.rest.client.service.ChannelConfigDeserialization;
 import hlf.java.rest.client.service.NetworkStatus;
 import hlf.java.rest.client.service.UpdateChannel;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Base64;
+import java.util.List;
 import lombok.extern.slf4j.Slf4j;
 import org.hyperledger.fabric.gateway.Gateway;
 import org.hyperledger.fabric.gateway.Network;
@@ -79,7 +82,7 @@ public class NetworkStatusImpl implements NetworkStatus {
           "One or more arguments included in the config update are invalid",
           e);
     } catch (TransactionException e) {
-      log.warn("Error retrieving channel config: " + e.getMessage());
+      log.warn("Error retrieving channel config: {} ", e.getMessage());
       throw new FabricTransactionException(
           ErrorCode.HYPERLEDGER_FABRIC_TRANSACTION_ERROR,
           ErrorCode.HYPERLEDGER_FABRIC_TRANSACTION_ERROR.name(),
@@ -91,7 +94,7 @@ public class NetworkStatusImpl implements NetworkStatus {
           "Error while establishing connection to the gateway",
           e);
     }
-    log.warn("Error getting channel config: Network cannot be NULL: " + "Network = " + network);
+    log.warn("Error getting channel config: Network cannot be NULL: Network: {}", network);
     return new ResponseEntity<>(
         new ClientResponseModel(ErrorCode.NOT_FOUND.getValue(), ErrorCode.NOT_FOUND.name()),
         HttpStatus.OK);
@@ -110,9 +113,8 @@ public class NetworkStatusImpl implements NetworkStatus {
           HttpStatus.OK);
     } else {
       log.warn(
-          "Error generating the Config Update: Network and User cannot be NULL: "
-              + "Network = "
-              + network);
+          "Error generating the Config Update: Network and User cannot be NULL: Network: {}",
+          network);
       return new ResponseEntity<>(
           new ClientResponseModel(
               ErrorCode.NOT_FOUND.getValue(),
@@ -124,7 +126,7 @@ public class NetworkStatusImpl implements NetworkStatus {
   private ConfigUpdate createConfigUpdate(
       String channelName, ChannelUpdateParamsDTO organizationDetails) {
     Network network = gateway.getNetwork(channelName);
-    if (network != null) {
+    if (network != null && organizationDetails.getMspDTO() != null) {
       try {
         Channel selectedChannel = network.getChannel();
         byte[] channelConfigBytes = selectedChannel.getChannelConfigurationBytes();
@@ -161,7 +163,7 @@ public class NetworkStatusImpl implements NetworkStatus {
             "Channel has no peer or orderers defined. Can not get configuration block",
             e);
       } catch (TransactionException e) {
-        log.warn("Error while fetching channel config: " + e.getMessage());
+        log.warn("Error while fetching channel config: {} ", e.getMessage());
         throw new FabricTransactionException(
             ErrorCode.HYPERLEDGER_FABRIC_TRANSACTION_ERROR,
             ErrorCode.HYPERLEDGER_FABRIC_TRANSACTION_ERROR.name(),
@@ -175,7 +177,9 @@ public class NetworkStatusImpl implements NetworkStatus {
       }
     } else {
       log.warn(
-          "Error fetching the channel config: Network cannot be NULL: " + "Network = " + network);
+          "Error fetching the channel config: Network and MSP details cannot be NULL: Network: {} and MSP details: {} ",
+          network,
+          organizationDetails.getMspDTO());
       return ConfigUpdate.newBuilder().build();
     }
   }
@@ -227,11 +231,9 @@ public class NetworkStatusImpl implements NetworkStatus {
       }
     } else {
       log.warn(
-          "Error while signing channel config: Network and User cannot be NULL: "
-              + "Network = "
-              + network
-              + "and User = "
-              + user);
+          "Error while signing channel config: Network and User cannot be NULL: Network: {} and User: {}",
+          network,
+          user);
       return new ResponseEntity<>(
           new ClientResponseModel(
               ErrorCode.NOT_FOUND.getValue(),
@@ -287,7 +289,7 @@ public class NetworkStatusImpl implements NetworkStatus {
             "One or more arguments included in the config update are invalid",
             e);
       } catch (TransactionException e) {
-        log.warn("Error while committing channel config: " + e.getMessage());
+        log.warn("Error while committing channel config: {} ", e.getMessage());
         throw new FabricTransactionException(
             ErrorCode.HYPERLEDGER_FABRIC_TRANSACTION_ERROR,
             ErrorCode.HYPERLEDGER_FABRIC_TRANSACTION_ERROR.name(),
@@ -301,11 +303,9 @@ public class NetworkStatusImpl implements NetworkStatus {
       }
     } else {
       log.warn(
-          "Error while committing channel config: Network and User cannot be NULL: "
-              + "Network = "
-              + network
-              + "and User = "
-              + user);
+          "Error while committing channel config: Network and User cannot be NULL: Network: {} and User:{}",
+          network,
+          user);
       return new ResponseEntity<>(
           new ClientResponseModel(
               ErrorCode.NOT_FOUND.getValue(),
@@ -318,7 +318,7 @@ public class NetworkStatusImpl implements NetworkStatus {
   public ResponseEntity<ClientResponseModel> addOrgToChannel(
       String channelName, ChannelUpdateParamsDTO organizationDetails) {
     Network network = gateway.getNetwork(channelName);
-    if (network != null && user != null) {
+    if (network != null && user != null && organizationDetails.getMspDTO() != null) {
       try {
         Channel selectedChannel = network.getChannel();
         ConfigUpdate configUpdate = createConfigUpdate(channelName, organizationDetails);
@@ -339,7 +339,7 @@ public class NetworkStatusImpl implements NetworkStatus {
             "One or more arguments included in the config update are invalid",
             e);
       } catch (TransactionException e) {
-        log.warn("Error while committing channel config: " + e.getMessage());
+        log.warn("Error while committing channel config: {} ", e.getMessage());
         throw new FabricTransactionException(
             ErrorCode.HYPERLEDGER_FABRIC_TRANSACTION_ERROR,
             ErrorCode.HYPERLEDGER_FABRIC_TRANSACTION_ERROR.name(),
@@ -355,13 +355,32 @@ public class NetworkStatusImpl implements NetworkStatus {
           new ClientResponseModel(ErrorConstants.NO_ERROR, ErrorCode.SUCCESS.getReason()),
           HttpStatus.OK);
     } else {
-      log.warn("Network and User cannot be NULL: " + "Network = " + network + "and User = " + user);
+      log.warn(
+          "Network, User and MSP details cannot be NULL: Network: {}, User: {} and MSP details: {}",
+          network,
+          user,
+          organizationDetails.getMspDTO());
       return new ResponseEntity<>(
           new ClientResponseModel(
               ErrorCode.NOT_FOUND.getValue(),
-              "Network and User cannot be NULL: " + "Network = " + network + "and User = " + user),
+              "Network, User and MSP details cannot be NULL: "
+                  + "Network = "
+                  + network
+                  + " User = "
+                  + user
+                  + " and MSP details = "
+                  + organizationDetails.getMspDTO()),
           HttpStatus.OK);
     }
+  }
+
+  private List<String> getAnchorPeersToAdd(ChannelUpdateParamsDTO channelUpdateParamsDTO) {
+    // Anchor peers are required as Host:Port
+    List<String> anchorPeerList = new ArrayList<>();
+    for (AnchorPeerDTO anchorPeerDTO : channelUpdateParamsDTO.getAnchorPeerDTOs()) {
+      anchorPeerList.add(anchorPeerDTO.getHostname() + ":" + anchorPeerDTO.getPort());
+    }
+    return anchorPeerList;
   }
 
   @Override
@@ -371,16 +390,16 @@ public class NetworkStatusImpl implements NetworkStatus {
     if (network != null && user != null) {
       try {
         Channel selectedChannel = network.getChannel();
-        ConfigUpdate configUpdate = createConfigUpdate(channelName, channelUpdateParamsDTO);
-        String channelConfigString = JsonFormat.printer().print(configUpdate);
-        log.info(channelConfigDeserialization.deserializeValueFields(channelConfigString));
-        UpdateChannelConfiguration updateChannelConfiguration = new UpdateChannelConfiguration();
-        updateChannelConfiguration.setUpdateChannelConfiguration(
-            configUpdate.toByteString().toByteArray());
+        Channel.AnchorPeersConfigUpdateResult configUpdateAnchorPeers =
+            selectedChannel.getConfigUpdateAnchorPeers(
+                selectedChannel.getPeers().iterator().next(),
+                user,
+                getAnchorPeersToAdd(channelUpdateParamsDTO),
+                null);
         selectedChannel.updateChannelConfiguration(
-            updateChannelConfiguration,
+            configUpdateAnchorPeers.getUpdateChannelConfiguration(),
             selectedChannel.getUpdateChannelConfigurationSignature(
-                updateChannelConfiguration, user));
+                configUpdateAnchorPeers.getUpdateChannelConfiguration(), user));
       } catch (InvalidArgumentException e) {
         log.warn(
             "Error while committing channel config: One or more arguments included in the config update are invalid");
@@ -389,23 +408,23 @@ public class NetworkStatusImpl implements NetworkStatus {
             "One or more arguments included in the config update are invalid",
             e);
       } catch (TransactionException e) {
-        log.warn("Error while committing channel config: " + e.getMessage());
+        log.warn("Error while committing channel config: {}", e.getMessage());
         throw new FabricTransactionException(
             ErrorCode.HYPERLEDGER_FABRIC_TRANSACTION_ERROR,
             ErrorCode.HYPERLEDGER_FABRIC_TRANSACTION_ERROR.name(),
             e);
-      } catch (IOException e) {
-        log.warn("Error while establishing connection to the gateway");
-        throw new ServiceException(
-            ErrorCode.HYPERLEDGER_FABRIC_CONNECTION_ERROR,
-            "Error while establishing connection to the gateway",
+      } catch (Exception e) {
+        log.warn("Error while channel configuration update: {}", e.getMessage());
+        throw new FabricTransactionException(
+            ErrorCode.HYPERLEDGER_FABRIC_TRANSACTION_ERROR,
+            ErrorCode.HYPERLEDGER_FABRIC_TRANSACTION_ERROR.name(),
             e);
       }
       return new ResponseEntity<>(
           new ClientResponseModel(ErrorConstants.NO_ERROR, ErrorCode.SUCCESS.getReason()),
           HttpStatus.OK);
     } else {
-      log.warn("Network and User cannot be NULL: " + "Network = " + network + "and User = " + user);
+      log.warn("Network and User cannot be NULL: Network: {} and User: {}", network, user);
       return new ResponseEntity<>(
           new ClientResponseModel(
               ErrorCode.NOT_FOUND.getValue(),
