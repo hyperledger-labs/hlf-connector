@@ -32,42 +32,21 @@ public class UpdateChannelImpl implements UpdateChannel {
     Map<String, ConfigGroup> existingOrganizations =
         FabricChannelUtil.getExistingOrgsFromReadset(readset);
 
-    ConfigGroup applicationGroup;
-
-    if (organizationDetails.getMspDTO() != null) {
-      // New org addition scenario
-      // The "Application" group
-      applicationGroup =
-          ConfigGroup.newBuilder()
-              .setModPolicy(FabricClientConstants.CHANNEL_CONFIG_MOD_POLICY_ADMINS)
-              .putAllPolicies(FabricChannelUtil.setApplicationPolicies(readset))
-              .putGroups(newOrgMspId, setNewOrgGroup(newOrgMspId, organizationDetails))
-              // putAllGroups excludes new organization
-              .putAllGroups(existingOrganizations)
-              // Application group version
-              .setVersion(
-                  FabricChannelUtil.retrieveMSPGroupVersionFromReadset(
-                          readset, FabricClientConstants.CHANNEL_CONFIG_GROUP_APPLICATION)
-                      + 1) // will be tied to current version + 1 for this level
-              .build();
-    } else {
-      // The "Application" group
-      applicationGroup =
-          ConfigGroup.newBuilder()
-              .setModPolicy(FabricClientConstants.CHANNEL_CONFIG_MOD_POLICY_ADMINS)
-              .putAllPolicies(FabricChannelUtil.setApplicationPolicies(readset))
-              .putGroups(
-                  newOrgMspId, setAnchorPeerInGroup(newOrgMspId, readset, organizationDetails))
-              // putAllGroups excludes new organization
-              .putAllGroups(existingOrganizations)
-              // Application group version
-              .setVersion(
-                  FabricChannelUtil.retrieveMSPGroupVersionFromReadset(
-                          readset, FabricClientConstants.CHANNEL_CONFIG_GROUP_APPLICATION)
-                      + 1) // will be tied to current version + 1 for this level
-              .build();
-    }
-
+    // New org addition scenario
+    // The "Application" group
+    ConfigGroup applicationGroup =
+        ConfigGroup.newBuilder()
+            .setModPolicy(FabricClientConstants.CHANNEL_CONFIG_MOD_POLICY_ADMINS)
+            .putAllPolicies(FabricChannelUtil.setApplicationPolicies(readset))
+            .putGroups(newOrgMspId, setNewOrgGroup(newOrgMspId, organizationDetails))
+            // putAllGroups excludes new organization
+            .putAllGroups(existingOrganizations)
+            // Application group version
+            .setVersion(
+                FabricChannelUtil.retrieveMSPGroupVersionFromReadset(
+                        readset, FabricClientConstants.CHANNEL_CONFIG_GROUP_APPLICATION)
+                    + 1) // will be tied to current version + 1 for this level
+            .build();
     // the "/Channel" group
     return ConfigGroup.newBuilder()
         .putGroups(FabricClientConstants.CHANNEL_CONFIG_GROUP_APPLICATION, applicationGroup)
