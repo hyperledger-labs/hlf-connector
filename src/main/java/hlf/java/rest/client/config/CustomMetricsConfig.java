@@ -10,13 +10,13 @@ import org.springframework.context.annotation.Configuration;
 public class CustomMetricsConfig {
 
   @Bean
-  @ConditionalOnProperty(value = "metrics.custom.kafka.enabled", havingValue = "true")
+  @ConditionalOnProperty(value = "management.metrics.custom.kafka.enabled", havingValue = "true")
   public Counter customKafkaSuccessCounter(MeterRegistry meterRegistry) {
     return meterRegistry.counter("kafka.messages.processed.messages");
   }
 
   @Bean
-  @ConditionalOnProperty(value = "metrics.custom.kafka.enabled", havingValue = "true")
+  @ConditionalOnProperty(value = "management.metrics.custom.kafka.enabled", havingValue = "true")
   public Counter customKafkaFailureCounter(MeterRegistry meterRegistry) {
     return meterRegistry.counter("kafka.messages.failed.messages");
   }
