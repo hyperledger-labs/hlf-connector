@@ -511,10 +511,7 @@ public class TransactionFulfillmentImpl implements TransactionFulfillment {
       }
 
       // Map to String Array for dispatching via SDK method
-      String[] publicDataArgs =
-          CollectionUtils.isEmpty(multiDataTransactionPayload.getPublicPayload())
-              ? new String[] {}
-              : publicParamsList.toArray(new String[publicParamsList.size()]);
+      String[] publicDataArgs = publicParamsList.toArray(new String[publicParamsList.size()]);
 
       byte[] result = fabricTransaction.submit(publicDataArgs);
 
