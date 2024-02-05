@@ -4,8 +4,12 @@ import io.micrometer.core.instrument.Counter;
 import java.util.Objects;
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.annotation.Around;
+import org.aspectj.lang.annotation.Aspect;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
 
+@Aspect
+@Component
 public class EmitKafkaCustomMetricsAspect {
 
   private static final String ANNOTATION_NAME =
