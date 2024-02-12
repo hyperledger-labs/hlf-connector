@@ -25,6 +25,15 @@ public class FabricOperationsControllerTest {
   @Mock private SerializationUtil serializationUtil;
 
   @Test
+  public void getAnchorPeerForChannelTest() {
+    ResponseEntity responseEntity = new ResponseEntity(HttpStatus.OK);
+    Mockito.when(networkStatus.getAnchorPeerForChannel(Mockito.anyString()))
+        .thenReturn(responseEntity);
+    assertEquals(
+        responseEntity, fabricOperationsController.getAnchorPeerForChannel("some_channel_name"));
+  }
+
+  @Test
   public void getChannelConfigurationTest() {
     ResponseEntity responseEntity = new ResponseEntity(HttpStatus.OK);
     Mockito.when(networkStatus.getChannelFromNetwork(Mockito.anyString()))

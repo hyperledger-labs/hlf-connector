@@ -9,6 +9,8 @@ public interface NetworkStatus {
 
   ResponseEntity<ClientResponseModel> getChannelFromNetwork(String channelName);
 
+  ResponseEntity<ClientResponseModel> getAnchorPeerForChannel(String channelName);
+
   ResponseEntity<ClientResponseModel> signChannelConfigTransaction(
       String channelName, String configUpdate);
 

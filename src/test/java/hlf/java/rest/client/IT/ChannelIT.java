@@ -350,7 +350,15 @@ public class ChannelIT {
     anchorPeerDTOs.add(anchorPeerDTO);
     channelUpdateParamsDTO.setAnchorPeerDTOs(anchorPeerDTOs);
     ResponseEntity<ClientResponseModel> responseModel =
-        networkStatus.addAnchorPeersToChannel(CHANNEL_NAME, channelUpdateParamsDTO);
+        networkStatus.addAnchorPeersToChannel(CHANNEL_NAME_TWO_ORGS, channelUpdateParamsDTO);
+    Assertions.assertEquals(new Integer(200), responseModel.getStatusCodeValue());
+  }
+
+  @Test
+  @Order(8)
+  public void getAnchorPeerForChannelTest() {
+    ResponseEntity<ClientResponseModel> responseModel =
+        networkStatus.getAnchorPeerForChannel(CHANNEL_NAME_TWO_ORGS);
     Assertions.assertEquals(new Integer(200), responseModel.getStatusCodeValue());
   }
 }

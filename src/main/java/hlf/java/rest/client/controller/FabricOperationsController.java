@@ -26,6 +26,18 @@ public class FabricOperationsController {
   @Autowired private SerializationUtil serializationUtil;
 
   /**
+   * Get the anchor peers defined in a channel.
+   *
+   * @param channelName - the name of the channel for which you will retrieve the anchor peer nodes
+   * @return ResponseEntity<ClientResponseModel> - contains the list of anchor peers in a particular
+   *     channel
+   */
+  @GetMapping(value = "/channel/{channelName}/anchor_peers")
+  public ResponseEntity<ClientResponseModel> getAnchorPeerForChannel(
+      @PathVariable @Validated String channelName) {
+    return networkStatus.getAnchorPeerForChannel(channelName);
+  }
+  /**
    * Obtain the channel configuration details.
    *
    * @param channelName - the name of the channel for which you will retrieve the channel
