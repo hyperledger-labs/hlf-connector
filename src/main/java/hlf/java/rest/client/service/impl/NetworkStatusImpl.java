@@ -63,6 +63,32 @@ public class NetworkStatusImpl implements NetworkStatus {
     return Base64.getEncoder().encodeToString(channelConfigString.getBytes());
   }
 
+  private Set<String> getAnchorPeersFromOrgConfigGroup(
+      Collection<String> peersOrganizationMSPIDs, ConfigGroup application)
+      throws InvalidProtocolBufferException {
+    Set<String> anchorPeersSet = new HashSet<>();
+    for (String peerOrganizationMSPID : peersOrganizationMSPIDs) {
+      ConfigGroup peerOrgConfigGroup = application.getGroupsMap().get(peerOrganizationMSPID);
+      if (peerOrgConfigGroup != null) {
+        Map<String, Configtx.ConfigValue> valuesMap = peerOrgConfigGroup.getValuesMap();
+        Configtx.ConfigValue anchorPeers =
+            valuesMap.get(FabricClientConstants.CHANNEL_CONFIG_GROUP_VALUE_ANCHORPEERS);
+        if (null != anchorPeers && anchorPeers.getValue() != null) {
+          Configuration.AnchorPeers anchorPeersValue =
+              Configuration.AnchorPeers.parseFrom(anchorPeers.getValue());
+          List<Configuration.AnchorPeer> anchorPeersList = anchorPeersValue.getAnchorPeersList();
+          if (anchorPeersList != null) {
+            for (Configuration.AnchorPeer anchorPeer : anchorPeersList) {
+              // Concatenating the host and port to form a URL
+              anchorPeersSet.add(anchorPeer.getHost() + ":" + anchorPeer.getPort());
+            }
+          }
+        }
+      }
+    }
+    return anchorPeersSet;
+  }
+
   @Override
   public ResponseEntity<ClientResponseModel> getAnchorPeerForChannel(String channelName) {
     Network network = gateway.getNetwork(channelName);
@@ -79,26 +105,7 @@ public class NetworkStatusImpl implements NetworkStatus {
         // Get all MSP IDs for a particular channel
         Collection<String> peersOrganizationMSPIDs = selectedChannel.getPeersOrganizationMSPIDs();
         log.debug("peersOrganizationMSPIDs: {}", peersOrganizationMSPIDs.toString());
-        for (String peerOrganizationMSPID : peersOrganizationMSPIDs) {
-          ConfigGroup peerOrgConfigGroup = application.getGroupsMap().get(peerOrganizationMSPID);
-          if (peerOrgConfigGroup != null) {
-            Map<String, Configtx.ConfigValue> valuesMap = peerOrgConfigGroup.getValuesMap();
-            Configtx.ConfigValue anchorPeers =
-                valuesMap.get(FabricClientConstants.CHANNEL_CONFIG_GROUP_VALUE_ANCHORPEERS);
-            if (null != anchorPeers && anchorPeers.getValue() != null) {
-              Configuration.AnchorPeers anchorPeersValue =
-                  Configuration.AnchorPeers.parseFrom(anchorPeers.getValue());
-              List<Configuration.AnchorPeer> anchorPeersList =
-                  anchorPeersValue.getAnchorPeersList();
-              if (anchorPeersList != null) {
-                for (Configuration.AnchorPeer anchorPeer : anchorPeersList) {
-                  // Concatenating the host and port to form a URL
-                  anchorPeersSet.add(anchorPeer.getHost() + ":" + anchorPeer.getPort());
-                }
-              }
-            }
-          }
-        }
+        anchorPeersSet = getAnchorPeersFromOrgConfigGroup(peersOrganizationMSPIDs, application);
       }
 
     } catch (InvalidArgumentException e) {
