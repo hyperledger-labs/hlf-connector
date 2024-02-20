@@ -17,7 +17,6 @@ import hlf.java.rest.client.service.NetworkStatus;
 import hlf.java.rest.client.service.UpdateChannel;
 import hlf.java.rest.client.util.FabricClientConstants;
 import java.io.IOException;
-import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.Collection;
@@ -90,9 +89,8 @@ public class NetworkStatusImpl implements NetworkStatus {
   }
 
   @Override
-  public ResponseEntity<ClientResponseModel> getAnchorPeerForChannel(String channelName) {
+  public Set<String> getAnchorPeerForChannel(String channelName) {
     Network network = gateway.getNetwork(channelName);
-    Set<String> anchorPeersSet = new HashSet<>();
     try {
       if (network != null) {
         Channel selectedChannel = network.getChannel();
@@ -105,7 +103,7 @@ public class NetworkStatusImpl implements NetworkStatus {
         // Get all MSP IDs for a particular channel
         Collection<String> peersOrganizationMSPIDs = selectedChannel.getPeersOrganizationMSPIDs();
         log.debug("peersOrganizationMSPIDs: {}", peersOrganizationMSPIDs.toString());
-        anchorPeersSet = getAnchorPeersFromOrgConfigGroup(peersOrganizationMSPIDs, application);
+        return getAnchorPeersFromOrgConfigGroup(peersOrganizationMSPIDs, application);
       }
 
     } catch (InvalidArgumentException e) {
@@ -126,9 +124,7 @@ public class NetworkStatusImpl implements NetworkStatus {
       throw new ServiceException(
           ErrorCode.HYPERLEDGER_FABRIC_TRANSACTION_ERROR, "Error retrieving anchor peers", e);
     }
-    return new ResponseEntity<>(
-        new ClientResponseModel(ErrorConstants.NO_ERROR, (Serializable) anchorPeersSet),
-        HttpStatus.OK);
+    return new HashSet<>();
   }
 
   @Override

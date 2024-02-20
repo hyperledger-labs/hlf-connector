@@ -99,9 +99,6 @@ public class NetworkStatusImplTest {
 
   @Test
   public void getAnchorPeerForChannelTest() throws InvalidArgumentException, TransactionException {
-    ResponseEntity<ClientResponseModel> responseEntity =
-        new ResponseEntity<>(
-            new ClientResponseModel(ErrorConstants.NO_ERROR, new HashSet<>()), HttpStatus.OK);
     Mockito.when(gateway.getNetwork(Mockito.anyString())).thenReturn(network);
     Mockito.when(network.getChannel()).thenReturn(channel);
     Mockito.when(channel.getChannelConfigurationBytes()).thenReturn(new byte[0]);
@@ -110,9 +107,7 @@ public class NetworkStatusImplTest {
     Mockito.when(configTxConfigGroup.getGroupsMap()).thenReturn(groupMap);
     Mockito.when(groupMap.get(FabricClientConstants.CHANNEL_CONFIG_GROUP_APPLICATION))
         .thenReturn(readset);
-    assertEquals(
-        responseEntity.getStatusCode(),
-        networkStatus.getAnchorPeerForChannel("some_channelname").getStatusCode());
+    assertEquals(new HashSet<>(), networkStatus.getAnchorPeerForChannel("some_channelname"));
   }
 
   @Test

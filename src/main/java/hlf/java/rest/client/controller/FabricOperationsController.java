@@ -5,8 +5,10 @@ import hlf.java.rest.client.model.ClientResponseModel;
 import hlf.java.rest.client.model.CommitChannelParamsDTO;
 import hlf.java.rest.client.service.NetworkStatus;
 import hlf.java.rest.client.util.SerializationUtil;
+import java.util.Set;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -33,9 +35,9 @@ public class FabricOperationsController {
    *     channel
    */
   @GetMapping(value = "/channel/{channelName}/anchor_peers")
-  public ResponseEntity<ClientResponseModel> getAnchorPeerForChannel(
+  public ResponseEntity<Set<String>> getAnchorPeerForChannel(
       @PathVariable @Validated String channelName) {
-    return networkStatus.getAnchorPeerForChannel(channelName);
+    return new ResponseEntity<>(networkStatus.getAnchorPeerForChannel(channelName), HttpStatus.OK);
   }
   /**
    * Obtain the channel configuration details.
