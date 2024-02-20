@@ -6,6 +6,8 @@ import hlf.java.rest.client.model.ChannelUpdateParamsDTO;
 import hlf.java.rest.client.model.CommitChannelParamsDTO;
 import hlf.java.rest.client.service.NetworkStatus;
 import hlf.java.rest.client.util.SerializationUtil;
+import java.util.HashSet;
+import java.util.Set;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -23,6 +25,16 @@ public class FabricOperationsControllerTest {
   @InjectMocks private FabricOperationsController fabricOperationsController;
   @Mock private NetworkStatus networkStatus;
   @Mock private SerializationUtil serializationUtil;
+
+  @Test
+  public void getAnchorPeerForChannelTest() {
+    ResponseEntity<Set<String>> responseEntity =
+        new ResponseEntity<>(new HashSet<>(), HttpStatus.OK);
+    Mockito.when(networkStatus.getAnchorPeerForChannel(Mockito.anyString()))
+        .thenReturn(new HashSet<>());
+    assertEquals(
+        responseEntity, fabricOperationsController.getAnchorPeerForChannel("some_channel_name"));
+  }
 
   @Test
   public void getChannelConfigurationTest() {

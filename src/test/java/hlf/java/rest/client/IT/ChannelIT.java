@@ -303,7 +303,7 @@ public class ChannelIT {
   }
 
   @Test
-  @Order(6)
+  @Order(7)
   public void addOrgToChannelTest() {
     ChannelUpdateParamsDTO newOrgParamsDTO = new ChannelUpdateParamsDTO();
     try {
@@ -339,7 +339,7 @@ public class ChannelIT {
   }
 
   @Test
-  @Order(7)
+  @Order(6)
   public void addAnchorPeersToChannelTest() {
     ChannelUpdateParamsDTO channelUpdateParamsDTO = new ChannelUpdateParamsDTO();
     channelUpdateParamsDTO.setOrganizationMspId(ORG_1_MSP);
@@ -350,7 +350,14 @@ public class ChannelIT {
     anchorPeerDTOs.add(anchorPeerDTO);
     channelUpdateParamsDTO.setAnchorPeerDTOs(anchorPeerDTOs);
     ResponseEntity<ClientResponseModel> responseModel =
-        networkStatus.addAnchorPeersToChannel(CHANNEL_NAME, channelUpdateParamsDTO);
+        networkStatus.addAnchorPeersToChannel(CHANNEL_NAME_TWO_ORGS, channelUpdateParamsDTO);
     Assertions.assertEquals(new Integer(200), responseModel.getStatusCodeValue());
+  }
+
+  @Test
+  @Order(8)
+  public void getAnchorPeerForChannelWithoutAnchorPeersTest() {
+    Set<String> anchorPeersSet = networkStatus.getAnchorPeerForChannel(CHANNEL_NAME);
+    Assertions.assertEquals(new Integer(0), anchorPeersSet.size());
   }
 }

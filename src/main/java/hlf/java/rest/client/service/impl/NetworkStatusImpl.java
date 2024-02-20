@@ -15,16 +15,23 @@ import hlf.java.rest.client.model.CommitChannelParamsDTO;
 import hlf.java.rest.client.service.ChannelConfigDeserialization;
 import hlf.java.rest.client.service.NetworkStatus;
 import hlf.java.rest.client.service.UpdateChannel;
+import hlf.java.rest.client.util.FabricClientConstants;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Base64;
+import java.util.Collection;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import lombok.extern.slf4j.Slf4j;
 import org.hyperledger.fabric.gateway.Gateway;
 import org.hyperledger.fabric.gateway.Network;
+import org.hyperledger.fabric.protos.common.Configtx;
 import org.hyperledger.fabric.protos.common.Configtx.Config;
 import org.hyperledger.fabric.protos.common.Configtx.ConfigGroup;
 import org.hyperledger.fabric.protos.common.Configtx.ConfigUpdate;
+import org.hyperledger.fabric.protos.peer.Configuration;
 import org.hyperledger.fabric.sdk.Channel;
 import org.hyperledger.fabric.sdk.UpdateChannelConfiguration;
 import org.hyperledger.fabric.sdk.User;
@@ -53,6 +60,71 @@ public class NetworkStatusImpl implements NetworkStatus {
     }
     log.info(channelConfigString);
     return Base64.getEncoder().encodeToString(channelConfigString.getBytes());
+  }
+
+  private Set<String> getAnchorPeersFromOrgConfigGroup(
+      Collection<String> peersOrganizationMSPIDs, ConfigGroup application)
+      throws InvalidProtocolBufferException {
+    Set<String> anchorPeersSet = new HashSet<>();
+    for (String peerOrganizationMSPID : peersOrganizationMSPIDs) {
+      ConfigGroup peerOrgConfigGroup = application.getGroupsMap().get(peerOrganizationMSPID);
+      if (peerOrgConfigGroup != null) {
+        Map<String, Configtx.ConfigValue> valuesMap = peerOrgConfigGroup.getValuesMap();
+        Configtx.ConfigValue anchorPeers =
+            valuesMap.get(FabricClientConstants.CHANNEL_CONFIG_GROUP_VALUE_ANCHORPEERS);
+        if (null != anchorPeers && anchorPeers.getValue() != null) {
+          Configuration.AnchorPeers anchorPeersValue =
+              Configuration.AnchorPeers.parseFrom(anchorPeers.getValue());
+          List<Configuration.AnchorPeer> anchorPeersList = anchorPeersValue.getAnchorPeersList();
+          if (anchorPeersList != null) {
+            for (Configuration.AnchorPeer anchorPeer : anchorPeersList) {
+              // Concatenating the host and port to form a URL
+              anchorPeersSet.add(anchorPeer.getHost() + ":" + anchorPeer.getPort());
+            }
+          }
+        }
+      }
+    }
+    return anchorPeersSet;
+  }
+
+  @Override
+  public Set<String> getAnchorPeerForChannel(String channelName) {
+    Network network = gateway.getNetwork(channelName);
+    try {
+      if (network != null) {
+        Channel selectedChannel = network.getChannel();
+        byte[] selectedChannelBytes = selectedChannel.getChannelConfigurationBytes();
+        log.debug("peers: {} ", selectedChannel.getPeers());
+        Map<String, ConfigGroup> groupsMap =
+            Config.parseFrom(selectedChannelBytes).getChannelGroup().getGroupsMap();
+        ConfigGroup application =
+            groupsMap.get(FabricClientConstants.CHANNEL_CONFIG_GROUP_APPLICATION);
+        // Get all MSP IDs for a particular channel
+        Collection<String> peersOrganizationMSPIDs = selectedChannel.getPeersOrganizationMSPIDs();
+        log.debug("peersOrganizationMSPIDs: {}", peersOrganizationMSPIDs.toString());
+        return getAnchorPeersFromOrgConfigGroup(peersOrganizationMSPIDs, application);
+      }
+
+    } catch (InvalidArgumentException e) {
+      log.warn(
+          "Error while fetching channel config: Channel has no peer or orderer defined. Can not get configuration block");
+      throw new ServiceException(
+          ErrorCode.HYPERLEDGER_FABRIC_TRANSACTION_ERROR,
+          "Channel has no peer or orderer defined. Can not get configuration block",
+          e);
+    } catch (TransactionException e) {
+      log.warn("Error retrieving anchor peers: {} ", e.getMessage());
+      throw new FabricTransactionException(
+          ErrorCode.HYPERLEDGER_FABRIC_TRANSACTION_ERROR,
+          ErrorCode.HYPERLEDGER_FABRIC_TRANSACTION_ERROR.name(),
+          e);
+    } catch (InvalidProtocolBufferException e) {
+      log.warn("Error retrieving anchor peers: {}", e.getMessage());
+      throw new ServiceException(
+          ErrorCode.HYPERLEDGER_FABRIC_TRANSACTION_ERROR, "Error retrieving anchor peers", e);
+    }
+    return new HashSet<>();
   }
 
   @Override

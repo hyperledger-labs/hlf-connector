@@ -5,8 +5,10 @@ import hlf.java.rest.client.model.ClientResponseModel;
 import hlf.java.rest.client.model.CommitChannelParamsDTO;
 import hlf.java.rest.client.service.NetworkStatus;
 import hlf.java.rest.client.util.SerializationUtil;
+import java.util.Set;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -25,6 +27,18 @@ public class FabricOperationsController {
 
   @Autowired private SerializationUtil serializationUtil;
 
+  /**
+   * Get the anchor peers defined in a channel.
+   *
+   * @param channelName - the name of the channel for which you will retrieve the anchor peer nodes
+   * @return ResponseEntity<ClientResponseModel> - contains the list of anchor peers in a particular
+   *     channel
+   */
+  @GetMapping(value = "/channel/{channelName}/anchor_peers")
+  public ResponseEntity<Set<String>> getAnchorPeerForChannel(
+      @PathVariable @Validated String channelName) {
+    return new ResponseEntity<>(networkStatus.getAnchorPeerForChannel(channelName), HttpStatus.OK);
+  }
   /**
    * Obtain the channel configuration details.
    *

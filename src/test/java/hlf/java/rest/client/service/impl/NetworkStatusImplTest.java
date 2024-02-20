@@ -15,11 +15,15 @@ import hlf.java.rest.client.model.ClientResponseModel;
 import hlf.java.rest.client.model.CommitChannelParamsDTO;
 import hlf.java.rest.client.model.MSPDTO;
 import hlf.java.rest.client.service.ChannelConfigDeserialization;
+import hlf.java.rest.client.util.FabricClientConstants;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import org.hyperledger.fabric.gateway.Network;
 import org.hyperledger.fabric.gateway.impl.GatewayImpl;
+import org.hyperledger.fabric.protos.common.Configtx;
 import org.hyperledger.fabric.protos.common.Configtx.Config;
 import org.hyperledger.fabric.protos.common.Configtx.ConfigGroup;
 import org.hyperledger.fabric.protos.common.Configtx.ConfigUpdate;
@@ -88,7 +92,23 @@ public class NetworkStatusImplTest {
 
   @Mock private ByteString byteString;
 
-  @Mock private ConfigUpdate.Builder configUpdateBuilder;
+  @Mock private Configtx.Config configTxConfig;
+  @Mock private Configtx.ConfigGroup configTxConfigGroup;
+
+  @Mock private Map<String, ConfigGroup> groupMap;
+
+  @Test
+  public void getAnchorPeerForChannelTest() throws InvalidArgumentException, TransactionException {
+    Mockito.when(gateway.getNetwork(Mockito.anyString())).thenReturn(network);
+    Mockito.when(network.getChannel()).thenReturn(channel);
+    Mockito.when(channel.getChannelConfigurationBytes()).thenReturn(new byte[0]);
+    staticConfig.when(() -> Config.parseFrom(Mockito.any(byte[].class))).thenReturn(configTxConfig);
+    Mockito.when(configTxConfig.getChannelGroup()).thenReturn(configTxConfigGroup);
+    Mockito.when(configTxConfigGroup.getGroupsMap()).thenReturn(groupMap);
+    Mockito.when(groupMap.get(FabricClientConstants.CHANNEL_CONFIG_GROUP_APPLICATION))
+        .thenReturn(readset);
+    assertEquals(new HashSet<>(), networkStatus.getAnchorPeerForChannel("some_channelname"));
+  }
 
   @Test
   public void getChannelFromNetworkTest()
