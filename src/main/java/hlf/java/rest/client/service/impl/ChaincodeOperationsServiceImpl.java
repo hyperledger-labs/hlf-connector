@@ -112,7 +112,7 @@ public class ChaincodeOperationsServiceImpl implements ChaincodeOperationsServic
       Network network = gateway.getNetwork(networkName);
       Channel channel = network.getChannel();
 
-      Collection<Peer> peers = channel.getPeers();
+      Collection<Peer> peers = channel.getPeersForOrganization(gateway.getIdentity().getMspId());
 
       final QueryLifecycleQueryChaincodeDefinitionRequest
           queryLifecycleQueryChaincodeDefinitionRequest =
@@ -146,7 +146,7 @@ public class ChaincodeOperationsServiceImpl implements ChaincodeOperationsServic
       Network network = gateway.getNetwork(networkName);
       Channel channel = network.getChannel();
 
-      Collection<Peer> peers = channel.getPeers();
+      Collection<Peer> peers = channel.getPeersForOrganization(gateway.getIdentity().getMspId());
 
       final QueryLifecycleQueryChaincodeDefinitionRequest
           queryLifecycleQueryChaincodeDefinitionRequest =
@@ -191,9 +191,11 @@ public class ChaincodeOperationsServiceImpl implements ChaincodeOperationsServic
 
     Network network = gateway.getNetwork(networkName);
     Channel channel = network.getChannel();
-    Collection<Peer> peers = channel.getPeers();
 
     try {
+
+      Collection<Peer> peers = channel.getPeersForOrganization(gateway.getIdentity().getMspId());
+
       Collection<LifecycleQueryInstalledChaincodesProposalResponse> results =
           hfClientWrapper
               .getHfClient()
@@ -237,7 +239,7 @@ public class ChaincodeOperationsServiceImpl implements ChaincodeOperationsServic
       Network network = gateway.getNetwork(networkName);
       Channel channel = network.getChannel();
 
-      Collection<Peer> peers = channel.getPeers();
+      Collection<Peer> peers = channel.getPeersForOrganization(gateway.getIdentity().getMspId());
 
       final QueryLifecycleQueryChaincodeDefinitionRequest
           queryLifecycleQueryChaincodeDefinitionRequest =
@@ -345,29 +347,30 @@ public class ChaincodeOperationsServiceImpl implements ChaincodeOperationsServic
       ChaincodeOperations chaincodeOperationsModel,
       Optional<ChaincodeCollectionConfiguration> chaincodeCollectionConfigurationOptional) {
 
-    Collection<Peer> peers = channel.getPeers();
-
-    if (!CollectionUtils.isEmpty(chaincodeOperationsModel.getPeerNames())) {
-
-      Set<String> peerFilter = chaincodeOperationsModel.getPeerNames();
-
-      peers =
-          peers.stream()
-              .filter(channelPeer -> peerFilter.contains(channelPeer.getName()))
-              .collect(Collectors.toList());
-
-      if (CollectionUtils.isEmpty(peers)) {
-        log.error(
-            "No Peers identified with the names {} in channel {}. Skipping approval",
-            peerFilter,
-            channel.getName());
-        throw new ServiceException(
-            ErrorCode.HYPERLEDGER_FABRIC_CHAINCODE_OPERATIONS_REQUEST_REJECTION,
-            "Invalid Peer details");
-      }
-    }
-
     try {
+
+      Collection<Peer> peers = channel.getPeersForOrganization(gateway.getIdentity().getMspId());
+
+      if (!CollectionUtils.isEmpty(chaincodeOperationsModel.getPeerNames())) {
+
+        Set<String> peerFilter = chaincodeOperationsModel.getPeerNames();
+
+        peers =
+            peers.stream()
+                .filter(channelPeer -> peerFilter.contains(channelPeer.getName()))
+                .collect(Collectors.toList());
+
+        if (CollectionUtils.isEmpty(peers)) {
+          log.error(
+              "No Peers identified with the names {} in channel {}. Skipping approval",
+              peerFilter,
+              channel.getName());
+          throw new ServiceException(
+              ErrorCode.HYPERLEDGER_FABRIC_CHAINCODE_OPERATIONS_REQUEST_REJECTION,
+              "Invalid Peer details");
+        }
+      }
+
       LifecycleApproveChaincodeDefinitionForMyOrgRequest
           lifecycleApproveChaincodeDefinitionForMyOrgRequest =
               hfClientWrapper.getHfClient().newLifecycleApproveChaincodeDefinitionForMyOrgRequest();
@@ -419,8 +422,10 @@ public class ChaincodeOperationsServiceImpl implements ChaincodeOperationsServic
       ChaincodeOperations chaincodeOperationsModel,
       Optional<ChaincodeCollectionConfiguration> chaincodeCollectionConfigurationOptional) {
 
-    Collection<Peer> peers = channel.getPeers();
     try {
+
+      Collection<Peer> peers = channel.getPeersForOrganization(gateway.getIdentity().getMspId());
+
       LifecycleCommitChaincodeDefinitionRequest lifecycleCommitChaincodeDefinitionRequest =
           hfClientWrapper.getHfClient().newLifecycleCommitChaincodeDefinitionRequest();
 
