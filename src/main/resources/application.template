@@ -48,6 +48,7 @@ kafka:
       security-protocol: <Only supports SSL>
       ssl-keystore-base64: <if ssl-enabled is true, provide the Base64 encoded value of keystore file>
       ssl-truststore-base64: <if ssl-enabled is true, provide the Base64 encoded value of Trsutstore file>
+      offsetResetPolicy: <possible values are earliest / latest> if not provided, default will be latest.
   event-listener:
     brokerHost: <Comma separated list of boostrap servers>
     topic: <topic to publish Block or Chaincode Events>
