@@ -83,6 +83,7 @@ public class KafkaProperties {
     private int topicPartitions = 1;
     private boolean enableParallelListenerCapabilities = false;
     private String saslJaasConfig;
+    private String offsetResetPolicy;
 
     @Override
     public String toString() {

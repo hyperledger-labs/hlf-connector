@@ -52,6 +52,11 @@ public class KafkaConsumerConfig {
           kafkaConsumerProperties.getSaslJaasConfig());
     }
 
+    if (StringUtils.isNotBlank(kafkaConsumerProperties.getOffsetResetPolicy())) {
+      props.put(
+          ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, kafkaConsumerProperties.getOffsetResetPolicy());
+    }
+
     // Adding SSL configuration if Kafka Cluster is SSL secured
     if (kafkaConsumerProperties.isSslAuthRequired()) {
 
