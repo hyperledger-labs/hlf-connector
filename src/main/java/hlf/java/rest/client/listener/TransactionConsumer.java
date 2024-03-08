@@ -4,7 +4,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import hlf.java.rest.client.exception.ErrorCode;
 import hlf.java.rest.client.exception.FabricTransactionException;
 import hlf.java.rest.client.exception.ServiceException;
-import hlf.java.rest.client.metrics.EmitKafkaCustomMetrics;
+import hlf.java.rest.client.exception.UnrecognizedTransactionPayloadException;
+import hlf.java.rest.client.metrics.EmitCustomTransactionListenerMetrics;
 import hlf.java.rest.client.model.MultiDataTransactionPayload;
 import hlf.java.rest.client.service.TransactionFulfillment;
 import hlf.java.rest.client.util.FabricClientConstants;
@@ -38,7 +39,7 @@ public class TransactionConsumer {
    *
    * @param message ConsumerRecord payload from upstream system
    */
-  @EmitKafkaCustomMetrics
+  @EmitCustomTransactionListenerMetrics
   public void listen(ConsumerRecord<String, String> message) {
     log.info(
         "Incoming Message details : Topic : "
@@ -108,7 +109,7 @@ public class TransactionConsumer {
           multiDataTransactionPayload =
               objectMapper.readValue(transactionParams, MultiDataTransactionPayload.class);
         } catch (Exception e) {
-          throw new ServiceException(
+          throw new UnrecognizedTransactionPayloadException(
               ErrorCode.VALIDATION_FAILED, "Invalid transaction payload provided");
         }
 
@@ -163,7 +164,7 @@ public class TransactionConsumer {
 
       } else {
         log.error("Incorrect Transaction Payload");
-        throw new ServiceException(
+        throw new UnrecognizedTransactionPayloadException(
             ErrorCode.VALIDATION_FAILED,
             "Inbound transaction format is incorrect or doesn't contain valid parameters.");
       }

@@ -7,17 +7,26 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 @Configuration
-public class CustomMetricsConfig {
+@ConditionalOnProperty("kafka.event-listener.brokerHost")
+public class CustomTxnListenerMetricsConfig {
 
   @Bean
-  @ConditionalOnProperty(value = "management.metrics.custom.kafka.enabled", havingValue = "true")
   public Counter customKafkaSuccessCounter(MeterRegistry meterRegistry) {
     return meterRegistry.counter("kafka.messages.processed.messages");
   }
 
   @Bean
-  @ConditionalOnProperty(value = "management.metrics.custom.kafka.enabled", havingValue = "true")
   public Counter customKafkaFailureCounter(MeterRegistry meterRegistry) {
     return meterRegistry.counter("kafka.messages.failed.messages");
+  }
+
+  @Bean
+  public Counter invalidInboundTransactionMessageCounter(MeterRegistry meterRegistry) {
+    return meterRegistry.counter("transaction.messages.unrecognized");
+  }
+
+  @Bean
+  public Counter inboundTxnProcessingFailureCounter(MeterRegistry meterRegistry) {
+    return meterRegistry.counter("transaction.messages.process.failures");
   }
 }
