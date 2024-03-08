@@ -1,6 +1,7 @@
 package hlf.java.rest.client.config;
 
 import hlf.java.rest.client.util.FabricClientConstants;
+import io.micrometer.core.instrument.MeterRegistry;
 import java.util.HashMap;
 import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
@@ -15,6 +16,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.kafka.core.DefaultKafkaProducerFactory;
 import org.springframework.kafka.core.KafkaTemplate;
+import org.springframework.kafka.core.MicrometerProducerListener;
 import org.springframework.kafka.core.ProducerFactory;
 
 /** This class is the configuration class for sending to Chaincode event to eventHub/Kafka Topic. */
@@ -25,6 +27,8 @@ import org.springframework.kafka.core.ProducerFactory;
 public class KafkaProducerConfig {
 
   @Autowired private KafkaProperties kafkaProperties;
+
+  @Autowired private MeterRegistry meterRegistry;
 
   public ProducerFactory<String, String> eventProducerFactory(
       KafkaProperties.Producer kafkaProducerProperties) {
@@ -73,8 +77,13 @@ public class KafkaProducerConfig {
       props.put(SslConfigs.SSL_KEY_PASSWORD_CONFIG, kafkaProducerProperties.getSslKeyPassword());
     }
 
-    log.info("Created kafka producer factory");
-    return new DefaultKafkaProducerFactory<>(props);
+    log.info("Generating Kafka producer factory..");
+
+    DefaultKafkaProducerFactory<String, String> defaultKafkaProducerFactory =
+        new DefaultKafkaProducerFactory<>(props);
+    defaultKafkaProducerFactory.addListener(new MicrometerProducerListener<>(meterRegistry));
+
+    return defaultKafkaProducerFactory;
   }
 
   @Bean
