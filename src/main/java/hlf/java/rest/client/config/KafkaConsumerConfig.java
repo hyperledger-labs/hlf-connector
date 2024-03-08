@@ -1,6 +1,7 @@
 package hlf.java.rest.client.config;
 
 import hlf.java.rest.client.util.FabricClientConstants;
+import io.micrometer.core.instrument.MeterRegistry;
 import java.util.HashMap;
 import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
@@ -9,10 +10,12 @@ import org.apache.kafka.clients.CommonClientConfigs;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.common.config.SslConfigs;
 import org.apache.kafka.common.serialization.StringDeserializer;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.cloud.context.config.annotation.RefreshScope;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.kafka.core.DefaultKafkaConsumerFactory;
+import org.springframework.kafka.core.MicrometerConsumerListener;
 
 /*
  * This class is the configuration class for setting the properties for the kafka consumers.
@@ -23,6 +26,8 @@ import org.springframework.kafka.core.DefaultKafkaConsumerFactory;
 @ConditionalOnProperty("kafka.integration-points[0].brokerHost")
 @RefreshScope
 public class KafkaConsumerConfig {
+
+  @Autowired private MeterRegistry meterRegistry;
 
   public DefaultKafkaConsumerFactory<String, String> consumerFactory(
       KafkaProperties.Consumer kafkaConsumerProperties) {
@@ -80,7 +85,12 @@ public class KafkaConsumerConfig {
       props.put(SslConfigs.SSL_KEY_PASSWORD_CONFIG, kafkaConsumerProperties.getSslKeyPassword());
     }
 
-    log.info("Created kafka consumer factory");
-    return new DefaultKafkaConsumerFactory<>(props);
+    log.info("Generating Kafka consumer factory..");
+
+    DefaultKafkaConsumerFactory<String, String> defaultKafkaConsumerFactory =
+        new DefaultKafkaConsumerFactory<>(props);
+    defaultKafkaConsumerFactory.addListener(new MicrometerConsumerListener<>(meterRegistry));
+
+    return defaultKafkaConsumerFactory;
   }
 }
