@@ -5,11 +5,14 @@ import io.micrometer.core.instrument.Counter;
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.annotation.Around;
 import org.aspectj.lang.annotation.Aspect;
+import org.hyperledger.fabric.gateway.ContractException;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
 
 @Aspect
 @Component
+@ConditionalOnProperty("kafka.integration-points[0].brokerHost")
 public class EmitCustomTransactionListenerMetricsAspect {
 
   private static final String ANNOTATION_NAME =
@@ -17,11 +20,11 @@ public class EmitCustomTransactionListenerMetricsAspect {
 
   @Autowired private Counter customKafkaSuccessCounter;
 
-  @Autowired private Counter customKafkaFailureCounter;
-
   @Autowired private Counter invalidInboundTransactionMessageCounter;
 
   @Autowired private Counter inboundTxnProcessingFailureCounter;
+
+  @Autowired private Counter inboundTxnContractExceptionCounter;
 
   @Around("@annotation(" + ANNOTATION_NAME + ")")
   public Object interceptedKafkaMetricsEmissionAdvice(ProceedingJoinPoint proceedingJoinPoint)
@@ -33,14 +36,15 @@ public class EmitCustomTransactionListenerMetricsAspect {
       return returnValue;
     } catch (Throwable e) {
 
-      customKafkaFailureCounter.increment();
-
       if (e instanceof UnrecognizedTransactionPayloadException) {
         invalidInboundTransactionMessageCounter.increment();
-      } else {
-        inboundTxnProcessingFailureCounter.increment();
       }
 
+      if (e instanceof ContractException) {
+        inboundTxnContractExceptionCounter.increment();
+      }
+
+      inboundTxnProcessingFailureCounter.increment();
       throw e;
     }
   }
