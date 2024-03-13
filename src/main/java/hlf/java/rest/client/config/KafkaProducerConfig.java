@@ -1,7 +1,9 @@
 package hlf.java.rest.client.config;
 
 import hlf.java.rest.client.util.FabricClientConstants;
+import io.micrometer.core.instrument.Gauge;
 import io.micrometer.core.instrument.MeterRegistry;
+import java.sql.Timestamp;
 import java.util.HashMap;
 import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
@@ -57,7 +59,7 @@ public class KafkaProducerConfig {
     // Adding SSL configuration if Kafka Cluster is SSL secured
     if (kafkaProducerProperties.isSslAuthRequired()) {
 
-      SSLAuthFilesCreationHelper.createSSLAuthFiles(kafkaProducerProperties);
+      SSLAuthFilesHelper.createSSLAuthFiles(kafkaProducerProperties);
 
       props.put(
           CommonClientConfigs.SECURITY_PROTOCOL_CONFIG,
@@ -75,6 +77,33 @@ public class KafkaProducerConfig {
           SslConfigs.SSL_TRUSTSTORE_PASSWORD_CONFIG,
           kafkaProducerProperties.getSslTruststorePassword());
       props.put(SslConfigs.SSL_KEY_PASSWORD_CONFIG, kafkaProducerProperties.getSslKeyPassword());
+
+      try {
+        Timestamp keyStoreCertExpiryTimestamp =
+            SSLAuthFilesHelper.getExpiryTimestampForKeyStore(
+                kafkaProducerProperties.getSslKeystoreLocation(),
+                kafkaProducerProperties.getSslKeystorePassword());
+        Timestamp trustStoreCertExpiryTimestamp =
+            SSLAuthFilesHelper.getExpiryTimestampForKeyStore(
+                kafkaProducerProperties.getSslTruststoreLocation(),
+                kafkaProducerProperties.getSslTruststorePassword());
+
+        Gauge.builder(
+                "producer." + kafkaProducerProperties.getTopic() + ".keystore.expiryTs",
+                keyStoreCertExpiryTimestamp::getTime)
+            .strongReference(true)
+            .register(meterRegistry);
+
+        Gauge.builder(
+                "producer." + kafkaProducerProperties.getTopic() + ".truststore.expiryTs",
+                trustStoreCertExpiryTimestamp::getTime)
+            .strongReference(true)
+            .register(meterRegistry);
+
+      } catch (Exception e) {
+        log.error(
+            "Failed to extract expiry details of Producer SSL Certs. Metrics for Producer SSL cert-expiry will not be available.");
+      }
     }
 
     log.info("Generating Kafka producer factory..");
