@@ -1,18 +1,19 @@
 package hlf.java.rest.client.config;
 
 import hlf.java.rest.client.util.FabricClientConstants;
+import io.micrometer.core.instrument.MeterRegistry;
 import java.util.HashMap;
 import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.kafka.clients.CommonClientConfigs;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
-import org.apache.kafka.common.config.SslConfigs;
 import org.apache.kafka.common.serialization.StringDeserializer;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.cloud.context.config.annotation.RefreshScope;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.kafka.core.DefaultKafkaConsumerFactory;
+import org.springframework.kafka.core.MicrometerConsumerListener;
 
 /*
  * This class is the configuration class for setting the properties for the kafka consumers.
@@ -22,7 +23,9 @@ import org.springframework.kafka.core.DefaultKafkaConsumerFactory;
 @Configuration
 @ConditionalOnProperty("kafka.integration-points[0].brokerHost")
 @RefreshScope
-public class KafkaConsumerConfig {
+public class KafkaConsumerConfig extends BaseKafkaConfig {
+
+  @Autowired private MeterRegistry meterRegistry;
 
   public DefaultKafkaConsumerFactory<String, String> consumerFactory(
       KafkaProperties.Consumer kafkaConsumerProperties) {
@@ -39,18 +42,9 @@ public class KafkaConsumerConfig {
         FabricClientConstants.KAFKA_INTG_MAX_POLL_INTERVAL);
     props.put(
         ConsumerConfig.MAX_POLL_RECORDS_CONFIG, FabricClientConstants.KAFKA_INTG_MAX_POLL_RECORDS);
+
     // Azure event-hub config
-    if (StringUtils.isNotEmpty(kafkaConsumerProperties.getSaslJaasConfig())) {
-      props.put(
-          FabricClientConstants.KAFKA_SECURITY_PROTOCOL_KEY,
-          FabricClientConstants.KAFKA_SECURITY_PROTOCOL_VALUE);
-      props.put(
-          FabricClientConstants.KAFKA_SASL_MECHANISM_KEY,
-          FabricClientConstants.KAFKA_SASL_MECHANISM_VALUE);
-      props.put(
-          FabricClientConstants.KAFKA_SASL_JASS_ENDPOINT_KEY,
-          kafkaConsumerProperties.getSaslJaasConfig());
-    }
+    configureSaslProperties(props, kafkaConsumerProperties.getSaslJaasConfig());
 
     if (StringUtils.isNotBlank(kafkaConsumerProperties.getOffsetResetPolicy())) {
       props.put(
@@ -58,29 +52,20 @@ public class KafkaConsumerConfig {
     }
 
     // Adding SSL configuration if Kafka Cluster is SSL secured
-    if (kafkaConsumerProperties.isSslAuthRequired()) {
+    configureSSLProperties(
+        props, kafkaConsumerProperties, kafkaConsumerProperties.getTopic(), meterRegistry);
 
-      SSLAuthFilesCreationHelper.createSSLAuthFiles(kafkaConsumerProperties);
+    log.info("Generating Kafka consumer factory..");
 
-      props.put(
-          CommonClientConfigs.SECURITY_PROTOCOL_CONFIG,
-          kafkaConsumerProperties.getSecurityProtocol());
-      props.put(
-          SslConfigs.SSL_KEYSTORE_LOCATION_CONFIG,
-          kafkaConsumerProperties.getSslKeystoreLocation());
-      props.put(
-          SslConfigs.SSL_KEYSTORE_PASSWORD_CONFIG,
-          kafkaConsumerProperties.getSslKeystorePassword());
-      props.put(
-          SslConfigs.SSL_TRUSTSTORE_LOCATION_CONFIG,
-          kafkaConsumerProperties.getSslTruststoreLocation());
-      props.put(
-          SslConfigs.SSL_TRUSTSTORE_PASSWORD_CONFIG,
-          kafkaConsumerProperties.getSslTruststorePassword());
-      props.put(SslConfigs.SSL_KEY_PASSWORD_CONFIG, kafkaConsumerProperties.getSslKeyPassword());
-    }
+    DefaultKafkaConsumerFactory<String, String> defaultKafkaConsumerFactory =
+        new DefaultKafkaConsumerFactory<>(props);
+    defaultKafkaConsumerFactory.addListener(new MicrometerConsumerListener<>(meterRegistry));
 
-    log.info("Created kafka consumer factory");
-    return new DefaultKafkaConsumerFactory<>(props);
+    return defaultKafkaConsumerFactory;
+  }
+
+  @Override
+  protected ConfigType getConfigType() {
+    return ConfigType.CONSUMER;
   }
 }
