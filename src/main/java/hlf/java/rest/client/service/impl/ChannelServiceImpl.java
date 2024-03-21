@@ -1,5 +1,8 @@
 package hlf.java.rest.client.service.impl;
 
+import static hlf.java.rest.client.util.FabricClientConstants.FABRIC_2_0;
+import static hlf.java.rest.client.util.FabricClientConstants.VALUE_TAG_CAPABILITIES;
+
 import com.google.protobuf.ByteString;
 import com.google.protobuf.Timestamp;
 import hlf.java.rest.client.exception.ChannelOperationException;
@@ -51,8 +54,6 @@ public class ChannelServiceImpl implements ChannelService {
   private static final String EMPTY_MOD_POLICY = "";
   private static final String GROUP_TAG_APPLICATION = "Application";
   private static final String VALUE_TAG_CONSORTIUM = "Consortium";
-  private static final String VALUE_TAG_CAPABILITIES = "Capabilities";
-  private static final String FABRIC_2_0 = "V2_0";
   private static final int INIT_VERSION = 1;
   private static final int EMPTY_VERSION = 0;
   private static final int HEADER_TYPE = 2;
@@ -279,7 +280,8 @@ public class ChannelServiceImpl implements ChannelService {
     }
     channelGroupBuilder.setVersion(EMPTY_VERSION).setModPolicy(EMPTY_MOD_POLICY);
     // add capabilities for V2_0 lifecycle chaincode support
-    channelGroupBuilder.putValues(VALUE_TAG_CAPABILITIES, getCapabilities(FABRIC_2_0));
+    channelGroupBuilder.putValues(
+        VALUE_TAG_CAPABILITIES, FabricChannelUtil.getCapabilitiesWithDefaultVersion(FABRIC_2_0));
     return channelGroupBuilder.build();
   }
 
@@ -296,7 +298,8 @@ public class ChannelServiceImpl implements ChannelService {
     if (isWriteSet) {
       addDefaultImplicitMetaPolicy(appGroupBuilder);
       appGroupBuilder.setVersion(INIT_VERSION);
-      appGroupBuilder.putValues(VALUE_TAG_CAPABILITIES, getCapabilities(FABRIC_2_0));
+      appGroupBuilder.putValues(
+          VALUE_TAG_CAPABILITIES, FabricChannelUtil.getCapabilitiesWithDefaultVersion(FABRIC_2_0));
     }
     for (Map.Entry<String, MSPDTO> entry : mspMap.entrySet()) {
       if (entry.getValue() != null) {
@@ -307,23 +310,6 @@ public class ChannelServiceImpl implements ChannelService {
       }
     }
     return appGroupBuilder.build();
-  }
-
-  /**
-   * @param capabilities capabilities need to be added to config
-   * @return channel capabilities
-   */
-  private Configtx.ConfigValue getCapabilities(String... capabilities) {
-    Configtx.ConfigValue.Builder valueBuilder = Configtx.ConfigValue.newBuilder();
-    valueBuilder.setModPolicy(DEFAULT_MOD_POLICY);
-    Configuration.Capabilities.Builder capabilitiesBuilder =
-        Configuration.Capabilities.newBuilder();
-    for (String capability : capabilities) {
-      capabilitiesBuilder.putCapabilities(
-          capability, Configuration.Capability.newBuilder().build());
-    }
-    valueBuilder.setValue(capabilitiesBuilder.build().toByteString());
-    return valueBuilder.build();
   }
 
   /**

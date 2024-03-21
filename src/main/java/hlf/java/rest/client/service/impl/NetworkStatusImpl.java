@@ -399,6 +399,7 @@ public class NetworkStatusImpl implements NetworkStatus {
         UpdateChannelConfiguration updateChannelConfiguration = new UpdateChannelConfiguration();
         updateChannelConfiguration.setUpdateChannelConfiguration(
             configUpdate.toByteString().toByteArray());
+
         selectedChannel.updateChannelConfiguration(
             updateChannelConfiguration,
             selectedChannel.getUpdateChannelConfigurationSignature(

@@ -1,5 +1,8 @@
 package hlf.java.rest.client.service.impl;
 
+import static hlf.java.rest.client.util.FabricClientConstants.FABRIC_2_0;
+import static hlf.java.rest.client.util.FabricClientConstants.VALUE_TAG_CAPABILITIES;
+
 import com.google.protobuf.ByteString;
 import hlf.java.rest.client.exception.ServiceException;
 import hlf.java.rest.client.model.AnchorPeerDTO;
@@ -39,6 +42,9 @@ public class UpdateChannelImpl implements UpdateChannel {
             .setModPolicy(FabricClientConstants.CHANNEL_CONFIG_MOD_POLICY_ADMINS)
             .putAllPolicies(FabricChannelUtil.setApplicationPolicies(readset))
             .putGroups(newOrgMspId, setNewOrgGroup(newOrgMspId, organizationDetails))
+            .putValues(
+                VALUE_TAG_CAPABILITIES,
+                FabricChannelUtil.getCapabilitiesWithDefaultVersion(FABRIC_2_0))
             // putAllGroups excludes new organization
             .putAllGroups(existingOrganizations)
             // Application group version

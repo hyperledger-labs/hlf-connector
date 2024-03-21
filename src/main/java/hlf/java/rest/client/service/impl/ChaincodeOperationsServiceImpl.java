@@ -424,7 +424,7 @@ public class ChaincodeOperationsServiceImpl implements ChaincodeOperationsServic
 
     try {
 
-      Collection<Peer> peers = channel.getPeersForOrganization(gateway.getIdentity().getMspId());
+      Collection<Peer> peers = channel.getPeers();
 
       LifecycleCommitChaincodeDefinitionRequest lifecycleCommitChaincodeDefinitionRequest =
           hfClientWrapper.getHfClient().newLifecycleCommitChaincodeDefinitionRequest();
