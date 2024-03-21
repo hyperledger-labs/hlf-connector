@@ -1,5 +1,8 @@
 package hlf.java.rest.client.service.impl;
 
+import static hlf.java.rest.client.util.FabricClientConstants.FABRIC_2_0;
+import static hlf.java.rest.client.util.FabricClientConstants.VALUE_TAG_CAPABILITIES;
+
 import com.google.protobuf.ByteString;
 import hlf.java.rest.client.exception.ServiceException;
 import hlf.java.rest.client.model.AnchorPeerDTO;
@@ -11,10 +14,8 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import org.hyperledger.fabric.protos.common.Configtx;
 import org.hyperledger.fabric.protos.common.Configtx.ConfigGroup;
 import org.hyperledger.fabric.protos.common.Configtx.ConfigValue;
-import org.hyperledger.fabric.protos.common.Configuration;
 import org.hyperledger.fabric.protos.msp.MspConfigPackage.FabricCryptoConfig;
 import org.hyperledger.fabric.protos.msp.MspConfigPackage.FabricMSPConfig;
 import org.hyperledger.fabric.protos.msp.MspConfigPackage.FabricNodeOUs;
@@ -26,12 +27,6 @@ import org.springframework.stereotype.Service;
 
 @Service
 public class UpdateChannelImpl implements UpdateChannel {
-
-  private static final String VALUE_TAG_CAPABILITIES = "Capabilities";
-
-  private static final String FABRIC_2_0 = "V2_0";
-
-  private static final String DEFAULT_MOD_POLICY = "Admins";
 
   @Override
   public ConfigGroup buildWriteset(ConfigGroup readset, ChannelUpdateParamsDTO organizationDetails)
@@ -47,7 +42,9 @@ public class UpdateChannelImpl implements UpdateChannel {
             .setModPolicy(FabricClientConstants.CHANNEL_CONFIG_MOD_POLICY_ADMINS)
             .putAllPolicies(FabricChannelUtil.setApplicationPolicies(readset))
             .putGroups(newOrgMspId, setNewOrgGroup(newOrgMspId, organizationDetails))
-            .putValues(VALUE_TAG_CAPABILITIES,getCapabilities(FABRIC_2_0))
+            .putValues(
+                VALUE_TAG_CAPABILITIES,
+                FabricChannelUtil.getCapabilitiesWithDefaultVersion(FABRIC_2_0))
             // putAllGroups excludes new organization
             .putAllGroups(existingOrganizations)
             // Application group version
@@ -225,22 +222,5 @@ public class UpdateChannelImpl implements UpdateChannel {
                     FabricClientConstants.CHANNEL_CONFIG_ORGANIZATIONAL_UNIT_ID_PEER)
                 .setCertificate(ByteString.copyFrom(nodeCert)))
         .setEnable(true);
-  }
-  /**
-   * @param capabilities capabilities need to be added to config
-   * @return channel capabilities
-   */
-  private Configtx.ConfigValue getCapabilities(String... capabilities) {
-    Configtx.ConfigValue.Builder valueBuilder = Configtx.ConfigValue.newBuilder();
-    Configuration.Capabilities.Builder capabilitiesBuilder =
-        Configuration.Capabilities.newBuilder();
-    valueBuilder.setModPolicy(DEFAULT_MOD_POLICY);
-    valueBuilder.setVersion(0);
-    for (String capability : capabilities) {
-      capabilitiesBuilder.putCapabilities(
-              capability, Configuration.Capability.newBuilder().build());
-    }
-    valueBuilder.setValue(capabilitiesBuilder.build().toByteString());
-    return valueBuilder.build();
   }
 }

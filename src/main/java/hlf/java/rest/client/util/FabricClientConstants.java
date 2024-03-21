@@ -8,6 +8,7 @@ public class FabricClientConstants {
   public static final String ERROR_MSG = "error_msg";
   public static final String PEER_LIST = "peers";
 
+  public static final String FABRIC_2_0 = "V2_0";
   public static final String FABRIC_TRANSACTION_ID = "fabric_tx_id";
   public static final String FABRIC_EVENT_NAME = "event_name";
   public static final String FABRIC_CHANNEL_NAME = "channel_name";
@@ -77,4 +78,6 @@ public class FabricClientConstants {
   public static final String JSON_PATH_ROOTCERTS = "$..rootCerts";
   public static final String JSON_PATH_TLS_ROOT_CERTS = "$..tls_root_certs";
   public static final String JSON_PATH_CERTIFICATE = "$..certificate";
+
+  public static final String VALUE_TAG_CAPABILITIES = "Capabilities";
 }

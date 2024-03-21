@@ -8,12 +8,14 @@ import java.util.List;
 import java.util.Map;
 import lombok.experimental.UtilityClass;
 import org.hyperledger.fabric.protos.common.Configtx;
+import org.hyperledger.fabric.protos.common.Configuration;
 import org.hyperledger.fabric.protos.common.MspPrincipal;
 import org.hyperledger.fabric.protos.common.Policies;
 
 @UtilityClass
 public class FabricChannelUtil {
   private final int DEFAULT_VERSION = 0;
+  private static final String DEFAULT_MOD_POLICY = "Admins";
 
   /**
    * get default configuration policy for organization that maps the roles. The policy type is
@@ -239,5 +241,23 @@ public class FabricChannelUtil {
     applicationPoliciesMap.put(
         FabricClientConstants.CHANNEL_CONFIG_POLICY_TYPE_WRITERS, writerPolicy);
     return applicationPoliciesMap;
+  }
+
+  /**
+   * @param capabilities capabilities need to be added to config
+   * @return channel capabilities
+   */
+  public Configtx.ConfigValue getCapabilitiesWithDefaultVersion(String... capabilities) {
+    Configtx.ConfigValue.Builder valueBuilder = Configtx.ConfigValue.newBuilder();
+    Configuration.Capabilities.Builder capabilitiesBuilder =
+        Configuration.Capabilities.newBuilder();
+    valueBuilder.setModPolicy(DEFAULT_MOD_POLICY);
+    valueBuilder.setVersion(0);
+    for (String capability : capabilities) {
+      capabilitiesBuilder.putCapabilities(
+          capability, Configuration.Capability.newBuilder().build());
+    }
+    valueBuilder.setValue(capabilitiesBuilder.build().toByteString());
+    return valueBuilder.build();
   }
 }
