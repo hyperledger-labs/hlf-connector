@@ -2,6 +2,8 @@ package hlf.java.rest.client.config;
 
 import hlf.java.rest.client.exception.FabricTransactionException;
 import hlf.java.rest.client.exception.RetryableServiceException;
+import hlf.java.rest.client.exception.ServiceException;
+import hlf.java.rest.client.exception.UnrecognizedTransactionPayloadException;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
@@ -32,6 +34,9 @@ public class KafkaConsumerErrorHandler {
   private static final int MAX_RETRY_ATTEMPTS = 5;
   private static final List<Class<? extends Exception>> connectorRetryableExceptions =
       Arrays.asList(RetryableServiceException.class, FabricTransactionException.class);
+
+  private static final List<Class<? extends Exception>> connectorNonRetryableExceptions =
+      Arrays.asList(UnrecognizedTransactionPayloadException.class, ServiceException.class);
 
   @Autowired private KafkaProperties kafkaProperties;
 
@@ -86,6 +91,10 @@ public class KafkaConsumerErrorHandler {
 
     for (Class<? extends Exception> retryableExceptionClass : connectorRetryableExceptions) {
       defaultErrorHandler.addRetryableExceptions(retryableExceptionClass);
+    }
+
+    for (Class<? extends Exception> nonRetryableExceptionClass : connectorNonRetryableExceptions) {
+      defaultErrorHandler.addNotRetryableExceptions(nonRetryableExceptionClass);
     }
 
     return defaultErrorHandler;
