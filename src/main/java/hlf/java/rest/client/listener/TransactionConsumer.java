@@ -2,8 +2,6 @@ package hlf.java.rest.client.listener;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import hlf.java.rest.client.exception.ErrorCode;
-import hlf.java.rest.client.exception.FabricTransactionException;
-import hlf.java.rest.client.exception.ServiceException;
 import hlf.java.rest.client.exception.UnrecognizedTransactionPayloadException;
 import hlf.java.rest.client.metrics.EmitCustomTransactionListenerMetrics;
 import hlf.java.rest.client.model.MultiDataTransactionPayload;
@@ -169,16 +167,13 @@ public class TransactionConsumer {
             "Inbound transaction format is incorrect or doesn't contain valid parameters.");
       }
 
-    } catch (FabricTransactionException fte) {
-      log.error("Error in Submitting Transaction - Exception - " + fte.getMessage());
+    } catch (Exception exception) {
+      log.error("Error in Submitting Transaction - Exception - " + exception.getMessage());
       /*
        If the error handler has dead letter publish enabled, the errored Record header will be enriched by extracting
        the error cause and message from the thrown exception.
       */
-      throw fte;
-    } catch (Exception ex) {
-      log.error("Error in Kafka Listener - Message Format exception - " + ex.getMessage());
-      throw new ServiceException(ErrorCode.HYPERLEDGER_FABRIC_TRANSACTION_ERROR, ex.getMessage());
+      throw exception;
     }
   }
 
