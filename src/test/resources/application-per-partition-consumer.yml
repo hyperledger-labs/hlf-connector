@@ -1,0 +1,71 @@
+spring:
+  devtools.add-properties: false
+fabric:
+  localhostReportAddress: false
+  wallet:
+    path: src/test/resources/testwallet
+    adminUser:
+      name: admin
+    clientUser:
+      name: clientUser
+  orgConnectionConfig:
+    path: src/test/resources/testconfig
+    filename: connection.yml
+  events:
+    enable: true
+    chaincode: []
+    chaincodeDetails: []
+    block: []
+  client:
+    rest:
+      apikey: 6uoIAnR
+kafka:
+  integration-points:
+    - groupId: test-group-publisher
+      brokerHost: localhost:9092
+      topic: test-consumer-inbound-topic
+      config-id: 892019
+      ssl-enabled: false
+      topicPartitions: 12
+  event-listener:
+    ssl-enabled: false
+    brokerHost: localhost:9092
+    topic: test-publisher-event-topic
+  failed-message-listener:
+    brokerHost: localhost:9092
+    topic: test-consumer-dlt
+    ssl-enabled: false
+management:
+  endpoints:
+    web:
+      exposure:
+        include: "prometheus,metrics,health,refresh"
+  endpoint:
+    health:
+      group:
+        db:
+          include: db
+          show-components: always
+  metrics:
+    enable:
+      tomcat: true
+      jvm: true
+      process: true
+      hikaricp: true
+      system: true
+      jdbc: true
+      logback: true
+    distribution:
+      percentiles-histogram:
+        http.server.requests: true
+      maximum-expected-value:
+        http.server.requests: 1s
+    custom:
+      kafka:
+        enabled: true
+server:
+  config:
+    location: /Users/n0p0328/work/hlf-connector/src/main/resources/config/
+  servlet:
+    context-path: /hlf-rest-client
+  port: 8282
