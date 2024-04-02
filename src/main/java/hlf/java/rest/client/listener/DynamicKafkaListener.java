@@ -7,6 +7,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
+import lombok.Getter;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
@@ -36,9 +37,9 @@ import org.springframework.util.CollectionUtils;
 @ConditionalOnProperty("kafka.integration-points[0].brokerHost")
 public class DynamicKafkaListener {
 
-  private static final int MAX_CONCURRENT_LISTENERS_PER_CONSUMER = 6;
+  private static final int MAX_CONCURRENT_LISTENERS_PER_CONSUMER = 12;
 
-  private List<ConcurrentMessageListenerContainer> existingContainers = new ArrayList<>();
+  @Getter private List<ConcurrentMessageListenerContainer> existingContainers = new ArrayList<>();
 
   @Autowired private KafkaProperties kafkaProperties;
 
@@ -92,7 +93,7 @@ public class DynamicKafkaListener {
 
     int consumerListenerConcurrency = 1; // Kafka default if no concurrency is set.
 
-    if (consumer.isEnableParallelListenerCapabilities() && consumer.getTopicPartitions() > 1) {
+    if (consumer.getTopicPartitions() > 1) {
       consumerListenerConcurrency =
           Math.min(consumer.getTopicPartitions(), MAX_CONCURRENT_LISTENERS_PER_CONSUMER);
     }
@@ -102,6 +103,7 @@ public class DynamicKafkaListener {
 
     container.start();
     existingContainers.add(container);
+
     log.debug(
         "Created kafka message listener container"
             + container.metrics().keySet().iterator().next());
@@ -117,9 +119,9 @@ public class DynamicKafkaListener {
   /**
    * A Message listener, where each Consumer container would get the list of Records fetched as part
    * of poll() to process. The records are then supplied to an Async Task pool so that multiple
-   * individual Records can be processed in Parallel aynchronously. In case if one of the
+   * individual Records can be processed in Parallel asynchronously. In case if one of the
    * tasks/record fails with an Exception, we perform a partial Batch commit, in which the next
-   * poll() from the server would contain the non committed records of the previous Batch to
+   * poll() from the server would contain the non-committed records of the previous Batch to
    * process.
    *
    * @return
@@ -173,13 +175,11 @@ public class DynamicKafkaListener {
 
   private Object getPerRecordAcknowledgingListener() {
 
-    return new AcknowledgingMessageListener<String, String>() {
-      @Override
-      public void onMessage(ConsumerRecord<String, String> message, Acknowledgment acknowledgment) {
-        transactionConsumer.listen(message);
-        // Manually ack the single Record
-        acknowledgment.acknowledge();
-      }
-    };
+    return (AcknowledgingMessageListener<String, String>)
+        (message, acknowledgment) -> {
+          transactionConsumer.listen(message);
+          // Manually ack the single Record
+          acknowledgment.acknowledge();
+        };
   }
 }
