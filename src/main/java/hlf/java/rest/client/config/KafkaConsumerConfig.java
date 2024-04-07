@@ -43,6 +43,11 @@ public class KafkaConsumerConfig extends BaseKafkaConfig {
     props.put(
         ConsumerConfig.MAX_POLL_RECORDS_CONFIG, FabricClientConstants.KAFKA_INTG_MAX_POLL_RECORDS);
 
+    // Distribute available partitions evenly across all consumers (or consumer threads)
+    props.put(
+        ConsumerConfig.PARTITION_ASSIGNMENT_STRATEGY_CONFIG,
+        FabricClientConstants.ROUND_ROBIN_CONSUMER_PARTITION_ASSIGNEMENT_STRATEGY);
+
     // Azure event-hub config
     configureSaslProperties(props, kafkaConsumerProperties.getSaslJaasConfig());
 

@@ -80,4 +80,6 @@ public class FabricClientConstants {
   public static final String JSON_PATH_CERTIFICATE = "$..certificate";
 
   public static final String VALUE_TAG_CAPABILITIES = "Capabilities";
+  public static final String ROUND_ROBIN_CONSUMER_PARTITION_ASSIGNEMENT_STRATEGY =
+      "org.apache.kafka.clients.consumer.RoundRobinAssignor";
 }
