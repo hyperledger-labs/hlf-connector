@@ -12,10 +12,14 @@ import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.sql.Timestamp;
+import java.util.ArrayList;
 import java.util.Base64;
+import java.util.Collections;
 import java.util.Enumeration;
+import java.util.List;
 import lombok.experimental.UtilityClass;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.util.CollectionUtils;
 
 @Slf4j
 @UtilityClass
@@ -57,18 +61,25 @@ public class SSLAuthFilesHelper {
 
     KeyStore keyStore = loadKeyStore(keyStorePath, keyStorePassword);
 
+    List<Timestamp> certExpiryTimestamps = new ArrayList<>();
+
     Enumeration<String> aliases = keyStore.aliases();
     while (aliases.hasMoreElements()) {
       String alias = aliases.nextElement();
       Certificate cert = keyStore.getCertificate(alias);
       if (cert instanceof X509Certificate) {
         X509Certificate x509Cert = (X509Certificate) cert;
-        return new Timestamp(x509Cert.getNotAfter().getTime());
+        certExpiryTimestamps.add(new Timestamp(x509Cert.getNotAfter().getTime()));
       }
     }
 
-    throw new CertificateException(
-        "Couldn't extract an instance of X509Certificate for fetching expiry details");
+    if (CollectionUtils.isEmpty(certExpiryTimestamps)) {
+      throw new CertificateException(
+          "Couldn't extract an instance of X509Certificate for fetching expiry details");
+    }
+
+    // Return the earliest (minimum) timestamp from the list
+    return Collections.min(certExpiryTimestamps);
   }
 
   private static KeyStore loadKeyStore(String path, String password)
