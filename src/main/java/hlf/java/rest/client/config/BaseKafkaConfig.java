@@ -4,7 +4,10 @@ import hlf.java.rest.client.util.FabricClientConstants;
 import io.micrometer.core.instrument.Gauge;
 import io.micrometer.core.instrument.MeterRegistry;
 import java.sql.Timestamp;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 import java.time.Instant;
+import java.util.Date;
 import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.BooleanUtils;
@@ -57,18 +60,24 @@ public abstract class BaseKafkaConfig {
             SSLAuthFilesHelper.getExpiryTimestampForKeyStore(
                 sslProperties.getSslTruststoreLocation(), sslProperties.getSslTruststorePassword());
 
+        DateFormat formatter = new SimpleDateFormat("dd/MM/yyyy");
+
         String guagePrefix =
             getConfigType().equals(ConfigType.CONSUMER) ? "consumer." : "producer.";
 
         Gauge.builder(
                 guagePrefix + topicName + ".keystore.expiryTs",
                 keyStoreCertExpiryTimestamp::getTime)
+            .tag("topic-name", topicName)
+            .tag("expiry-date", formatter.format(new Date(keyStoreCertExpiryTimestamp.getTime())))
             .strongReference(true)
             .register(sslMetricsRegistry);
 
         Gauge.builder(
                 guagePrefix + topicName + ".truststore.expiryTs",
                 trustStoreCertExpiryTimestamp::getTime)
+            .tag("topic-name", topicName)
+            .tag("expiry-date", formatter.format(new Date(trustStoreCertExpiryTimestamp.getTime())))
             .strongReference(true)
             .register(sslMetricsRegistry);
 
@@ -81,6 +90,7 @@ public abstract class BaseKafkaConfig {
                 guagePrefix + topicName + ".keystore.hasExpired",
                 hasKeyStoreCertExpired,
                 BooleanUtils::toInteger)
+            .tag("topic-name", topicName)
             .strongReference(true)
             .register(sslMetricsRegistry);
 
@@ -88,6 +98,7 @@ public abstract class BaseKafkaConfig {
                 guagePrefix + topicName + ".truststore.hasExpired",
                 hasTrustStoreCertExpired,
                 BooleanUtils::toInteger)
+            .tag("topic-name", topicName)
             .strongReference(true)
             .register(sslMetricsRegistry);
 
