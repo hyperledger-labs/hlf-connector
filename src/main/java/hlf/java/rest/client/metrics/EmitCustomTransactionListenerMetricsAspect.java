@@ -38,10 +38,12 @@ public class EmitCustomTransactionListenerMetricsAspect {
 
       if (e instanceof UnrecognizedTransactionPayloadException) {
         invalidInboundTransactionMessageCounter.increment();
+        throw e;
       }
 
       if (e instanceof ContractException) {
         inboundTxnContractExceptionCounter.increment();
+        throw e;
       }
 
       inboundTxnProcessingFailureCounter.increment();
