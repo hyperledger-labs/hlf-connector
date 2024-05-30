@@ -5,6 +5,7 @@ import hlf.java.rest.client.config.FabricProperties;
 import hlf.java.rest.client.model.EventType;
 import hlf.java.rest.client.sdk.StandardCCEvent;
 import hlf.java.rest.client.service.EventPublishService;
+import hlf.java.rest.client.service.RecencyTransactionContext;
 import hlf.java.rest.client.util.FabricClientConstants;
 import hlf.java.rest.client.util.FabricEventParseUtil;
 import java.nio.charset.StandardCharsets;
@@ -29,6 +30,8 @@ public class ChaincodeEventListener {
 
   @Autowired private FabricProperties fabricProperties;
 
+  @Autowired private RecencyTransactionContext recencyTransactionContext;
+
   private static String eventTxnId = FabricClientConstants.FABRIC_TRANSACTION_ID;
 
   public void chaincodeEventListener(ContractEvent contractEvent) {
@@ -43,7 +46,16 @@ public class ChaincodeEventListener {
             ? new String(contractEvent.getPayload().get(), StandardCharsets.UTF_8)
             : StringUtils.EMPTY;
 
-    publishChaincodeEvent(txId, chaincodeId, eventName, payload, channelName, blockNumber);
+    if (recencyTransactionContext.validateAndRemoveTransactionContext(txId)) {
+      publishChaincodeEvent(txId, chaincodeId, eventName, payload, channelName, blockNumber);
+      return;
+    }
+
+    log.info(
+        "TxnID {} for Block Number {} qualifies as a duplicate event.. Discarding the payload {} from being published.",
+        txId,
+        blockNumber,
+        payload);
   }
 
   @Deprecated

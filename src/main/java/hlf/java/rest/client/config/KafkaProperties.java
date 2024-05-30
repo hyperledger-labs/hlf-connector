@@ -29,6 +29,7 @@ public class KafkaProperties {
     private String brokerHost;
     private String topic;
     private String saslJaasConfig;
+    private Boolean enableIdempotence;
 
     @Override
     public String toString() {

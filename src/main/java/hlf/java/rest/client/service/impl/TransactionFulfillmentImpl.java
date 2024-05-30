@@ -15,6 +15,7 @@ import hlf.java.rest.client.model.EventType;
 import hlf.java.rest.client.model.MultiDataTransactionPayload;
 import hlf.java.rest.client.model.MultiPrivateDataTransactionPayloadValidator;
 import hlf.java.rest.client.service.HFClientWrapper;
+import hlf.java.rest.client.service.RecencyTransactionContext;
 import hlf.java.rest.client.service.TransactionFulfillment;
 import hlf.java.rest.client.util.FabricEventParseUtil;
 import java.io.IOException;
@@ -83,6 +84,8 @@ public class TransactionFulfillmentImpl implements TransactionFulfillment {
   @Autowired private Gateway gateway;
 
   @Autowired private HFClientWrapper hfClientWrapper;
+
+  @Autowired private RecencyTransactionContext recencyTransactionContext;
 
   @Override
   public ResponseEntity<ClientResponseModel> initSmartContract(
@@ -218,6 +221,11 @@ public class TransactionFulfillmentImpl implements TransactionFulfillment {
         }
       }
 
+      recencyTransactionContext.setTransactionContext(fabricTransaction.getTransactionId());
+
+      log.info(
+          "Performing Write Transaction to Ledger with Tx ID {}",
+          fabricTransaction.getTransactionId());
       byte[] result = fabricTransaction.submit(transactionParams);
       resultString = new String(result, StandardCharsets.UTF_8);
       log.info("Transaction Successfully Submitted - Response: " + resultString);
@@ -283,6 +291,12 @@ public class TransactionFulfillmentImpl implements TransactionFulfillment {
 
       transientParam.put(transientKey, jsonPayload.getBytes());
       fabricTransaction.setTransient(transientParam);
+
+      recencyTransactionContext.setTransactionContext(fabricTransaction.getTransactionId());
+
+      log.info(
+          "Performing Write Transaction to Ledger with Tx ID {}",
+          fabricTransaction.getTransactionId());
       byte[] result = fabricTransaction.submit(collection, transientKey);
       resultString = new String(result, StandardCharsets.UTF_8);
       log.info("Transaction Successfully Submitted - Response: " + resultString);
@@ -513,6 +527,11 @@ public class TransactionFulfillmentImpl implements TransactionFulfillment {
       // Map to String Array for dispatching via SDK method
       String[] publicDataArgs = publicParamsList.toArray(new String[publicParamsList.size()]);
 
+      recencyTransactionContext.setTransactionContext(fabricTransaction.getTransactionId());
+
+      log.info(
+          "Performing Write Transaction to Ledger with Tx ID {}",
+          fabricTransaction.getTransactionId());
       byte[] result = fabricTransaction.submit(publicDataArgs);
 
       resultString = new String(result, StandardCharsets.UTF_8);

@@ -36,7 +36,8 @@ public class KafkaProducerConfig extends BaseKafkaConfig {
     props.put(
         ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG,
         org.apache.kafka.common.serialization.StringSerializer.class);
-    props.put(ProducerConfig.ENABLE_IDEMPOTENCE_CONFIG, Boolean.FALSE);
+    props.put(
+        ProducerConfig.ENABLE_IDEMPOTENCE_CONFIG, kafkaProducerProperties.getEnableIdempotence());
 
     // Azure event-hub config
     configureSaslProperties(props, kafkaProducerProperties.getSaslJaasConfig());

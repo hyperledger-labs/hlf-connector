@@ -31,10 +31,12 @@ kafka:
     ssl-enabled: false
     brokerHost: localhost:9092
     topic: test-publisher-event-topic
+    enable-idempotence: true
   failed-message-listener:
     brokerHost: localhost:9092
     topic: test-consumer-dlt
     ssl-enabled: false
+    enable-idempotence: true
 management:
   endpoints:
     web:
@@ -62,10 +64,12 @@ management:
         http.server.requests: 1s
     custom:
       kafka:
-        enabled: true
+        enabled: false
 server:
   config:
     location: /Users/n0p0328/work/hlf-connector/src/main/resources/config/
   servlet:
     context-path: /hlf-rest-client
   port: 8282
+dedupe:
+  enable: true

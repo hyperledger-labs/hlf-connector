@@ -58,16 +58,18 @@ public class EventPublishServiceImpl implements EventPublishService {
             @Override
             public void onSuccess(SendResult<String, String> result) {
               log.info(
-                  "Sent message=["
-                      + msg
-                      + "] with offset=["
-                      + result.getRecordMetadata().offset()
-                      + "]");
+                  "Sent message '{}' to partition {} for offset {}",
+                  msg,
+                  result.getRecordMetadata().partition(),
+                  result.getRecordMetadata().offset());
             }
 
             @Override
             public void onFailure(Throwable ex) {
-              log.warn("Unable to send message=[" + msg + "] due to : " + ex.getMessage());
+              log.error(
+                  "Failed to send message event for Transaction ID {} due to {}",
+                  fabricTxId,
+                  ex.getMessage());
             }
           });
 
