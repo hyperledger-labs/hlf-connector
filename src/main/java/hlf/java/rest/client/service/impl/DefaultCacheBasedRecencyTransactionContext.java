@@ -18,10 +18,12 @@ public class DefaultCacheBasedRecencyTransactionContext implements RecencyTransa
 
   @Override
   public boolean validateAndRemoveTransactionContext(String transactionId) {
-    if (recencyCache.getIfPresent(transactionId) == null) {
-      return false;
+    synchronized (this) {
+      if (recencyCache.getIfPresent(transactionId) == null) {
+        return false;
+      }
+      recencyCache.invalidate(transactionId);
+      return true;
     }
-    recencyCache.invalidate(transactionId);
-    return true;
   }
 }
