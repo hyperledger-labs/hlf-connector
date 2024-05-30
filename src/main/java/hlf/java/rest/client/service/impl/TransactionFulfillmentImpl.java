@@ -223,6 +223,9 @@ public class TransactionFulfillmentImpl implements TransactionFulfillment {
 
       recencyTransactionContext.setTransactionContext(fabricTransaction.getTransactionId());
 
+      log.info(
+          "Performing Write Transaction to Ledger with Tx ID {}",
+          fabricTransaction.getTransactionId());
       byte[] result = fabricTransaction.submit(transactionParams);
       resultString = new String(result, StandardCharsets.UTF_8);
       log.info("Transaction Successfully Submitted - Response: " + resultString);
@@ -291,6 +294,9 @@ public class TransactionFulfillmentImpl implements TransactionFulfillment {
 
       recencyTransactionContext.setTransactionContext(fabricTransaction.getTransactionId());
 
+      log.info(
+          "Performing Write Transaction to Ledger with Tx ID {}",
+          fabricTransaction.getTransactionId());
       byte[] result = fabricTransaction.submit(collection, transientKey);
       resultString = new String(result, StandardCharsets.UTF_8);
       log.info("Transaction Successfully Submitted - Response: " + resultString);
@@ -523,6 +529,9 @@ public class TransactionFulfillmentImpl implements TransactionFulfillment {
 
       recencyTransactionContext.setTransactionContext(fabricTransaction.getTransactionId());
 
+      log.info(
+          "Performing Write Transaction to Ledger with Tx ID {}",
+          fabricTransaction.getTransactionId());
       byte[] result = fabricTransaction.submit(publicDataArgs);
 
       resultString = new String(result, StandardCharsets.UTF_8);

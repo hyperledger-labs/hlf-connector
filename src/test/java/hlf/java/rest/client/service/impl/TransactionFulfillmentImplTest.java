@@ -8,6 +8,7 @@ import hlf.java.rest.client.exception.ErrorConstants;
 import hlf.java.rest.client.exception.FabricTransactionException;
 import hlf.java.rest.client.exception.ServiceException;
 import hlf.java.rest.client.model.ClientResponseModel;
+import hlf.java.rest.client.service.RecencyTransactionContext;
 import java.io.IOException;
 import java.util.List;
 import java.util.Optional;
@@ -42,6 +43,7 @@ public class TransactionFulfillmentImplTest {
   @Mock Network network;
   @Mock Contract contract;
   @Mock Transaction transaction;
+  @Mock RecencyTransactionContext recencyTransactionContext;
 
   private String testNetworkString = "some string";
   private String testContractString = "some string";
@@ -69,7 +71,9 @@ public class TransactionFulfillmentImplTest {
     Mockito.when(gatewayConnetion.getNetwork(Mockito.anyString())).thenReturn(network);
     Mockito.when(network.getContract(Mockito.anyString())).thenReturn(contract);
     Mockito.when(contract.createTransaction(Mockito.anyString())).thenReturn(transaction);
+    Mockito.when(transaction.getTransactionId()).thenReturn("TX-1234");
     Mockito.when(transaction.submit(Mockito.<String>any())).thenReturn(byteArrayResponse);
+    Mockito.doNothing().when(recencyTransactionContext).setTransactionContext(Mockito.anyString());
     /*
      * Mockito.when(contract.submitTransaction(Mockito.anyString(),
      * Mockito.<String>any())) .thenReturn(byteArrayResponse);
@@ -92,7 +96,9 @@ public class TransactionFulfillmentImplTest {
     Mockito.when(gatewayConnetion.getNetwork(Mockito.anyString())).thenReturn(network);
     Mockito.when(network.getContract(Mockito.anyString())).thenReturn(contract);
     Mockito.when(contract.createTransaction(Mockito.anyString())).thenReturn(transaction);
+    Mockito.when(transaction.getTransactionId()).thenReturn("TX-1234");
     Mockito.when(transaction.submit(Mockito.<String>any())).thenThrow(new ContractException(""));
+    Mockito.doNothing().when(recencyTransactionContext).setTransactionContext(Mockito.anyString());
     /*
      * Mockito.when(contract.submitTransaction(Mockito.anyString(),
      * Mockito.<String>any())) .thenThrow(new ContractException(""));
@@ -115,7 +121,9 @@ public class TransactionFulfillmentImplTest {
     Mockito.when(gatewayConnetion.getNetwork(Mockito.anyString())).thenReturn(network);
     Mockito.when(network.getContract(Mockito.anyString())).thenReturn(contract);
     Mockito.when(contract.createTransaction(Mockito.anyString())).thenReturn(transaction);
+    Mockito.when(transaction.getTransactionId()).thenReturn("TX-1234");
     Mockito.when(transaction.submit(Mockito.<String>any())).thenThrow(new TimeoutException());
+    Mockito.doNothing().when(recencyTransactionContext).setTransactionContext(Mockito.anyString());
     /*
      * Mockito.when(contract.submitTransaction(Mockito.anyString(),
      * Mockito.<String>any())) .thenThrow(new TimeoutException());
@@ -138,7 +146,9 @@ public class TransactionFulfillmentImplTest {
     Mockito.when(gatewayConnetion.getNetwork(Mockito.anyString())).thenReturn(network);
     Mockito.when(network.getContract(Mockito.anyString())).thenReturn(contract);
     Mockito.when(contract.createTransaction(Mockito.anyString())).thenReturn(transaction);
+    Mockito.when(transaction.getTransactionId()).thenReturn("TX-1234");
     Mockito.when(transaction.submit(Mockito.<String>any())).thenThrow(new InterruptedException());
+    Mockito.doNothing().when(recencyTransactionContext).setTransactionContext(Mockito.anyString());
     /*
      * Mockito.when(contract.submitTransaction(Mockito.anyString(),
      * Mockito.<String>any())) .thenThrow(new InterruptedException());

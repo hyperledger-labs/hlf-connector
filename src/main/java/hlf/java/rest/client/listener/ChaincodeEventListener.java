@@ -52,7 +52,7 @@ public class ChaincodeEventListener {
     }
 
     log.info(
-        "TxnID {} for Block Number {} is qualifies as a duplicate event.. Discarding the payload {} from being published.",
+        "TxnID {} for Block Number {} qualifies as a duplicate event.. Discarding the payload {} from being published.",
         txId,
         blockNumber,
         payload);

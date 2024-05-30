@@ -46,8 +46,9 @@ kafka:
   event-listener:
     brokerHost: localhost:9093
     topic: hlf-offchain-topic
-
-
+    enable-idempotence: true
+dedupe:
+  enable: false
 ---
 spring:
   profiles: intg
