@@ -55,12 +55,17 @@ kafka:
     ssl-enabled: boolean
     security-protocol: <Only supports SSL>
     listenToFailedMessages: boolean <set as true if you wish to recieve errored Transaction records back to this topic>
+    enableIdempotence: boolean, enable strict Kafka producer idempotence
 
   failed-message-listener: <Note, if you wish to receive errored Transactions to a dedicated topic, these details should be filled up>
     brokerHost: <Comma separated list of boostrap servers>
     topic: <topic to publish errored Records>
     ssl-enabled: boolean
     security-protocol: <Only supports SSL>
+dedupe:
+    enable: boolean, if enabled, the runtime instance of Connector utilises an in-memory recency cache that would validate a recent submission of Transaction prior to emitting an event with the matching Transaction ID.
+    recency-window-size: applicable only if dedupe is enabled, defines the recency cache size.
+    recency-window-expiry-in-minutes: applicable only if dedupe is enabled, defines the recency cache TTL in minites
 ---
 spring:
   profiles: container
