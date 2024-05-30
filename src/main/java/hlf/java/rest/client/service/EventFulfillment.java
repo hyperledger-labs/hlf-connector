@@ -18,5 +18,9 @@ public interface EventFulfillment {
    * @return responseEntity ResponseEntity Transaction Response
    */
   ResponseEntity<ClientResponseModel> replayEvents(
-      Long startBlockNumber, Long endBlockNumber, String networkName, String eventType);
+      Long startBlockNumber,
+      Long endBlockNumber,
+      String transactionId,
+      String networkName,
+      String eventType);
 }

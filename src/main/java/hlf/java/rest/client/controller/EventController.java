@@ -33,6 +33,7 @@ public class EventController {
   public ResponseEntity<ClientResponseModel> replayEvents(
       @RequestParam("block-number-start") Long startBlockNumber,
       @RequestParam("block-number-end") Long endBlockNumber,
+      @RequestParam(value = "transaction-id", required = false) String transactionId,
       @RequestParam("channel") @Validated String networkName,
       @RequestParam("eventType") @Validated String eventType) {
     log.info(
@@ -41,6 +42,7 @@ public class EventController {
         endBlockNumber,
         networkName,
         eventType);
-    return eventFulfillment.replayEvents(startBlockNumber, endBlockNumber, networkName, eventType);
+    return eventFulfillment.replayEvents(
+        startBlockNumber, endBlockNumber, transactionId, networkName, eventType);
   }
 }

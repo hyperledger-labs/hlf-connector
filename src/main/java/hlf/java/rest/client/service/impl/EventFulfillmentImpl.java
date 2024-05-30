@@ -55,7 +55,11 @@ public class EventFulfillmentImpl implements EventFulfillment {
    */
   @Override
   public ResponseEntity<ClientResponseModel> replayEvents(
-      Long startBlockNumber, Long endBlockNumber, String networkName, String eventType) {
+      Long startBlockNumber,
+      Long endBlockNumber,
+      String transactionId,
+      String networkName,
+      String eventType) {
     log.info(
         "Initiate the replay of events since {} until {} on channel {} and type {}",
         startBlockNumber,
@@ -87,8 +91,17 @@ public class EventFulfillmentImpl implements EventFulfillment {
                 .forEach(
                     transactionActionInfo -> {
                       ChaincodeEvent chaincodeEvent = transactionActionInfo.getEvent();
-                      chaincodeEventListener.listener(
-                          StringUtils.EMPTY, blockInfo, chaincodeEvent, networkName);
+
+                      if (Objects.nonNull(transactionId)
+                          && chaincodeEvent.getTxId().equals(transactionId)) {
+                        chaincodeEventListener.listener(
+                            StringUtils.EMPTY, blockInfo, chaincodeEvent, networkName);
+                      } else {
+                        log.info(
+                            "Event TransactionID {} doesn't match with the provided TraansactionID filter {}, skipping event.",
+                            chaincodeEvent.getTxId(),
+                            transactionId);
+                      }
                     });
           }
         }
