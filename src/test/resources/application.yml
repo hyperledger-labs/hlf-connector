@@ -47,6 +47,7 @@ kafka:
     brokerHost: localhost:9093
     topic: hlf-offchain-topic
     enable-idempotence: true
+    enable-at-most-once-semantics: true
 dedupe:
   enable: false
 ---

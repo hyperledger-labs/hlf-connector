@@ -130,16 +130,18 @@ public class EventPublishServiceImpl implements EventPublishService {
             @Override
             public void onSuccess(SendResult<String, String> result) {
               log.info(
-                  "Sent message=["
-                      + payload
-                      + "] with offset=["
-                      + result.getRecordMetadata().offset()
-                      + "]");
+                  "Sent message '{}' to partition {} for offset {}",
+                  payload,
+                  result.getRecordMetadata().partition(),
+                  result.getRecordMetadata().offset());
             }
 
             @Override
             public void onFailure(Throwable ex) {
-              log.error("Unable to send message=[" + payload + "] due to : " + ex.getMessage());
+              log.error(
+                  "Failed to send message event for Transaction ID {} due to {}",
+                  fabricTxId,
+                  ex.getMessage());
             }
           });
 
@@ -214,16 +216,18 @@ public class EventPublishServiceImpl implements EventPublishService {
             @Override
             public void onSuccess(SendResult<String, String> result) {
               log.info(
-                  "Sent message=["
-                      + payload
-                      + "] with offset=["
-                      + result.getRecordMetadata().offset()
-                      + "]");
+                  "Sent message '{}' to partition {} for offset {}",
+                  payload,
+                  result.getRecordMetadata().partition(),
+                  result.getRecordMetadata().offset());
             }
 
             @Override
             public void onFailure(Throwable ex) {
-              log.error("Unable to send message=[" + payload + "] due to : " + ex.getMessage());
+              log.error(
+                  "Failed to send message event for Transaction ID {} due to {}",
+                  fabricTxId,
+                  ex.getMessage());
             }
           });
 

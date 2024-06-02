@@ -37,6 +37,7 @@ kafka:
     topic: test-consumer-dlt
     ssl-enabled: false
     enable-idempotence: true
+    enable-at-most-once-semantics: true
 management:
   endpoints:
     web:

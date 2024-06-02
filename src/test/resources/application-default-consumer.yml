@@ -31,6 +31,7 @@ kafka:
     brokerHost: localhost:9092
     topic: test-publisher-event-topice
     enable-idempotence: true
+    enable-at-most-once-semantics: true
 management:
   endpoints:
     web:
