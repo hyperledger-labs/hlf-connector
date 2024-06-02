@@ -22,6 +22,9 @@ import org.springframework.kafka.core.ProducerFactory;
 @RefreshScope
 public class KafkaProducerConfig extends BaseKafkaConfig {
 
+  private static final String PRODUCER_ALL_ACKS = "all";
+  private static final int RETRIES_CONFIG_FOR_AT_MOST_ONCE = 0;
+
   @Autowired private KafkaProperties kafkaProperties;
 
   @Autowired private MeterRegistry meterRegistry;
@@ -38,6 +41,15 @@ public class KafkaProducerConfig extends BaseKafkaConfig {
         org.apache.kafka.common.serialization.StringSerializer.class);
     props.put(
         ProducerConfig.ENABLE_IDEMPOTENCE_CONFIG, kafkaProducerProperties.getEnableIdempotence());
+
+    if (kafkaProducerProperties.getEnableAtMostOnceSemantics()) {
+      // at-most once requires retries to be set as zero since the client wouldn't re-attempt a
+      // publish in case of Broker failure.
+      props.put(ProducerConfig.RETRIES_CONFIG, RETRIES_CONFIG_FOR_AT_MOST_ONCE);
+      props.put(ProducerConfig.ENABLE_IDEMPOTENCE_CONFIG, false);
+
+      log.info("Kafka producer will be initialised with at-most once behaviour");
+    }
 
     // Azure event-hub config
     configureSaslProperties(props, kafkaProducerProperties.getSaslJaasConfig());

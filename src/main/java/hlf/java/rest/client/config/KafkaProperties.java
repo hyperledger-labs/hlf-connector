@@ -30,6 +30,7 @@ public class KafkaProperties {
     private String topic;
     private String saslJaasConfig;
     private Boolean enableIdempotence;
+    private Boolean enableAtMostOnceSemantics;
 
     @Override
     public String toString() {
