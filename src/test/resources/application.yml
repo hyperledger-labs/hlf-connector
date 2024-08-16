@@ -43,11 +43,11 @@ kafka:
       brokerHost: localhost:9094
       groupId: fabric-consumer
       topic: hlf-integration-topic2
-  event-listener:
-    brokerHost: localhost:9093
-    topic: hlf-offchain-topic
-    enable-idempotence: true
-    enable-at-most-once-semantics: true
+  event-listeners:
+    - brokerHost: localhost:9093
+      topic: hlf-offchain-topic
+      enable-idempotence: true
+      enable-at-most-once-semantics: true
 dedupe:
   enable: false
 ---
@@ -67,7 +67,9 @@ fabric:
   events:
     enable: false
     chaincode: channel1
-    block: channel1
+    blockDetails:
+      - channelName: channel1
+        listenerTopics: topic-1
   client:
     rest:
       apikey: abc

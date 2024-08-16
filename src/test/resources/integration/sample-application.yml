@@ -38,7 +38,9 @@ fabric:
     enable: true
     standardCCEventEnabled: false
     chaincode: chaincode12, chaincode2
-    block: block111, block2
+    blockDetails:
+      - channelName: block111
+        listenerTopics: topic-1
 kafka:
   integration-points:
     -
@@ -49,9 +51,9 @@ kafka:
       brokerHost: localhost:8087
       groupId: fabric-consumer1
       topic: hlf-integration-topic21
-  event-listener:
-    brokerHost: localhost:8087
-    topic: hlf-offchain-topic1
+  event-listeners:
+    - brokerHost: localhost:8087
+      topic: hlf-offchain-topic1
 
 
 ---

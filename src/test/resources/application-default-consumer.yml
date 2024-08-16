@@ -15,7 +15,7 @@ fabric:
     enable: true
     chaincode: []
     chaincodeDetails: []
-    block: []
+    blockDetails: []
   client:
     rest:
       apikey: 6uoIAnR
@@ -26,12 +26,12 @@ kafka:
       topic: test-consumer-inbound-topic
       config-id: 892019
       ssl-enabled: false
-  event-listener:
-    ssl-enabled: false
-    brokerHost: localhost:9092
-    topic: test-publisher-event-topice
-    enable-idempotence: true
-    enable-at-most-once-semantics: true
+  event-listeners:
+    - ssl-enabled: false
+      brokerHost: localhost:9092
+      topic: test-publisher-event-topice
+      enable-idempotence: true
+      enable-at-most-once-semantics: true
 management:
   endpoints:
     web:
