@@ -20,7 +20,7 @@ import org.springframework.context.annotation.Configuration;
 public class KafkaProperties {
 
   private List<Consumer> integrationPoints;
-  private EventProducer eventListener;
+  private List<EventProducer> eventListeners;
   private Producer failedMessageListener;
 
   @Getter

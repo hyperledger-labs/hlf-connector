@@ -47,13 +47,15 @@ public class FabricEventListener {
     startEventListener();
   }
 
-  public void startEventListener() {
+  private void startEventListener() {
 
     try {
-      List<String> blockChannelNames = fabricProperties.getEvents().getBlock();
-      if (!CollectionUtils.isEmpty(blockChannelNames)) {
+      List<FabricProperties.BlockDetails> blockDetailsList =
+          fabricProperties.getEvents().getBlockDetails();
+      if (!CollectionUtils.isEmpty(blockDetailsList)) {
 
-        for (String channelName : blockChannelNames) {
+        for (FabricProperties.BlockDetails blockDetails : blockDetailsList) {
+          String channelName = blockDetails.getChannelName();
           log.info("channel names {}", channelName);
           Network network = gateway.getNetwork(channelName);
 

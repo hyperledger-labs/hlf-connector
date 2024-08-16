@@ -7,6 +7,7 @@ import hlf.java.rest.client.exception.UnrecognizedTransactionPayloadException;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.kafka.clients.consumer.Consumer;
@@ -22,6 +23,7 @@ import org.springframework.kafka.listener.CommonErrorHandler;
 import org.springframework.kafka.listener.ConsumerAwareRecordRecoverer;
 import org.springframework.kafka.listener.DeadLetterPublishingRecoverer;
 import org.springframework.kafka.listener.DefaultErrorHandler;
+import org.springframework.util.CollectionUtils;
 import org.springframework.util.backoff.FixedBackOff;
 
 @Configuration
@@ -59,11 +61,16 @@ public class KafkaConsumerErrorHandler {
 
       deadLetterPublishingRecoverer =
           generateRecordRecovererWithPublisher(kafkaProperties.getFailedMessageListener());
-    } else if (Objects.nonNull(kafkaProperties.getEventListener())
-        && kafkaProperties.getEventListener().isListenToFailedMessages()) {
+    } else if (!CollectionUtils.isEmpty(kafkaProperties.getEventListeners())) {
 
-      deadLetterPublishingRecoverer =
-          generateRecordRecovererWithPublisher(kafkaProperties.getEventListener());
+      Optional<KafkaProperties.EventProducer> eventProducerOptional =
+          kafkaProperties.getEventListeners().stream()
+              .filter(KafkaProperties.EventProducer::isListenToFailedMessages)
+              .findAny();
+      if (eventProducerOptional.isPresent()) {
+        deadLetterPublishingRecoverer =
+            generateRecordRecovererWithPublisher(eventProducerOptional.get());
+      }
     }
 
     /*
@@ -103,7 +110,7 @@ public class KafkaConsumerErrorHandler {
   private DeadLetterPublishingRecoverer generateRecordRecovererWithPublisher(
       KafkaProperties.Producer destination) {
 
-    KafkaTemplate<String, String> deadLetterPublisherTemplate =
+    KafkaTemplate<Object, Object> deadLetterPublisherTemplate =
         new KafkaTemplate<>(kafkaProducerConfig.eventProducerFactory(destination));
     deadLetterPublisherTemplate.setDefaultTopic(destination.getTopic());
 

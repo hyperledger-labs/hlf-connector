@@ -68,14 +68,21 @@ public class FabricProperties {
     // preferred for providing Chaincode details for Event subscription
     private List<String> chaincode;
     private boolean standardCCEventEnabled;
-    private List<String> block;
+    private List<BlockDetails> blockDetails;
     private List<ChaincodeDetails> chaincodeDetails;
+  }
+
+  @Data
+  public static class BlockDetails {
+    private String channelName;
+    private List<String> listenerTopics;
   }
 
   @Data
   public static class ChaincodeDetails {
     private String channelName;
     private String chaincodeId;
+    private List<String> listenerTopics;
   }
 
   /**
