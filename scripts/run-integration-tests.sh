@@ -12,7 +12,7 @@ cd "$(dirname "$0")"
 source pull-fabric-images.sh
 
 pushd ../src/test/java/fabricSetup/ >/dev/null
-docker-compose up --force-recreate -d
+docker compose up --force-recreate -d
 popd >/dev/null && cd ..
 
 docker ps -a
@@ -22,4 +22,4 @@ export MAVEN_OPTS="-Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Sl
 mvn clean test-compile failsafe:integration-test -Dmaven.test.failure.ignore=false
 
 pushd src/test/java/fabricSetup/ >/dev/null
-docker-compose down --volumes
+docker compose down --volumes
