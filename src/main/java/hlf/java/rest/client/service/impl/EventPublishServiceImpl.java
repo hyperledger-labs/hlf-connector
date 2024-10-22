@@ -29,64 +29,6 @@ public class EventPublishServiceImpl implements EventPublishService {
   @Autowired private RoutingKafkaTemplate routingKafkaTemplate;
 
   @Override
-  public boolean sendMessage(String msg, String fabricTxId, String eventName, String channelName) {
-
-    log.debug("Send Event Message - " + msg);
-
-    boolean status = true;
-
-    try {
-
-      ProducerRecord<Object, Object> producerRecord =
-          new ProducerRecord<>(
-              kafkaProperties.getEventListeners().get(0).getTopic(),
-              String.valueOf(msg.hashCode()),
-              msg);
-
-      producerRecord
-          .headers()
-          .add(
-              new RecordHeader(FabricClientConstants.FABRIC_TRANSACTION_ID, fabricTxId.getBytes()));
-      producerRecord
-          .headers()
-          .add(new RecordHeader(FabricClientConstants.FABRIC_EVENT_NAME, eventName.getBytes()));
-      producerRecord
-          .headers()
-          .add(new RecordHeader(FabricClientConstants.FABRIC_CHANNEL_NAME, channelName.getBytes()));
-
-      ListenableFuture<SendResult<Object, Object>> future =
-          routingKafkaTemplate.send(producerRecord);
-
-      future.addCallback(
-          new ListenableFutureCallback<SendResult<Object, Object>>() {
-
-            @Override
-            public void onSuccess(SendResult<Object, Object> result) {
-              log.info(
-                  "Sent message '{}' to partition {} for offset {}",
-                  msg,
-                  result.getRecordMetadata().partition(),
-                  result.getRecordMetadata().offset());
-            }
-
-            @Override
-            public void onFailure(Throwable ex) {
-              log.error(
-                  "Failed to send message event for Transaction ID {} due to {}",
-                  fabricTxId,
-                  ex.getMessage());
-            }
-          });
-
-    } catch (Exception ex) {
-      status = false;
-      log.error("Error sending message - " + ex.getMessage());
-    }
-
-    return status;
-  }
-
-  @Override
   public void publishChaincodeEvents(
       String payload,
       String chaincodeName,
