@@ -45,9 +45,11 @@ public class ChaincodeEventListener {
         contractEvent.getPayload().isPresent()
             ? new String(contractEvent.getPayload().get(), StandardCharsets.UTF_8)
             : StringUtils.EMPTY;
+    boolean isValidTransaction = contractEvent.getTransactionEvent().isValid();
 
     if (recencyTransactionContext.validateAndRemoveTransactionContext(txId)) {
-      publishChaincodeEvent(txId, chaincodeId, eventName, payload, channelName, blockNumber);
+      publishChaincodeEvent(
+          txId, chaincodeId, eventName, payload, channelName, blockNumber, isValidTransaction);
       return;
     }
 
@@ -60,7 +62,11 @@ public class ChaincodeEventListener {
 
   @Deprecated
   public void listener(
-      String handle, BlockInfo blockEvent, ChaincodeEvent chaincodeEvent, String channelName) {
+      String handle,
+      BlockInfo blockEvent,
+      ChaincodeEvent chaincodeEvent,
+      String channelName,
+      boolean isTxnValid) {
 
     long blockNumber = blockEvent.getBlockNumber();
     String txId = chaincodeEvent.getTxId();
@@ -68,7 +74,8 @@ public class ChaincodeEventListener {
     String eventName = chaincodeEvent.getEventName();
     String payload = new String(chaincodeEvent.getPayload(), StandardCharsets.UTF_8);
 
-    publishChaincodeEvent(txId, chaincodeId, eventName, payload, channelName, blockNumber);
+    publishChaincodeEvent(
+        txId, chaincodeId, eventName, payload, channelName, blockNumber, isTxnValid);
   }
 
   private void publishChaincodeEvent(
@@ -77,7 +84,8 @@ public class ChaincodeEventListener {
       String eventName,
       String payload,
       String channelName,
-      long blockNumber) {
+      long blockNumber,
+      boolean isTransactionValid) {
     synchronized (this) {
       if (!txId.equalsIgnoreCase(eventTxnId)) {
 
@@ -86,6 +94,7 @@ public class ChaincodeEventListener {
         log.info("Transaction ID: {}", txId);
         log.info("Payload: {}", payload);
         log.info("Channel Name: {}", channelName);
+        log.info("Transaction Valid state: {}", isTransactionValid);
 
         if (eventPublishService == null) {
           log.info("Event Publish is disabled, skipping this Chaincode event");
@@ -126,7 +135,8 @@ public class ChaincodeEventListener {
             txId,
             eventName,
             channelName,
-            messageKey);
+            messageKey,
+            isTransactionValid);
         eventTxnId = txId;
       } else {
         log.debug("Duplicate Transaction; ID: {}", txId);

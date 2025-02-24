@@ -2,14 +2,16 @@ package hlf.java.rest.client.listener;
 
 import hlf.java.rest.client.config.FabricProperties;
 import hlf.java.rest.client.service.HFClientWrapper;
+import java.io.IOException;
 import java.util.List;
-import java.util.regex.Pattern;
 import lombok.extern.slf4j.Slf4j;
 import org.hyperledger.fabric.gateway.Contract;
 import org.hyperledger.fabric.gateway.Gateway;
 import org.hyperledger.fabric.gateway.Network;
 import org.hyperledger.fabric.sdk.Channel;
 import org.hyperledger.fabric.sdk.Peer;
+import org.hyperledger.fabric.sdk.exception.InvalidArgumentException;
+import org.hyperledger.fabric.sdk.exception.TransactionException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.cloud.context.config.annotation.RefreshScope;
@@ -36,18 +38,21 @@ public class FabricEventListener {
   @Autowired private ChaincodeEventListener chaincodeEventService;
 
   @EventListener
-  public void handleEvent(ContextRefreshedEvent event) {
+  public void handleEvent(ContextRefreshedEvent event)
+      throws InvalidArgumentException, TransactionException, IOException, ClassNotFoundException {
     log.info("Initializing Chaincode/Block Event Listeners..");
     startEventListener();
   }
 
   @EventListener(RefreshScopeRefreshedEvent.class)
-  public void onRefresh(RefreshScopeRefreshedEvent event) {
+  public void onRefresh(RefreshScopeRefreshedEvent event)
+      throws InvalidArgumentException, TransactionException, IOException, ClassNotFoundException {
     log.info("Initializing Chaincode/Block Event Listeners..");
     startEventListener();
   }
 
-  private void startEventListener() {
+  private void startEventListener()
+      throws InvalidArgumentException, TransactionException, IOException, ClassNotFoundException {
 
     try {
       List<FabricProperties.BlockDetails> blockDetailsList =
@@ -85,18 +90,6 @@ public class FabricEventListener {
           fabricProperties.getEvents().getChaincodeDetails();
       List<String> chaincodeChannelNames = fabricProperties.getEvents().getChaincode();
 
-      /**
-       * In-order to ensure backward compatiability, registering event-listeners through
-       * 'chaincodeChannelNames' is preserved until this Listener service fully moves to utilising
-       * Chaincode & Channel names provided via the 'chaincodeDetails' property. Until that,
-       * registering events via Channel names provided through 'chaincodeChannelNames' will be used
-       * if 'chaincodeDetails' is empty. If 'chaincodeDetails' is a non-empty list, then preference
-       * will be given to register Event-listener via the 'Contract' object and registering events
-       * through 'chaincodeChannelNames' will be skipped regardless whether it's populated or not.
-       *
-       * <p>P.S it is recommended to use 'Contract' object for registering Event-Listeners over
-       * registering it through 'Channel' Object.
-       */
       if (!CollectionUtils.isEmpty(chaincodeDetails)) {
 
         for (FabricProperties.ChaincodeDetails chaincodeDetail : chaincodeDetails) {
@@ -106,26 +99,12 @@ public class FabricEventListener {
           contract.addContractListener(chaincodeEventService::chaincodeEventListener);
         }
       } else if (!CollectionUtils.isEmpty(chaincodeChannelNames)) {
-
-        for (String channelName : chaincodeChannelNames) {
-          Network network = gateway.getNetwork(channelName);
-
-          if (null != network) {
-            log.info("Creating event-listener for channel: {}", network);
-            Channel channel = network.getChannel();
-            channel.initialize();
-            channel.registerChaincodeEventListener(
-                Pattern.compile(".*"),
-                Pattern.compile(".*"),
-                (handle, blockEvent, chaincodeEvent) ->
-                    chaincodeEventService.listener(
-                        handle, blockEvent, chaincodeEvent, channel.getName()));
-          }
-        }
+        throw new InvalidArgumentException("Chaincode details are missing in the configuration");
       }
 
     } catch (Exception ex) {
       log.error("Failed to register Block/Chaincode listener with error {}, ", ex.getMessage(), ex);
+      throw ex;
     }
   }
 }
