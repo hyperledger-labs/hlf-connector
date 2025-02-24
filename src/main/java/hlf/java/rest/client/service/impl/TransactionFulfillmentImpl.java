@@ -5,7 +5,6 @@ import hlf.java.rest.client.exception.ErrorCode;
 import hlf.java.rest.client.exception.ErrorConstants;
 import hlf.java.rest.client.exception.FabricTransactionException;
 import hlf.java.rest.client.exception.NotFoundException;
-import hlf.java.rest.client.exception.RetryableServiceException;
 import hlf.java.rest.client.exception.ServiceException;
 import hlf.java.rest.client.model.AbstractModelValidator;
 import hlf.java.rest.client.model.BlockEventWriteSet;
@@ -17,11 +16,11 @@ import hlf.java.rest.client.model.MultiPrivateDataTransactionPayloadValidator;
 import hlf.java.rest.client.service.HFClientWrapper;
 import hlf.java.rest.client.service.RecencyTransactionContext;
 import hlf.java.rest.client.service.TransactionFulfillment;
+import hlf.java.rest.client.util.FabricClientConstants;
 import hlf.java.rest.client.util.FabricEventParseUtil;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -60,25 +59,6 @@ import org.springframework.util.CollectionUtils;
 @Service
 public class TransactionFulfillmentImpl implements TransactionFulfillment {
 
-  // List of exceptions that would be wrapped as 'FabricTransactionException' once caught.
-  private static final List<Class<? extends Exception>> fabricTransactionExceptionCandidates =
-      Arrays.asList(
-          GatewayRuntimeException.class, ContractException.class, InterruptedException.class);
-
-  private static final long DEFAULT_ORDERER_TIMEOUT = 60;
-  private static final TimeUnit DEFAULT_ORDERER_TIMEOUT_UNIT = TimeUnit.SECONDS;
-
-  private static final long DEFAULT_COMMIT_TIMEOUT = 5;
-  private static final TimeUnit DEFAULT_COMMIT_TIMEOUT_UNIT = TimeUnit.MINUTES;
-
-  // Error messages from Fabric while connecting to chaincode from peer
-  private static final List<String> fabricTxErrorList =
-      Arrays.asList(
-          "Failed to send transaction to the orderer",
-          "error creating grpc connection",
-          "error cannot create connection",
-          "could not launch chaincode");
-
   @Autowired private FabricProperties fabricProperties;
 
   @Autowired private Gateway gateway;
@@ -95,13 +75,10 @@ public class TransactionFulfillmentImpl implements TransactionFulfillment {
       Optional<List<String>> peerNames,
       String... transactionParams) {
     log.info("initialize the smart contract, this is done once every install");
-    // get the network information to send the request
-    Network network = gateway.getNetwork(networkName);
 
-    // set the init flag
+    Network network = gateway.getNetwork(networkName);
     Channel channel = network.getChannel();
 
-    // Generate the transaction proposal, set the init flag
     TransactionProposalRequest transactionProposalRequest =
         hfClientWrapper.getHfClient().newTransactionProposalRequest();
     transactionProposalRequest.setInit(true);
@@ -110,40 +87,38 @@ public class TransactionFulfillmentImpl implements TransactionFulfillment {
     transactionProposalRequest.setTransactionContext(channel.newTransactionContext());
     transactionProposalRequest.setArgs(transactionParams);
 
-    List<Peer> endorsingPeers = new ArrayList<>();
-    // get the peers if present
-    if (peerNames.isPresent()) {
-      for (Peer channelPeer : network.getChannel().getPeers()) {
-        log.info("Peer Name: " + channelPeer.getName());
-        if (peerNames.get().contains(channelPeer.getName())) {
-          endorsingPeers.add(channelPeer);
-        }
-      }
-    }
+    List<Peer> endorsingPeers =
+        peerNames.orElse(Collections.emptyList()).stream()
+            .map(
+                peerName ->
+                    network.getChannel().getPeers().stream()
+                        .filter(peer -> peer.getName().equals(peerName))
+                        .findFirst()
+                        .orElse(null))
+            .filter(Objects::nonNull)
+            .collect(Collectors.toList());
 
     Collection<ProposalResponse> proposalResponses;
-    // send the transaction
     try {
-      if (!endorsingPeers.isEmpty()) {
-        proposalResponses =
-            channel.sendTransactionProposal(transactionProposalRequest, endorsingPeers);
-      } else {
-        proposalResponses = channel.sendTransactionProposal(transactionProposalRequest);
-      }
+      proposalResponses =
+          !endorsingPeers.isEmpty()
+              ? channel.sendTransactionProposal(transactionProposalRequest, endorsingPeers)
+              : channel.sendTransactionProposal(transactionProposalRequest);
     } catch (Exception ex) {
       throw new FabricTransactionException(
           ErrorCode.HYPERLEDGER_FABRIC_TRANSACTION_ERROR, ex.getMessage(), ex);
     }
-    // check response status
+
     List<ProposalResponse> validResponses =
         proposalResponses.stream()
             .filter(response -> response.getStatus().equals(ChaincodeResponse.Status.SUCCESS))
             .collect(Collectors.toList());
+
     if (validResponses.isEmpty()) {
       throw new FabricTransactionException(
           ErrorCode.HYPERLEDGER_FABRIC_TRANSACTION_ERROR, "no successful endorsements");
     }
-    // send the endorsements to the orderer nodes
+
     byte[] response =
         commitTransaction(validResponses, network, validResponses.get(0).getTransactionID());
     log.info("successfully initialized the chaincode");
@@ -155,7 +130,6 @@ public class TransactionFulfillmentImpl implements TransactionFulfillment {
   private byte[] commitTransaction(
       final Collection<ProposalResponse> validResponses, Network network, String transactionId) {
     ProposalResponse proposalResponse = validResponses.iterator().next();
-
     CommitHandler commitHandler =
         DefaultCommitHandlers.MSPID_SCOPE_ANYFORTX.create(transactionId, network);
     commitHandler.startListening();
@@ -163,30 +137,25 @@ public class TransactionFulfillmentImpl implements TransactionFulfillment {
     try {
       Channel.TransactionOptions transactionOptions =
           Channel.TransactionOptions.createTransactionOptions()
-              .nOfEvents(
-                  Channel.NOfEvents.createNoEvents()); // Disable default commit wait behaviour
+              .nOfEvents(Channel.NOfEvents.createNoEvents());
       network
           .getChannel()
           .sendTransaction(validResponses, transactionOptions)
-          .get(DEFAULT_ORDERER_TIMEOUT, DEFAULT_ORDERER_TIMEOUT_UNIT);
-    } catch (TimeoutException e) {
-      commitHandler.cancelListening();
-      throw new FabricTransactionException(
-          ErrorCode.HYPERLEDGER_FABRIC_TRANSACTION_ERROR, "timed out", e);
+          .get(FabricClientConstants.DEFAULT_ORDERER_TIMEOUT_IN_SECONDS, TimeUnit.SECONDS);
     } catch (Exception e) {
       commitHandler.cancelListening();
       throw new FabricTransactionException(
-          ErrorCode.HYPERLEDGER_FABRIC_TRANSACTION_ERROR,
-          "Failed to send transaction to the orderer",
-          e);
+          ErrorCode.HYPERLEDGER_FABRIC_TRANSACTION_ERROR, e.getMessage(), e);
     }
 
     try {
-      commitHandler.waitForEvents(DEFAULT_COMMIT_TIMEOUT, DEFAULT_COMMIT_TIMEOUT_UNIT);
+      commitHandler.waitForEvents(
+          fabricProperties.getOrgConnectionConfig().getDefaultCommitTimeoutInSeconds(),
+          TimeUnit.SECONDS);
       return proposalResponse.getChaincodeActionResponsePayload();
     } catch (Exception e) {
       throw new FabricTransactionException(
-          ErrorCode.HYPERLEDGER_FABRIC_TRANSACTION_ERROR, "exception while waiting", e);
+          ErrorCode.HYPERLEDGER_FABRIC_TRANSACTION_ERROR, e.getMessage(), e);
     }
   }
 
@@ -197,28 +166,33 @@ public class TransactionFulfillmentImpl implements TransactionFulfillment {
       String transactionFunctionName,
       Optional<List<String>> peerNames,
       String... transactionParams) {
+
     log.info("Initiate the Write Transaction to Ledger process");
+
     String resultString = StringUtils.EMPTY;
-    List<Peer> endorsingPeers = new ArrayList<>();
+
     try {
       Network network = gateway.getNetwork(networkName);
       Contract contract = network.getContract(contractName);
       Transaction fabricTransaction = contract.createTransaction(transactionFunctionName);
-      // override default commit handler to wait for any response from msp
       fabricTransaction.setCommitHandler(DefaultCommitHandlers.MSPID_SCOPE_ANYFORTX);
-      if (peerNames.isPresent()) {
-        for (Peer channelPeer : network.getChannel().getPeers()) {
-          log.info("Peer Name: " + channelPeer.getName());
-          if (peerNames.get().contains(channelPeer.getName())) {
-            endorsingPeers.add(channelPeer);
-          }
-        }
+      fabricTransaction.setCommitTimeout(
+          fabricProperties.getOrgConnectionConfig().getDefaultCommitTimeoutInSeconds(),
+          TimeUnit.SECONDS);
 
-        if (!endorsingPeers.isEmpty()) {
-          fabricTransaction.setEndorsingPeers(endorsingPeers);
-        } else {
-          log.warn("Peer names don't match channel peers");
-        }
+      List<Peer> endorsingPeers =
+          peerNames.orElse(Collections.emptyList()).stream()
+              .map(
+                  peerName ->
+                      network.getChannel().getPeers().stream()
+                          .filter(peer -> peer.getName().equals(peerName))
+                          .findFirst()
+                          .orElse(null))
+              .filter(Objects::nonNull)
+              .collect(Collectors.toList());
+
+      if (!endorsingPeers.isEmpty()) {
+        fabricTransaction.setEndorsingPeers(endorsingPeers);
       }
 
       recencyTransactionContext.setTransactionContext(fabricTransaction.getTransactionId());
@@ -226,9 +200,11 @@ public class TransactionFulfillmentImpl implements TransactionFulfillment {
       log.info(
           "Performing Write Transaction to Ledger with Tx ID {}",
           fabricTransaction.getTransactionId());
+
       byte[] result = fabricTransaction.submit(transactionParams);
       resultString = new String(result, StandardCharsets.UTF_8);
-      log.info("Transaction Successfully Submitted - Response: " + resultString);
+
+      log.info("Transaction Successfully Submitted - Response: {}", resultString);
 
     } catch (Exception exception) {
       handleTransactionException(exception);
@@ -264,29 +240,33 @@ public class TransactionFulfillmentImpl implements TransactionFulfillment {
       String transientKey,
       Optional<List<String>> peerNames,
       String jsonPayload) {
+
     log.info("Initiate the Write Transaction to Ledger process");
     String resultString = StringUtils.EMPTY;
-    Collection<Peer> endorsingPeers = new ArrayList<>();
     Map<String, byte[]> transientParam = new HashMap<>();
+
     try {
       Network network = gateway.getNetwork(networkName);
       Contract contract = network.getContract(contractName);
       Transaction fabricTransaction = contract.createTransaction(transactionFunctionName);
-      // override default commithandler to wait for any response from msp
       fabricTransaction.setCommitHandler(DefaultCommitHandlers.MSPID_SCOPE_ANYFORTX);
+      fabricTransaction.setCommitTimeout(
+          fabricProperties.getOrgConnectionConfig().getDefaultCommitTimeoutInSeconds(),
+          TimeUnit.SECONDS);
 
-      if (peerNames.isPresent()) {
-        for (Peer channelPeer : network.getChannel().getPeers()) {
-          log.info("Peer Name: " + channelPeer.getName());
-          if (peerNames.get().contains(channelPeer.getName())) {
-            endorsingPeers.add(channelPeer);
-          }
-        }
-        if (!CollectionUtils.isEmpty(endorsingPeers)) {
-          fabricTransaction.setEndorsingPeers(endorsingPeers);
-        } else {
-          log.warn("Peer names don't match channel peers");
-        }
+      List<Peer> endorsingPeers =
+          peerNames.orElse(Collections.emptyList()).stream()
+              .map(
+                  peerName ->
+                      network.getChannel().getPeers().stream()
+                          .filter(peer -> peer.getName().equals(peerName))
+                          .findFirst()
+                          .orElse(null))
+              .filter(Objects::nonNull)
+              .collect(Collectors.toList());
+
+      if (!endorsingPeers.isEmpty()) {
+        fabricTransaction.setEndorsingPeers(endorsingPeers);
       }
 
       transientParam.put(transientKey, jsonPayload.getBytes());
@@ -299,7 +279,7 @@ public class TransactionFulfillmentImpl implements TransactionFulfillment {
           fabricTransaction.getTransactionId());
       byte[] result = fabricTransaction.submit(collection, transientKey);
       resultString = new String(result, StandardCharsets.UTF_8);
-      log.info("Transaction Successfully Submitted - Response: " + resultString);
+      log.info("Transaction Successfully Submitted - Response: {}", resultString);
     } catch (Exception exception) {
       handleTransactionException(exception);
     }
@@ -313,15 +293,18 @@ public class TransactionFulfillmentImpl implements TransactionFulfillment {
       String contractName,
       String transactionFunctionName,
       String transactionId) {
+
     log.info("Initiate the Read Transaction from Ledger process");
     String resultString;
 
     try {
       Network network = gateway.getNetwork(networkName);
       Contract contract = network.getContract(contractName);
+
       byte[] result = contract.evaluateTransaction(transactionFunctionName, transactionId);
       resultString = new String(result, StandardCharsets.UTF_8);
-      log.info("Result from Query: " + resultString);
+
+      log.info("Result from Query: {}", resultString);
 
     } catch (ContractException e) {
       log.error(
@@ -341,6 +324,7 @@ public class TransactionFulfillmentImpl implements TransactionFulfillment {
       String transactionId,
       String collections,
       String transientKey) {
+
     log.info("Initiate the Read Transaction from Ledger process");
     String resultString;
     Map<String, byte[]> transientParam = new HashMap<>();
@@ -351,9 +335,11 @@ public class TransactionFulfillmentImpl implements TransactionFulfillment {
       transientParam.put(transientKey, transactionId.getBytes());
       Transaction fabricTransaction = contract.createTransaction(transactionFunctionName);
       fabricTransaction.setTransient(transientParam);
+
       byte[] result = fabricTransaction.evaluate(collections, transientKey);
       resultString = new String(result, StandardCharsets.UTF_8);
-      log.info("Result from Query: " + resultString);
+
+      log.info("Result from Query: {}", resultString);
 
     } catch (ContractException e) {
       log.error(
@@ -382,6 +368,7 @@ public class TransactionFulfillmentImpl implements TransactionFulfillment {
       String transactionId,
       String chaincode,
       String eventType) {
+
     log.info(
         "Initiate the Read Transaction from Ledger process by blockNumber, networkName and transactionId based on eventType");
 
@@ -477,6 +464,9 @@ public class TransactionFulfillmentImpl implements TransactionFulfillment {
       Transaction fabricTransaction = contract.createTransaction(transactionFunctionName);
       // override default commithandler to wait for any response from msp
       fabricTransaction.setCommitHandler(DefaultCommitHandlers.MSPID_SCOPE_ANYFORTX);
+      fabricTransaction.setCommitTimeout(
+          fabricProperties.getOrgConnectionConfig().getDefaultCommitTimeoutInSeconds(),
+          TimeUnit.SECONDS);
 
       endorsingPeers =
           network.getChannel().getPeers().stream()
@@ -485,10 +475,9 @@ public class TransactionFulfillmentImpl implements TransactionFulfillment {
                       Objects.nonNull(multiDataTransactionPayload.getPeerNames())
                           && multiDataTransactionPayload.getPeerNames().contains(peer.getName()))
               .collect(Collectors.toList());
+
       if (!endorsingPeers.isEmpty()) {
         fabricTransaction.setEndorsingPeers(endorsingPeers);
-      } else {
-        log.warn("Peer names don't match channel peers");
       }
 
       List<String> publicParamsList = new ArrayList<>();
@@ -547,29 +536,27 @@ public class TransactionFulfillmentImpl implements TransactionFulfillment {
 
     log.error(
         "An error occurred while submitting the transaction to the Network. Error Type: {} & Error Message: {}",
-        incomingException.getCause(),
+        incomingException.getClass().getSimpleName(),
         incomingException.getMessage());
 
-    if (fabricTransactionExceptionCandidates.contains(incomingException.getClass())) {
-
-      if (Objects.nonNull(incomingException.getCause())
-          && (incomingException.getCause() instanceof IOException
-              || fabricTxErrorList.stream().anyMatch(incomingException.getMessage()::contains))) {
-        throw new RetryableServiceException(
-            ErrorCode.HYPERLEDGER_FABRIC_CONNECTION_ERROR,
-            incomingException.getMessage(),
-            incomingException);
-      }
-
+    /** Exceptions that are preferred to be get retried are wrapped as FabricTransactionException */
+    if (incomingException instanceof ContractException) {
       throw new FabricTransactionException(
-          ErrorCode.HYPERLEDGER_FABRIC_TRANSACTION_ERROR,
+          ErrorCode.HYPERLEDGER_FABRIC_TRANSACTION_CONTRACT_ERROR,
           incomingException.getMessage(),
           incomingException);
     }
 
     if (incomingException instanceof TimeoutException) {
-      throw new RetryableServiceException(
-          ErrorCode.HYPERLEDGER_FABRIC_CONNECTION_TIMEOUT_ERROR,
+      throw new FabricTransactionException(
+          ErrorCode.HYPERLEDGER_FABRIC_TRANSACTION_TIMEOUT_ERROR,
+          incomingException.getMessage(),
+          incomingException);
+    }
+
+    if (incomingException instanceof GatewayRuntimeException) {
+      throw new FabricTransactionException(
+          ErrorCode.HYPERLEDGER_FABRIC_TRANSACTION_GATEWAY_ERROR,
           incomingException.getMessage(),
           incomingException);
     }

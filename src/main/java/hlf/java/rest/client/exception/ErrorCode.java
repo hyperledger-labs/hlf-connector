@@ -51,10 +51,16 @@ public enum ErrorCode {
       5002,
       "Hyperledger Fabric chaincode operations request has illegal argument or argument is missing."),
 
-  HYPERLEDGER_FABRIC_CONNECTION_TIMEOUT_ERROR(
-      5000, "Hyperledger Fabric Connection timed-out during Transaction"),
-
   HYPERLEDGER_FABRIC_TRANSACTION_ERROR(6000, "Hyperledger Fabric transaction related error"),
+
+  HYPERLEDGER_FABRIC_TRANSACTION_CONTRACT_ERROR(
+      6001, "Exception occurred while executing contract method"),
+
+  HYPERLEDGER_FABRIC_TRANSACTION_TIMEOUT_ERROR(
+      6002, "Hyperledger Fabric Connection timed-out during Transaction"),
+
+  HYPERLEDGER_FABRIC_TRANSACTION_GATEWAY_ERROR(
+      6003, "A Gateway error has occurred due to possible API misconfiguration"),
 
   HYPERLEDGER_FABRIC_NOT_SUPPORTED(8000, "In Hyperledger Fabric this feature is not supported"),
 

@@ -48,6 +48,7 @@ public class FabricProperties {
   public static class OrgConnectionConfig {
     private String path;
     private String filename;
+    private int defaultCommitTimeoutInSeconds = 60;
   }
 
   @Data

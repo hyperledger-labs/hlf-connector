@@ -35,7 +35,8 @@ public class EventPublishServiceImpl implements EventPublishService {
       String fabricTxId,
       String eventName,
       String channelName,
-      String messageKey) {
+      String messageKey,
+      boolean isTxnValid) {
 
     Optional<FabricProperties.ChaincodeDetails> optionalChaincodeDetails =
         fabricProperties.getEvents().getChaincodeDetails().stream()
@@ -54,12 +55,21 @@ public class EventPublishServiceImpl implements EventPublishService {
           fabricTxId,
           eventName,
           channelName,
-          messageKey);
+          messageKey,
+          isTxnValid);
       return;
     }
 
     for (String topic : optionalChaincodeDetails.get().getListenerTopics()) {
-      sendMessage(topic, payload, chaincodeName, fabricTxId, eventName, channelName, messageKey);
+      sendMessage(
+          topic,
+          payload,
+          chaincodeName,
+          fabricTxId,
+          eventName,
+          channelName,
+          messageKey,
+          isTxnValid);
     }
   }
 
@@ -70,7 +80,8 @@ public class EventPublishServiceImpl implements EventPublishService {
       String fabricTxId,
       String eventName,
       String channelName,
-      String messageKey) {
+      String messageKey,
+      boolean isValidTransaction) {
     try {
       ProducerRecord<Object, Object> producerRecord =
           new ProducerRecord<>(topic, messageKey, payload);
@@ -97,6 +108,13 @@ public class EventPublishServiceImpl implements EventPublishService {
               new RecordHeader(
                   FabricClientConstants.FABRIC_EVENT_TYPE,
                   FabricClientConstants.FABRIC_EVENT_TYPE_CHAINCODE.getBytes()));
+
+      producerRecord
+          .headers()
+          .add(
+              new RecordHeader(
+                  FabricClientConstants.FABRIC_TRANSACTION_IS_VALID,
+                  Boolean.toString(isValidTransaction).getBytes()));
 
       log.info("Publishing Chaincode event to outbound topic {}", topic);
 
@@ -125,7 +143,7 @@ public class EventPublishServiceImpl implements EventPublishService {
           });
 
     } catch (Exception ex) {
-      log.error("Error sending message - " + ex.getMessage());
+      log.error("Error sending message - {}", ex.getMessage());
     }
   }
 

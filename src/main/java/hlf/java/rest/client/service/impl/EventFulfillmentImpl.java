@@ -95,7 +95,11 @@ public class EventFulfillmentImpl implements EventFulfillment {
                       if (Objects.isNull(transactionId)
                           || chaincodeEvent.getTxId().equals(transactionId)) {
                         chaincodeEventListener.listener(
-                            StringUtils.EMPTY, blockInfo, chaincodeEvent, networkName);
+                            StringUtils.EMPTY,
+                            blockInfo,
+                            chaincodeEvent,
+                            networkName,
+                            info.isValid());
                       } else {
                         log.info(
                             "Event TransactionID {} does not match the provided TransactionID filter {}. Skipping event.",

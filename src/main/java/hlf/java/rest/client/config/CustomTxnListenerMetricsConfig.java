@@ -29,4 +29,9 @@ public class CustomTxnListenerMetricsConfig {
   public Counter inboundTxnContractExceptionCounter(MeterRegistry meterRegistry) {
     return meterRegistry.counter("transaction.messages.contract.failures");
   }
+
+  @Bean
+  public Counter inboundTxnTimeoutExceptionCounter(MeterRegistry meterRegistry) {
+    return meterRegistry.counter("transaction.messages.timeout.failures");
+  }
 }

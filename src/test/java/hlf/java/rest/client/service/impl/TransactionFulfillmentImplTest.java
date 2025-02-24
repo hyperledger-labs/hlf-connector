@@ -38,6 +38,7 @@ public class TransactionFulfillmentImplTest {
 
   @InjectMocks TransactionFulfillmentImpl transactionFulfillment;
   @Mock FabricProperties fabricProperties;
+  @Mock FabricProperties.OrgConnectionConfig orgConnectionConfig;
   @Mock GatewayConfig gatewayConfig;
   @Mock Gateway gatewayConnetion;
   @Mock Network network;
@@ -68,6 +69,8 @@ public class TransactionFulfillmentImplTest {
   @Test
   public void writeTransactionToLedgerTest()
       throws IOException, ContractException, TimeoutException, InterruptedException {
+    Mockito.when(fabricProperties.getOrgConnectionConfig()).thenReturn(orgConnectionConfig);
+    Mockito.when(orgConnectionConfig.getDefaultCommitTimeoutInSeconds()).thenReturn(60);
     Mockito.when(gatewayConnetion.getNetwork(Mockito.anyString())).thenReturn(network);
     Mockito.when(network.getContract(Mockito.anyString())).thenReturn(contract);
     Mockito.when(contract.createTransaction(Mockito.anyString())).thenReturn(transaction);
@@ -93,6 +96,8 @@ public class TransactionFulfillmentImplTest {
   @Test
   public void writeTransactionToLedgerContractExceptionTest()
       throws IOException, ContractException, TimeoutException, InterruptedException {
+    Mockito.when(fabricProperties.getOrgConnectionConfig()).thenReturn(orgConnectionConfig);
+    Mockito.when(orgConnectionConfig.getDefaultCommitTimeoutInSeconds()).thenReturn(60);
     Mockito.when(gatewayConnetion.getNetwork(Mockito.anyString())).thenReturn(network);
     Mockito.when(network.getContract(Mockito.anyString())).thenReturn(contract);
     Mockito.when(contract.createTransaction(Mockito.anyString())).thenReturn(transaction);
@@ -118,6 +123,8 @@ public class TransactionFulfillmentImplTest {
   @Test
   public void writeTransactionToLedgerTimeoutExceptionTest()
       throws IOException, ContractException, TimeoutException, InterruptedException {
+    Mockito.when(fabricProperties.getOrgConnectionConfig()).thenReturn(orgConnectionConfig);
+    Mockito.when(orgConnectionConfig.getDefaultCommitTimeoutInSeconds()).thenReturn(60);
     Mockito.when(gatewayConnetion.getNetwork(Mockito.anyString())).thenReturn(network);
     Mockito.when(network.getContract(Mockito.anyString())).thenReturn(contract);
     Mockito.when(contract.createTransaction(Mockito.anyString())).thenReturn(transaction);
@@ -129,7 +136,7 @@ public class TransactionFulfillmentImplTest {
      * Mockito.<String>any())) .thenThrow(new TimeoutException());
      */
     Assertions.assertThrows(
-        ServiceException.class,
+        FabricTransactionException.class,
         () -> {
           transactionFulfillment.writeTransactionToLedger(
               testNetworkString,
@@ -143,6 +150,8 @@ public class TransactionFulfillmentImplTest {
   @Test
   public void writeTransactionToLedgerInterruptExceptionTest()
       throws IOException, ContractException, TimeoutException, InterruptedException {
+    Mockito.when(fabricProperties.getOrgConnectionConfig()).thenReturn(orgConnectionConfig);
+    Mockito.when(orgConnectionConfig.getDefaultCommitTimeoutInSeconds()).thenReturn(60);
     Mockito.when(gatewayConnetion.getNetwork(Mockito.anyString())).thenReturn(network);
     Mockito.when(network.getContract(Mockito.anyString())).thenReturn(contract);
     Mockito.when(contract.createTransaction(Mockito.anyString())).thenReturn(transaction);
@@ -154,7 +163,7 @@ public class TransactionFulfillmentImplTest {
      * Mockito.<String>any())) .thenThrow(new InterruptedException());
      */
     Assertions.assertThrows(
-        FabricTransactionException.class,
+        ServiceException.class,
         () -> {
           transactionFulfillment.writeTransactionToLedger(
               testNetworkString,

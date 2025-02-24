@@ -22,7 +22,8 @@ public interface EventPublishService {
       String fabricTxId,
       String eventName,
       String channelName,
-      String messageKey);
+      String messageKey,
+      boolean isTxnValid);
 
   /**
    * @param payload String message payload
