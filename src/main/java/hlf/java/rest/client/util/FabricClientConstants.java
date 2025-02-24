@@ -5,7 +5,6 @@ public class FabricClientConstants {
   public static final String CHANNEL_NAME = "channel_name";
   public static final String FUNCTION_NAME = "function_name";
   public static final String CHAINCODE_NAME = "chaincode_name";
-  public static final String ERROR_MSG = "error_msg";
   public static final String PEER_LIST = "peers";
 
   public static final String FABRIC_2_0 = "V2_0";
@@ -16,7 +15,6 @@ public class FabricClientConstants {
   public static final String FABRIC_EVENT_TYPE = "event_type";
   public static final String FABRIC_EVENT_TYPE_CHAINCODE = "chaincode_event";
   public static final String FABRIC_EVENT_TYPE_BLOCK = "block_event";
-  public static final String FABRIC_EVENT_TYPE_ERROR = "error_event";
   public static final String FABRIC_EVENT_FUNC_NAME = "function_name";
   public static final String FABRIC_TRANSIENT_KEY = "transient_key";
   public static final String FABRIC_COLLECTION_NAME = "collection_name";
@@ -82,4 +80,7 @@ public class FabricClientConstants {
   public static final String VALUE_TAG_CAPABILITIES = "Capabilities";
   public static final String ROUND_ROBIN_CONSUMER_PARTITION_ASSIGNEMENT_STRATEGY =
       "org.apache.kafka.clients.consumer.RoundRobinAssignor";
+
+  public static final long DEFAULT_ORDERER_TIMEOUT_IN_SECONDS = 60;
+  public static final String FABRIC_TRANSACTION_IS_VALID = "fabric_tx_is_valid";
 }
