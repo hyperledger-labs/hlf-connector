@@ -11,7 +11,7 @@
 	</parent>
 	<groupId>hlf.java.client</groupId>
 	<artifactId>hlf-connector</artifactId>
-	<version>1.5.9-SNAPSHOT</version>
+	<version>1.6.0-SNAPSHOT</version>
 	<name>hlf-connector</name>
 	<description>A REST-based Client to Perform Blockchain Actions
 	</description>
