@@ -16,6 +16,7 @@ metrics:
       enable: false
 fabric:
   localhostReportAddress: true
+  discoveryEnabled: true
   wallet:
     path: wallet
     adminUser:
