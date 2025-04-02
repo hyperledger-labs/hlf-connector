@@ -40,6 +40,8 @@ fabric:
         chaincodeId: chaincode-id of the deployed chaincode in this Channel
         listenerTopics: topics to which event messages will be sent
 kafka:
+  general:
+    consumer-shutdown-timeout-in-sec: <Timeout for graceful shutdown of consumers. During SIGINT this will be the max grace duration for the in-flight records to get committed before exiting the application>
   integration-points: <Note : This is a list and Multiple integration points can be configured>
     - groupId: test_group_id
       enableParallelListenerCapabilities: boolean
