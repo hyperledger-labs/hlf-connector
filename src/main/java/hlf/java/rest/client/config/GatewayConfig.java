@@ -48,7 +48,7 @@ public class GatewayConfig {
     builder
         .identity(wallet, fabricProperties.getWallet().getClientUser().getName())
         .networkConfig(networkConfigPath)
-        .discovery(true);
+        .discovery(fabricProperties.isDiscoveryEnabled());
     return builder.connect();
   }
 
