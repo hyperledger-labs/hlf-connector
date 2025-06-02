@@ -7,17 +7,14 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.atomic.AtomicInteger;
 import lombok.Getter;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.cloud.context.scope.refresh.RefreshScopeRefreshedEvent;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.context.event.ContextClosedEvent;
 import org.springframework.context.event.ContextRefreshedEvent;
 import org.springframework.context.event.EventListener;
 import org.springframework.core.task.TaskExecutor;
@@ -53,17 +50,6 @@ public class DynamicKafkaListener {
   @Autowired private TaskExecutor defaultTaskExecutor;
 
   @Autowired private CommonErrorHandler topicTransactionErrorHandler;
-
-  private final AtomicInteger inFlightRecords = new AtomicInteger(0);
-
-  @Value("${kafka.general.consumer-shutdown-timeout-in-sec:30}")
-  private int shutdownTimeoutInSeconds;
-
-  @EventListener(ContextClosedEvent.class)
-  public void onContextClosed() {
-    log.info("Application context closing, performing graceful Kafka shutdown");
-    performGracefulShutdown();
-  }
 
   @EventListener
   public void handleEvent(ContextRefreshedEvent event) {
@@ -142,14 +128,12 @@ public class DynamicKafkaListener {
    */
   private Object getMultithreadedBatchAcknowledgingMessageListener() {
     return new BatchAcknowledgingMessageListener<String, String>() {
+
       @SneakyThrows
       @Override
       public void onMessage(
           List<ConsumerRecord<String, String>> consumerRecords, Acknowledgment acknowledgment) {
         log.debug("Consumer got assigned with a Batch of size : {}", consumerRecords.size());
-
-        // Track the number of records we're processing
-        inFlightRecords.addAndGet(consumerRecords.size());
 
         List<CompletableFuture<Void>> transactionSubmissionTasks = new ArrayList<>();
 
@@ -158,24 +142,15 @@ public class DynamicKafkaListener {
           transactionSubmissionTasks.add(
               CompletableFuture.runAsync(
                   () -> {
-                    try {
-                      transactionConsumer.listen(message);
-                    } finally {
-                      // No need to decrement here as we'll do it after all tasks complete or fail
-                    }
+                    transactionConsumer.listen(message);
                   },
                   defaultTaskExecutor));
         }
-
-        boolean batchSuccess = true;
-        int failedIndex = -1;
 
         for (int i = 0; i < transactionSubmissionTasks.size(); i++) {
           try {
             transactionSubmissionTasks.get(i).get();
           } catch (InterruptedException | ExecutionException e) {
-            batchSuccess = false;
-            failedIndex = i;
 
             final Throwable cause = e.getCause();
 
@@ -183,6 +158,8 @@ public class DynamicKafkaListener {
               log.error(
                   "One of the Consumer Record in Async Batch Processor failed with message {}",
                   cause.getMessage());
+              throw new BatchListenerFailedException(
+                  "Failed to process a Consumer Record from the Batch", i);
             }
 
             if (cause instanceof InterruptedException) {
@@ -190,74 +167,19 @@ public class DynamicKafkaListener {
             }
           }
         }
-
-        // Always decrement the counter for all records in the batch
-        inFlightRecords.addAndGet(-consumerRecords.size());
-
         // If the entire Records were processed successfully, Ack & commit the entire Batch
-        if (batchSuccess) {
-          acknowledgment.acknowledge();
-        } else {
-          throw new BatchListenerFailedException(
-              "Failed to process a Consumer Record from the Batch", failedIndex);
-        }
+        acknowledgment.acknowledge();
       }
     };
   }
 
   private Object getPerRecordAcknowledgingListener() {
+
     return (AcknowledgingMessageListener<String, String>)
         (message, acknowledgment) -> {
-          try {
-            // Increment counter before processing
-            inFlightRecords.incrementAndGet();
-
-            transactionConsumer.listen(message);
-            // Manually ack the single Record
-            acknowledgment.acknowledge();
-          } finally {
-            // Always decrement counter, even if exception occurred
-            inFlightRecords.decrementAndGet();
-          }
+          transactionConsumer.listen(message);
+          // Manually ack the single Record
+          acknowledgment.acknowledge();
         };
-  }
-
-  private void performGracefulShutdown() {
-    log.info("Starting graceful shutdown of Kafka consumers");
-
-    // Stop all containers from polling new messages
-    if (!CollectionUtils.isEmpty(existingContainers)) {
-      existingContainers.forEach(
-          container -> {
-            log.info("Stopping container: {}", container.metrics().keySet().iterator().next());
-            container.stop();
-          });
-    }
-
-    // Wait for in-flight messages to be processed
-    log.info(
-        "All Kafka containers stopped from polling. Waiting for {} in-flight records to be processed...",
-        inFlightRecords.get());
-
-    long startTime = System.currentTimeMillis();
-
-    try {
-      while (inFlightRecords.get() > 0
-          && System.currentTimeMillis() - startTime < (shutdownTimeoutInSeconds * 1000L)) {
-        log.info("Still waiting for {} records to be acknowledged", inFlightRecords.get());
-        Thread.sleep(500);
-      }
-    } catch (InterruptedException e) {
-      Thread.currentThread().interrupt();
-      log.error("Interrupted during shutdown wait", e);
-    }
-
-    if (inFlightRecords.get() > 0) {
-      log.warn("{} records were not acknowledged before shutdown timeout", inFlightRecords.get());
-    } else {
-      log.info("All records successfully processed and acknowledged");
-    }
-
-    log.info("Kafka consumer graceful shutdown completed");
   }
 }
