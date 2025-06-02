@@ -47,6 +47,16 @@ public class ChaincodeEventListener {
             : StringUtils.EMPTY;
     boolean isValidTransaction = contractEvent.getTransactionEvent().isValid();
 
+    if (!isValidTransaction) {
+      log.warn(
+          "Inbound event with TxID {} and Block-Number {} with Event-Name {} is marked as invalid and will be skipped "
+              + "from publishing",
+          txId,
+          blockNumber,
+          eventName);
+      return;
+    }
+
     if (recencyTransactionContext.validateAndRemoveTransactionContext(txId)) {
       publishChaincodeEvent(
           txId, chaincodeId, eventName, payload, channelName, blockNumber, isValidTransaction);
