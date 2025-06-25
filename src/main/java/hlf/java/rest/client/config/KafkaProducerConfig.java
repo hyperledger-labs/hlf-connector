@@ -86,10 +86,11 @@ public class KafkaProducerConfig extends BaseKafkaConfig {
       topicSet.add(eventProducer.getTopic());
       ProducerFactory<Object, Object> defaultKafkaProducerFactory =
           eventProducerFactory(eventProducer);
-      context.registerBean(
-          eventProducer.getTopic() + "PF",
-          ProducerFactory.class,
-          () -> defaultKafkaProducerFactory);
+      String beanName = eventProducer.getTopic() + "PF";
+      if (context.isBeanNameInUse(beanName)) {
+        context.removeBeanDefinition(beanName);
+      }
+      context.registerBean(beanName, ProducerFactory.class, () -> defaultKafkaProducerFactory);
       map.put(Pattern.compile(eventProducer.getTopic()), defaultKafkaProducerFactory);
     }
     return new RoutingKafkaTemplate(map);
