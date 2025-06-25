@@ -42,7 +42,8 @@ public class KafkaConsumerErrorHandler {
 
   @Autowired private KafkaProperties kafkaProperties;
 
-  @Autowired private KafkaProducerConfig kafkaProducerConfig;
+  @Autowired(required = false)
+  private KafkaProducerConfig kafkaProducerConfig;
 
   @Bean
   public CommonErrorHandler topicTransactionErrorHandler() {
@@ -110,12 +111,15 @@ public class KafkaConsumerErrorHandler {
   private DeadLetterPublishingRecoverer generateRecordRecovererWithPublisher(
       KafkaProperties.Producer destination) {
 
-    KafkaTemplate<Object, Object> deadLetterPublisherTemplate =
-        new KafkaTemplate<>(kafkaProducerConfig.eventProducerFactory(destination));
-    deadLetterPublisherTemplate.setDefaultTopic(destination.getTopic());
+    if (kafkaProducerConfig != null) {
+      KafkaTemplate<Object, Object> deadLetterPublisherTemplate =
+          new KafkaTemplate<>(kafkaProducerConfig.eventProducerFactory(destination));
+      deadLetterPublisherTemplate.setDefaultTopic(destination.getTopic());
 
-    return new DeadLetterPublishingRecoverer(
-        deadLetterPublisherTemplate,
-        (cr, e) -> new TopicPartition(destination.getTopic(), cr.partition()));
+      return new DeadLetterPublishingRecoverer(
+          deadLetterPublisherTemplate,
+          (cr, e) -> new TopicPartition(destination.getTopic(), cr.partition()));
+    }
+    return null;
   }
 }
