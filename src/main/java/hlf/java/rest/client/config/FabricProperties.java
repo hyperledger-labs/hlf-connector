@@ -22,6 +22,7 @@ public class FabricProperties {
       "org.hyperledger.fabric.sdk.service_discovery.as_localhost";
 
   private boolean localhostReportAddress;
+  private boolean discoveryEnabled = true;
   private WalletConfig wallet;
   private OrgConnectionConfig orgConnectionConfig;
   private Client client;
