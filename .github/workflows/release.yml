@@ -42,13 +42,10 @@ jobs:
           password: "${{ secrets.GITHUB_TOKEN }}"
       - name: Generate a container image
         run: |
-          version=$(mvn -q \
-              -Dexec.executable=echo \
-              -Dexec.args='${project.version}' \
-              --non-recursive \
-              exec:exec)
-          docker build . -t ghcr.io/${USERNAME_OR_ORG}/hlf-connector:${version}
-          docker push ghcr.io/${USERNAME_OR_ORG}/hlf-connector:${version}
+          VERSION=$(mvn -q -DforceStdout help:evaluate -Dexpression=project.version)
+          IMAGE_TAG=$(echo "$VERSION" | sed 's/-SNAPSHOT$//')
+          docker build . -t ghcr.io/${USERNAME_OR_ORG}/hlf-connector:${IMAGE_TAG}
+          docker push ghcr.io/${USERNAME_OR_ORG}/hlf-connector:${IMAGE_TAG}
         shell: bash
         env:
           USERNAME_OR_ORG: "${{ github.repository_owner }}"
