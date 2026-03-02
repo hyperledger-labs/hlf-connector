@@ -7,10 +7,12 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.regex.Pattern;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.kafka.clients.producer.ProducerConfig;
+import org.apache.kafka.clients.producer.RoundRobinPartitioner;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.cloud.context.config.annotation.RefreshScope;
@@ -32,6 +34,7 @@ public class KafkaProducerConfig extends BaseKafkaConfig {
   private static final int RETRIES_CONFIG_FOR_AT_MOST_ONCE = 0;
 
   @Autowired private KafkaProperties kafkaProperties;
+  @Autowired private FabricProperties fabricProperties;
 
   @Autowired private MeterRegistry meterRegistry;
 
@@ -47,6 +50,9 @@ public class KafkaProducerConfig extends BaseKafkaConfig {
         org.apache.kafka.common.serialization.StringSerializer.class);
     props.put(
         ProducerConfig.ENABLE_IDEMPOTENCE_CONFIG, kafkaProducerProperties.getEnableIdempotence());
+    if (!Objects.isNull(fabricProperties.getEvents()) && !fabricProperties.getEvents().isStandardCCEventEnabled()){
+        props.put(ProducerConfig.PARTITIONER_CLASS_CONFIG, RoundRobinPartitioner.class);
+    }
 
     if (kafkaProducerProperties.getEnableAtMostOnceSemantics()) {
       // at-most once requires retries to be set as zero since the client wouldn't re-attempt a

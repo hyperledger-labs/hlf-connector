@@ -111,7 +111,7 @@ public class ChaincodeEventListener {
           return;
         }
 
-        String messageKey = String.valueOf(payload.hashCode());
+        String messageKey = null;
         String payloadToPublish = payload;
 
         if (fabricProperties.getEvents().isStandardCCEventEnabled()) {
