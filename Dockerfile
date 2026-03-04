@@ -1,4 +1,4 @@
-FROM openjdk:18-jdk-oracle
+FROM eclipse-temurin:21-jdk
 
 RUN mkdir /app
 
