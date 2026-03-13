@@ -23,12 +23,6 @@ public class FairPartitioner implements Partitioner {
 
     List<PartitionInfo> availablePartitions = cluster.availablePartitionsForTopic(topic);
 
-    for (PartitionInfo partitionInfo : availablePartitions) {
-      log.info("Available partition: {} for topic: {}", partitionInfo.partition(), topic);
-    }
-
-    log.info("Total available partitions {}", availablePartitions.size());
-
     List<PartitionInfo> partitionsToUse =
         (availablePartitions != null && !availablePartitions.isEmpty())
             ? availablePartitions
@@ -42,6 +36,8 @@ public class FairPartitioner implements Partitioner {
 
     int next = counter.getAndIncrement();
     int index = Math.floorMod(next, partitionsToUse.size());
+
+    log.info("Next partition to route {}", partitionsToUse.get(index).partition());
 
     return partitionsToUse.get(index).partition();
   }
