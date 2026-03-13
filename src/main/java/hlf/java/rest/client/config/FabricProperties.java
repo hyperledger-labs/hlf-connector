@@ -70,6 +70,7 @@ public class FabricProperties {
     // preferred for providing Chaincode details for Event subscription
     private List<String> chaincode;
     private boolean standardCCEventEnabled;
+    private boolean useFairPartitionerBetaFeature;
     private List<BlockDetails> blockDetails;
     private List<ChaincodeDetails> chaincodeDetails;
   }

@@ -36,6 +36,7 @@ fabric:
       apikey: expected-key
   events:
     enable: true
+    useFairPartitionerBetaFeature: true
     standardCCEventEnabled: false
     chaincode: chaincode12, chaincode2
     blockDetails:
@@ -72,6 +73,7 @@ fabric:
     filename: connection.yaml
   events:
     enable: false
+    useFairPartitionerBetaFeature: true
     standardCCEventEnabled: false
     chaincode: channel1
     block: channel1
