@@ -50,8 +50,14 @@ public class KafkaProducerConfig extends BaseKafkaConfig {
         org.apache.kafka.common.serialization.StringSerializer.class);
     props.put(
         ProducerConfig.ENABLE_IDEMPOTENCE_CONFIG, kafkaProducerProperties.getEnableIdempotence());
-    if (!Objects.isNull(fabricProperties.getEvents()) && !fabricProperties.getEvents().isStandardCCEventEnabled()){
+    if (!Objects.isNull(fabricProperties.getEvents())
+        && !fabricProperties.getEvents().isStandardCCEventEnabled()) {
+
+      if (fabricProperties.getEvents().isUseFairPartitionerBetaFeature()) {
+        props.put(ProducerConfig.PARTITIONER_CLASS_CONFIG, FairPartitioner.class);
+      } else {
         props.put(ProducerConfig.PARTITIONER_CLASS_CONFIG, RoundRobinPartitioner.class);
+      }
     }
 
     if (kafkaProducerProperties.getEnableAtMostOnceSemantics()) {

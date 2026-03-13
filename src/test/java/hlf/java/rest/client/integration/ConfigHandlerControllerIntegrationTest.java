@@ -82,7 +82,7 @@ public class ConfigHandlerControllerIntegrationTest {
     static String FABRIC_PROPERTIES_CLIENT =
         "FabricProperties.Client(rest=FabricProperties.Client.Rest(apikey=expected-key))";
     static String FABRIC_PROPERTIES_EVENTS =
-        "FabricProperties.Events(enable=true, chaincode=[chaincode12, chaincode2], standardCCEventEnabled=false, blockDetails=[FabricProperties.BlockDetails(channelName=block111, listenerTopics=[topic-1])], chaincodeDetails=null)";
+        "FabricProperties.Events(enable=true, chaincode=[chaincode12, chaincode2], standardCCEventEnabled=false, useFairPartitionerBetaFeature=true, blockDetails=[FabricProperties.BlockDetails(channelName=block111, listenerTopics=[topic-1])], chaincodeDetails=null)";
     static String KAFKA_PROPERTIES_PRODUCER =
         "Producer{brokerHost='localhost:8087', topic='hlf-offchain-topic1', saslJaasConfig='null'}";
     static String KAFKA_CONSUMER_PROPERTIES =
